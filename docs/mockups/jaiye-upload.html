@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jaiye — Upload</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,900;1,9..144,400&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0e0c;
+    --surface: #1a1714;
+    --surface-2: #242019;
+    --surface-3: #2c2720;
+    --red: #E63946;
+    --red-soft: #ff6b73;
+    --red-deep: #B8202D;
+    --green: #4ade80;
+    --bone: #F5F1EA;
+    --warm: #e8dfd0;
+    --mute: #8a8578;
+    --dim: #5a544a;
+    --line: rgba(245, 241, 234, 0.08);
+    --line-strong: rgba(245, 241, 234, 0.15);
+
+    --math: #f4a261;
+    --reading: #6b9bd2;
+    --writing: #a084dc;
+    --science: #4ade80;
+    --ball: #E63946;
+
+    --font-display: 'Fraunces', serif;
+    --font-body: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--bone);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    padding: 2rem;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(circle at 10% 0%, rgba(230, 57, 70, 0.05), transparent 40%),
+      radial-gradient(circle at 90% 100%, rgba(230, 57, 70, 0.03), transparent 40%);
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .screen-label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    color: var(--mute);
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px dashed var(--line-strong);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .screen-label .num {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 1.5rem;
+    color: var(--red);
+    letter-spacing: -0.02em;
+  }
+
+  .screen + .screen { margin-top: 4rem; }
+
+  /* ============ BACK BAR (top nav) ============ */
+  .back-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .back-link {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: var(--mute);
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: var(--red); }
+  .back-link::before { content: '←'; font-size: 1rem; }
+
+  .upload-meta {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--mute);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .upload-meta .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--red);
+    animation: pulse 1.8s infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+  /* ============ TASK BANNER ============ */
+  .task-banner {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--math);
+    border-radius: 4px;
+    padding: 1.75rem 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .task-banner.reading { border-left-color: var(--reading); }
+
+  .task-tag {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--math);
+    margin-bottom: 0.75rem;
+  }
+  .task-banner.reading .task-tag { color: var(--reading); }
+
+  .task-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 0.6rem;
+  }
+
+  .task-desc {
+    color: var(--warm);
+    font-size: 1rem;
+    line-height: 1.5;
+    max-width: 60ch;
+  }
+
+  /* ============ DROP ZONE (empty state) ============ */
+  .drop-zone {
+    background: var(--surface);
+    border: 2px dashed var(--line-strong);
+    border-radius: 6px;
+    padding: 4rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .drop-zone:hover {
+    border-color: var(--red);
+    background: var(--surface-2);
+  }
+  .drop-zone:hover .drop-icon { transform: translateY(-4px); color: var(--red); }
+
+  /* red pulse effect when hovered */
+  .drop-zone::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(230, 57, 70, 0.08), transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  .drop-zone:hover::before { opacity: 1; }
+
+  .drop-icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 1.5rem;
+    color: var(--mute);
+    transition: all 0.3s;
+    position: relative;
+    z-index: 1;
+  }
+
+  .drop-icon svg { width: 100%; height: 100%; }
+
+  .drop-headline {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.65rem;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 1;
+  }
+  .drop-headline .em { color: var(--red); font-style: italic; font-weight: 400; }
+
+  .drop-sub {
+    color: var(--mute);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 2rem;
+    max-width: 40ch;
+    margin-left: auto; margin-right: auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  .drop-sub strong { color: var(--warm); }
+
+  .btn-primary {
+    background: var(--red);
+    color: var(--bone);
+    border: none;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    padding: 1rem 2rem;
+    border-radius: 3px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    transition: all 0.2s;
+    position: relative;
+    z-index: 1;
+  }
+  .btn-primary:hover { background: var(--red-soft); transform: translateY(-1px); }
+
+  /* ============ HELP BAR (below drop zone) ============ */
+  .help-bar {
+    margin-top: 1.25rem;
+    padding: 1rem 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--warm);
+  }
+
+  .help-bar-icon {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--surface-3);
+    color: var(--red);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.8rem;
+    margin-top: 2px;
+  }
+
+  .help-bar-content strong {
+    color: var(--bone);
+    font-weight: 500;
+    display: block;
+    margin-bottom: 0.2rem;
+    font-family: var(--font-display);
+  }
+
+  /* ============ PREVIEW STATE ============ */
+  .preview-shell {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .photo-preview {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+    min-height: 520px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+
+  /* fake paper math worksheet to show as preview */
+  .fake-photo {
+    width: 100%;
+    max-width: 480px;
+    aspect-ratio: 3/4;
+    background: #f4ecd8;
+    border-radius: 3px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    padding: 2rem;
+    transform: rotate(-1.5deg);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    color: #2a2420;
+    position: relative;
+  }
+  .fake-photo::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-image:
+      repeating-linear-gradient(transparent, transparent 24px, rgba(66, 100, 151, 0.15) 24px, rgba(66, 100, 151, 0.15) 25px);
+    pointer-events: none;
+  }
+  .fake-photo h5 {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    color: #2a2420;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+  }
+  .fake-photo .problem {
+    font-size: 0.85rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: #1a1a1a;
+    margin-bottom: 0.3rem;
+    display: flex;
+    gap: 0.5rem;
+  }
+  .fake-photo .problem .hand {
+    font-family: 'Comic Sans MS', cursive;
+    font-weight: 600;
+    color: #2558a5;
+    font-size: 0.9rem;
+  }
+
+  /* Photo info bar on preview */
+  .photo-info {
+    position: absolute;
+    bottom: 1rem; left: 1rem;
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: blur(8px);
+    padding: 0.5rem 0.85rem;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--warm);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .photo-info .dim-text { color: var(--mute); }
+
+  /* Confirmation panel */
+  .confirm-panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .confirm-header {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--mute);
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .confirm-header::before { content: ''; width: 1.5rem; height: 1px; background: var(--red); }
+
+  .confirm-ask {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.35rem;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+  }
+  .confirm-ask .em { color: var(--red); font-style: italic; font-weight: 400; }
+
+  .confirm-sub {
+    color: var(--mute);
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+
+  .note-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .note-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--mute);
+  }
+  .note-label .opt {
+    color: var(--dim);
+    text-transform: none;
+    letter-spacing: 0;
+    margin-left: 0.5rem;
+    font-size: 0.7rem;
+  }
+  .note-input {
+    background: var(--bg);
+    border: 1px solid var(--line-strong);
+    color: var(--bone);
+    padding: 0.75rem 0.85rem;
+    border-radius: 3px;
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-style: italic;
+    line-height: 1.4;
+    min-height: 70px;
+    resize: vertical;
+    transition: border-color 0.2s;
+  }
+  .note-input:focus {
+    outline: none;
+    border-color: var(--red);
+  }
+  .note-input::placeholder { color: var(--dim); font-style: italic; }
+
+  .confirm-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-top: auto;
+    padding-top: 0.5rem;
+  }
+
+  .btn-send {
+    background: var(--red);
+    color: var(--bone);
+    border: none;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    padding: 1.1rem 1.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    transition: all 0.2s;
+  }
+  .btn-send:hover { background: var(--red-soft); transform: translateY(-1px); }
+  .btn-send::after {
+    content: '→';
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: 0;
+  }
+
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--line-strong);
+    color: var(--mute);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    padding: 0.75rem 1rem;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-secondary:hover { color: var(--bone); border-color: var(--bone); }
+
+  /* ============ SUCCESS STATE ============ */
+  .success-shell {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 4rem 2.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Red streak that fires across success card */
+  .success-shell::before {
+    content: '';
+    position: absolute;
+    top: 40%;
+    left: -10%;
+    width: 120%;
+    height: 2px;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      transparent 30%,
+      var(--red) 48%,
+      var(--red-soft) 50%,
+      var(--red) 52%,
+      transparent 70%,
+      transparent 100%);
+    transform: rotate(-8deg);
+    animation: streak 3s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes streak {
+    0% { transform: translateX(-100%) rotate(-8deg); opacity: 0; }
+    20% { opacity: 1; }
+    50% { opacity: 1; }
+    80% { opacity: 0; }
+    100% { transform: translateX(50%) rotate(-8deg); opacity: 0; }
+  }
+
+  .success-glow {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(230, 57, 70, 0.12), transparent 60%);
+    pointer-events: none;
+  }
+
+  .success-check {
+    width: 96px; height: 96px;
+    border-radius: 50%;
+    background: var(--red);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 2rem;
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 0 0 8px rgba(230, 57, 70, 0.12), 0 20px 40px -10px rgba(230, 57, 70, 0.3);
+  }
+
+  .success-check::before {
+    content: '';
+    width: 36px; height: 20px;
+    border-left: 3px solid var(--bone);
+    border-bottom: 3px solid var(--bone);
+    transform: rotate(-45deg) translate(3px, -4px);
+  }
+
+  .success-headline {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 2;
+  }
+  .success-headline .em { color: var(--red); font-style: italic; font-weight: 400; }
+
+  .success-sub {
+    font-family: var(--font-display);
+    color: var(--warm);
+    font-size: 1.2rem;
+    line-height: 1.5;
+    max-width: 44ch;
+    margin: 0 auto 2.5rem;
+    position: relative;
+    z-index: 2;
+  }
+  .success-sub em { color: var(--red); font-style: italic; }
+
+  .success-stats {
+    display: flex;
+    justify-content: center;
+    gap: 3rem;
+    margin-bottom: 2.5rem;
+    padding: 1.5rem 2rem;
+    background: var(--surface-2);
+    border-radius: 4px;
+    display: inline-flex;
+    position: relative;
+    z-index: 2;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--mute);
+    margin-bottom: 0.4rem;
+  }
+
+  .stat-value {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 1.75rem;
+    letter-spacing: -0.02em;
+  }
+  .stat-value .em { color: var(--red); font-style: italic; font-weight: 400; }
+
+  .stat-sub {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--mute);
+    margin-top: 0.3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .success-actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    position: relative;
+    z-index: 2;
+  }
+
+  .btn-done {
+    background: var(--red);
+    color: var(--bone);
+    border: none;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    padding: 1rem 2rem;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-done:hover { background: var(--red-soft); transform: translateY(-1px); }
+
+  /* ============ responsive ============ */
+  @media (max-width: 800px) {
+    body { padding: 1rem; }
+    .preview-shell { grid-template-columns: 1fr; }
+    .back-bar { flex-direction: column; align-items: flex-start; gap: 1rem; }
+    .success-stats { flex-direction: column; gap: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ===================================================== -->
+  <!-- SCREEN 1: EMPTY STATE - First time on upload screen   -->
+  <!-- ===================================================== -->
+  <div class="screen">
+    <div class="screen-label"><span class="num">1</span> Empty · What he sees when he taps Upload</div>
+
+    <div class="back-bar">
+      <a class="back-link">Back to Today</a>
+      <div class="upload-meta">
+        <span class="dot"></span>
+        <span>Upload · Step 1 of 2</span>
+      </div>
+    </div>
+
+    <div class="task-banner">
+      <div class="task-tag">Math · upload for Dad</div>
+      <h1 class="task-title">Multiplication worksheet, page 23</h1>
+      <p class="task-desc">All of the problems on page 23. Show your work. Say it out loud as you go.</p>
+    </div>
+
+    <div class="drop-zone">
+      <div class="drop-icon">
+        <svg viewBox="0 0 72 72" fill="none" stroke="currentColor" stroke-width="3">
+          <rect x="10" y="18" width="52" height="42" rx="3"/>
+          <circle cx="24" cy="34" r="5"/>
+          <path d="M10 52 L28 38 L44 50 L62 36" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h2 class="drop-headline">Drop your <span class="em">photo</span> here.</h2>
+      <p class="drop-sub">Or click the button to find it in your <strong>Downloads</strong> folder. The photo of your finished math sheet is probably there.</p>
+      <button class="btn-primary">Choose a file</button>
+    </div>
+
+    <div class="help-bar">
+      <div class="help-bar-icon">?</div>
+      <div class="help-bar-content">
+        <strong>Need to get a photo on here first?</strong>
+        Take the picture with Dad's phone, then AirDrop it to this Chromebook. Look in Downloads.
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================== -->
+  <!-- SCREEN 2: PREVIEW STATE - After he's picked a file     -->
+  <!-- ===================================================== -->
+  <div class="screen">
+    <div class="screen-label"><span class="num">2</span> Preview · After he picks a file</div>
+
+    <div class="back-bar">
+      <a class="back-link">Back to Today</a>
+      <div class="upload-meta">
+        <span class="dot"></span>
+        <span>Upload · Step 2 of 2 · Ready to send</span>
+      </div>
+    </div>
+
+    <div class="task-banner">
+      <div class="task-tag">Math · upload for Dad</div>
+      <h1 class="task-title">Multiplication worksheet, page 23</h1>
+      <p class="task-desc">All of the problems on page 23. Show your work. Say it out loud as you go.</p>
+    </div>
+
+    <div class="preview-shell">
+
+      <!-- The big photo preview -->
+      <div class="photo-preview">
+        <div class="fake-photo">
+          <h5>Math · Page 23</h5>
+          <div class="problem">1.  7 × 6 = <span class="hand">42</span></div>
+          <div class="problem">2.  8 × 9 = <span class="hand">72</span></div>
+          <div class="problem">3.  6 × 5 = <span class="hand">30</span></div>
+          <div class="problem">4.  9 × 4 = <span class="hand">36</span></div>
+          <div class="problem">5.  7 × 8 = <span class="hand">56</span></div>
+          <div class="problem">6.  6 × 7 = <span class="hand">42</span></div>
+          <div class="problem">7.  9 × 9 = <span class="hand">81</span></div>
+          <div class="problem">8.  5 × 8 = <span class="hand">40</span></div>
+          <div class="problem">9.  7 × 7 = <span class="hand">49</span></div>
+          <div class="problem">10. 8 × 6 = <span class="hand">48</span></div>
+        </div>
+        <div class="photo-info">
+          <span>math-page-23.jpg</span>
+          <span class="dim-text">· 2.4 MB</span>
+        </div>
+      </div>
+
+      <!-- Confirmation panel -->
+      <div class="confirm-panel">
+        <div class="confirm-header">Ready to send</div>
+
+        <div>
+          <h3 class="confirm-ask">Is this the <span class="em">right one?</span></h3>
+          <p class="confirm-sub">Check the picture carefully. Once you send it, it goes straight to Dad.</p>
+        </div>
+
+        <div class="note-field">
+          <label class="note-label">Note for Dad <span class="opt">optional</span></label>
+          <textarea class="note-input" placeholder="How did it go? Anything hard? Proud of something?">Number 6 was tricky, but I got them all right!</textarea>
+        </div>
+
+        <div class="confirm-actions">
+          <button class="btn-send">Send to Dad</button>
+          <button class="btn-secondary">Pick a different photo</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===================================================== -->
+  <!-- SCREEN 3: SUCCESS STATE                                -->
+  <!-- ===================================================== -->
+  <div class="screen">
+    <div class="screen-label"><span class="num">3</span> Success · Right after he hits Send</div>
+
+    <div class="success-shell">
+      <div class="success-glow"></div>
+
+      <div class="success-check"></div>
+
+      <h1 class="success-headline">Sent to <span class="em">Dad.</span></h1>
+      <p class="success-sub">Nice work on page 23. That's the <em>5th</em> thing you've finished today.</p>
+
+      <div class="success-stats">
+        <div class="stat">
+          <div class="stat-label">Today</div>
+          <div class="stat-value"><span class="em">5</span> / 8</div>
+          <div class="stat-sub">done</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Streak</div>
+          <div class="stat-value"><span class="em">12</span></div>
+          <div class="stat-sub">days</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">This Week</div>
+          <div class="stat-value"><span class="em">25</span> / 32</div>
+          <div class="stat-sub">crushed</div>
+        </div>
+      </div>
+
+      <div class="success-actions">
+        <button class="btn-done">Back to Today</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

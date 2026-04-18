@@ -10,9 +10,33 @@
   --color-bone: #F5F1EA;
   --color-mute: #8a8a8a;
   --color-line: rgba(245, 241, 234, 0.08);
+  --color-line-strong: rgba(245, 241, 234, 0.15);
+
+  /* /me warm palette — his room, not his stage */
+  --color-warm-bg: #0f0e0c;
+  --color-warm-surface: #1a1714;
+  --color-warm-surface-2: #242019;
+  --color-warm-surface-3: #2c2720;
+  --color-warm-surface-hover: #322c24;
+  --color-warm-bone: #e8dfd0;
+  --color-warm-mute: #8a8578;
+  --color-warm-dim: #5a544a;
+  --color-red-soft: #ff6b73;
+  --color-amber: #f4a261;
+  --color-green: #4ade80;
+  --color-green-deep: #1a6b3a;
+
   --font-display: 'Fraunces', serif;
   --font-body: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+}
+
+@keyframes pin-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-10px); }
+  40% { transform: translateX(10px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }

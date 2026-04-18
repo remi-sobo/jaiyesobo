@@ -12,7 +12,11 @@
     "@mdx-js/loader": "^3.1.1",
     "@mdx-js/react": "^3.1.1",
     "@next/mdx": "^16.2.4",
+    "@supabase/ssr": "^0.10.2",
+    "@supabase/supabase-js": "^2.103.3",
+    "bcryptjs": "^3.0.3",
     "framer-motion": "^12.38.0",
+    "googleapis": "^171.4.0",
     "gray-matter": "^4.0.3",
     "next": "16.2.4",
     "react": "19.2.4",
@@ -20,6 +24,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/bcryptjs": "^2.4.6",
     "@types/mdx": "^2.0.13",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -27,6 +32,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jaiye — Today</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,900;1,9..144,400&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0e0c;            /* warmer than public site — his room, not his stage */
+    --surface: #1a1714;
+    --surface-2: #242019;
+    --surface-hover: #2c2720;
+    --red: #E63946;
+    --red-soft: #ff6b73;
+    --green: #4ade80;
+    --green-deep: #1a6b3a;
+    --bone: #F5F1EA;
+    --warm: #e8dfd0;
+    --mute: #8a8578;
+    --line: rgba(245, 241, 234, 0.08);
+    --line-strong: rgba(245, 241, 234, 0.15);
+    --font-display: 'Fraunces', serif;
+    --font-body: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--bone);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    padding: 2rem;
+    background-image:
+      radial-gradient(circle at 10% 0%, rgba(230, 57, 70, 0.05), transparent 40%),
+      radial-gradient(circle at 90% 100%, rgba(230, 57, 70, 0.03), transparent 40%);
+  }
+
+  .app {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  /* ============ HEADER ============ */
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .header-meta {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--mute);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .header-meta .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--red);
+  }
+
+  .greeting {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 3.5vw, 3rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  .greeting .em { color: var(--red); font-style: italic; font-weight: 400; }
+
+  .date {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--mute);
+    margin-top: 0.25rem;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  /* Streak counter */
+  .streak {
+    text-align: right;
+  }
+  .streak-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--mute);
+  }
+  .streak-value {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 2rem;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    margin-top: 0.25rem;
+  }
+  .streak-value .flame { color: var(--red); font-style: italic; font-weight: 400; margin-right: 0.25em; }
+
+  /* Avatar */
+  .avatar {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--surface);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23242019'/%3E%3Ctext x='50' y='58' text-anchor='middle' font-family='Fraunces' font-size='28' font-weight='900' fill='%23E63946' font-style='italic'%3EJ%3C/text%3E%3C/svg%3E");
+    background-size: cover;
+    border: 1px solid var(--line-strong);
+  }
+
+  /* ============ TOP SUMMARY ============ */
+  .summary {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2rem;
+    align-items: center;
+    padding: 2rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    margin-bottom: 2.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .summary::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    height: 100%;
+    width: 60%;
+    background: linear-gradient(90deg, transparent, rgba(230, 57, 70, 0.05));
+  }
+
+  .summary-text h2 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.5rem;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    margin-bottom: 0.5rem;
+    position: relative;
+  }
+
+  .summary-text h2 .count { color: var(--red); font-weight: 900; font-style: italic; }
+
+  .summary-text p {
+    color: var(--mute);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    max-width: 42ch;
+    position: relative;
+  }
+
+  /* Progress ring */
+  .ring {
+    width: 100px; height: 100px;
+    position: relative;
+  }
+  .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--line-strong); stroke-width: 6; }
+  .ring-fg { fill: none; stroke: var(--red); stroke-width: 6; stroke-linecap: round;
+    stroke-dasharray: 283; stroke-dashoffset: 121; /* 4/7 complete */
+    transition: stroke-dashoffset 0.6s ease;
+  }
+  .ring-text {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    font-family: var(--font-display);
+  }
+  .ring-num {
+    font-size: 1.75rem;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .ring-sub {
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--mute);
+    margin-top: 0.25rem;
+  }
+
+  /* ============ SECTION HEADERS ============ */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+    margin-top: 2.5rem;
+  }
+  .section-header:first-of-type { margin-top: 0; }
+
+  .section-header h3 {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--mute);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .section-header h3::before {
+    content: '';
+    width: 2rem; height: 1px;
+    background: var(--red);
+  }
+
+  .section-count {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--mute);
+    letter-spacing: 0.1em;
+  }
+
+  /* ============ TASK CARDS ============ */
+  .tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .task {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1.25rem 1.5rem;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 1.25rem;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .task:hover {
+    background: var(--surface-hover);
+    border-color: var(--line-strong);
+    transform: translateX(2px);
+  }
+
+  /* Completion dot */
+  .task-dot {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid var(--line-strong);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+  }
+
+  .task:hover .task-dot { border-color: var(--red); }
+
+  .task.done .task-dot {
+    background: var(--red);
+    border-color: var(--red);
+  }
+
+  .task.done .task-dot::after {
+    content: '';
+    width: 10px; height: 6px;
+    border-left: 1.5px solid var(--bone);
+    border-bottom: 1.5px solid var(--bone);
+    transform: rotate(-45deg) translateY(-1px);
+  }
+
+  .task.done .task-body h4 {
+    text-decoration: line-through;
+    text-decoration-color: var(--mute);
+    color: var(--mute);
+  }
+
+  .task.done .task-body p { color: var(--mute); opacity: 0.6; }
+
+  .task.done {
+    background: var(--bg);
+    opacity: 0.75;
+  }
+
+  /* Subject tag */
+  .task-subject {
+    position: absolute;
+    top: 0.75rem;
+    right: 1.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--mute);
+  }
+
+  .task-body {
+    min-width: 0;
+  }
+
+  .task-body h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.15rem;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.3rem;
+    line-height: 1.3;
+    transition: color 0.3s;
+  }
+
+  .task-body p {
+    font-size: 0.85rem;
+    color: var(--mute);
+    line-height: 1.5;
+    max-width: 55ch;
+  }
+
+  .task-body .link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--red-soft);
+    text-decoration: none;
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
+    padding-bottom: 2px;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.3s;
+  }
+
+  .task-body .link:hover { border-bottom-color: var(--red-soft); }
+  .task-body .link::after { content: '↗'; font-size: 0.9rem; }
+
+  /* Task action */
+  .task-action {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-upload {
+    background: transparent;
+    border: 1px solid var(--line-strong);
+    color: var(--bone);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    padding: 0.6rem 1rem;
+    border-radius: 3px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s;
+    white-space: nowrap;
+  }
+
+  .btn-upload:hover {
+    background: var(--red);
+    border-color: var(--red);
+  }
+
+  .btn-upload::before {
+    content: '';
+    display: inline-block;
+    width: 12px; height: 12px;
+    border: 1.5px solid currentColor;
+    border-radius: 2px;
+    position: relative;
+  }
+
+  .task.done .btn-upload {
+    background: transparent;
+    border-color: var(--line);
+    color: var(--mute);
+    cursor: default;
+    pointer-events: none;
+  }
+  .task.done .btn-upload::before {
+    border: none;
+    width: 0; height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-bottom: 8px solid var(--green);
+    border-radius: 0;
+    transform: rotate(45deg) translate(-1px, -2px);
+  }
+  .task.done .btn-upload .label-done { display: inline; }
+  .task.done .btn-upload .label-upload { display: none; }
+  .label-done { display: none; }
+
+  /* Simple check tasks (no photo) */
+  .task.simple .btn-upload { display: none; }
+  .task.simple .task-dot { cursor: pointer; width: 26px; height: 26px; }
+
+  /* ============ ASK DAD ============ */
+  .ask-dad {
+    margin-top: 3rem;
+    padding: 2rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--red);
+    border-radius: 4px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2rem;
+    align-items: center;
+  }
+
+  .ask-dad h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.4rem;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.4rem;
+  }
+  .ask-dad h3 .em { color: var(--red); font-style: italic; font-weight: 400; }
+
+  .ask-dad p {
+    font-size: 0.9rem;
+    color: var(--mute);
+    line-height: 1.5;
+  }
+
+  .btn-ask {
+    background: var(--red);
+    color: var(--bone);
+    border: none;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    padding: 0.9rem 1.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    transition: all 0.3s;
+    white-space: nowrap;
+  }
+  .btn-ask:hover { background: var(--red-soft); transform: translateY(-1px); }
+
+  /* ============ FOOTER NAV ============ */
+  .footer-nav {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--mute);
+  }
+
+  .footer-nav a {
+    color: var(--mute);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: color 0.3s;
+  }
+  .footer-nav a:hover { color: var(--red); }
+
+  .nav-group { display: flex; gap: 2rem; }
+
+  /* Dad's note (when present, shows up here) */
+  .dads-note {
+    margin-top: 2rem;
+    padding: 1.5rem 1.75rem;
+    background: linear-gradient(135deg, var(--surface-2), var(--surface));
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+  }
+
+  .dads-note-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--red);
+    margin-bottom: 0.4rem;
+  }
+
+  .dads-note-body {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    line-height: 1.4;
+    font-style: italic;
+    color: var(--warm);
+  }
+
+  .dads-note-icon {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--red);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 0.9rem;
+    color: var(--bone);
+  }
+
+  @media (max-width: 720px) {
+    body { padding: 1rem; }
+    header { flex-direction: column; align-items: flex-start; gap: 1.5rem; }
+    .summary { grid-template-columns: 1fr; text-align: left; }
+    .summary .ring { justify-self: start; }
+    .task { grid-template-columns: auto 1fr; gap: 1rem; }
+    .task-action { grid-column: 1 / -1; justify-self: end; margin-top: 0.5rem; }
+    .ask-dad { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ HEADER ============ -->
+  <header>
+    <div class="header-left">
+      <div class="header-meta">
+        <span class="dot"></span>
+        <span>Today</span>
+      </div>
+      <h1 class="greeting">Morning, <span class="em">Jaiye.</span></h1>
+      <div class="date">Friday · April 17 · Week 16</div>
+    </div>
+
+    <div class="header-right">
+      <div class="streak">
+        <div class="streak-label">Day streak</div>
+        <div class="streak-value"><span class="flame">★</span>12</div>
+      </div>
+      <div class="avatar"></div>
+    </div>
+  </header>
+
+  <!-- ============ SUMMARY ============ -->
+  <div class="summary">
+    <div class="summary-text">
+      <h2><span class="count">3</span> things left to finish today.</h2>
+      <p>You've already crushed 4. Reading is due by 4pm. Don't forget to upload your math sheet when you're done.</p>
+    </div>
+    <div class="ring">
+      <svg viewBox="0 0 100 100">
+        <circle class="ring-bg" cx="50" cy="50" r="45" />
+        <circle class="ring-fg" cx="50" cy="50" r="45" />
+      </svg>
+      <div class="ring-text">
+        <div class="ring-num">4/7</div>
+        <div class="ring-sub">Done</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ HOMESCHOOL ============ -->
+  <div class="section-header">
+    <h3>Homeschool</h3>
+    <span class="section-count">3 left</span>
+  </div>
+
+  <div class="tasks">
+    <!-- Done: Math -->
+    <div class="task done">
+      <div class="task-dot"></div>
+      <div class="task-body">
+        <span class="task-subject">Math</span>
+        <h4>Multiplication worksheet, page 23</h4>
+        <p>All of the problems on page 23. Show your work. Say it out loud as you go.</p>
+      </div>
+      <div class="task-action">
+        <button class="btn-upload">
+          <span class="label-upload">Upload</span>
+          <span class="label-done">Done</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Done: Reading -->
+    <div class="task done">
+      <div class="task-dot"></div>
+      <div class="task-body">
+        <span class="task-subject">Reading</span>
+        <h4>Big Nate: read chapter 4</h4>
+        <p>Take a photo of your favorite page and write one sentence about why.</p>
+      </div>
+      <div class="task-action">
+        <button class="btn-upload">
+          <span class="label-upload">Upload</span>
+          <span class="label-done">Done</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Pending: Writing -->
+    <div class="task">
+      <div class="task-dot"></div>
+      <div class="task-body">
+        <span class="task-subject">Writing</span>
+        <h4>Journal entry: What did you work on in basketball this week?</h4>
+        <p>Four sentences minimum. Use a period at the end of every sentence.</p>
+        <a class="link" href="#">Open writing prompt in Google Docs</a>
+      </div>
+      <div class="task-action">
+        <button class="btn-upload">
+          <span class="label-upload">Upload</span>
+          <span class="label-done">Done</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Pending: Science -->
+    <div class="task">
+      <div class="task-dot"></div>
+      <div class="task-body">
+        <span class="task-subject">Science</span>
+        <h4>Watch: How plants drink water</h4>
+        <p>Watch the whole video. Then draw a picture of what's happening inside a plant.</p>
+        <a class="link" href="#">Watch on YouTube</a>
+      </div>
+      <div class="task-action">
+        <button class="btn-upload">
+          <span class="label-upload">Upload</span>
+          <span class="label-done">Done</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Pending: Reading -->
+    <div class="task">
+      <div class="task-dot"></div>
+      <div class="task-body">
+        <span class="task-subject">Reading · 4pm</span>
+        <h4>Read Big Nate chapter 5 out loud to Kemi</h4>
+        <p>Take a picture of you and Kemi reading together.</p>
+      </div>
+      <div class="task-action">
+        <button class="btn-upload">
+          <span class="label-upload">Upload</span>
+          <span class="label-done">Done</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ REST OF DAY ============ -->
+  <div class="section-header">
+    <h3>Rest of Day</h3>
+    <span class="section-count">1 left</span>
+  </div>
+
+  <div class="tasks">
+    <div class="task done simple">
+      <div class="task-dot"></div>
+      <div class="task-body">
+        <h4>Make your bed</h4>
+        <p>Pillows flat, corners tucked.</p>
+      </div>
+    </div>
+
+    <div class="task done simple">
+      <div class="task-dot"></div>
+      <div class="task-body">
+        <h4>Memorize: Proverbs 3:5-6</h4>
+        <p>Say it to Dad before dinner.</p>
+      </div>
+    </div>
+
+    <div class="task simple">
+      <div class="task-dot"></div>
+      <div class="task-body">
+        <h4>Basketball practice — 15 min</h4>
+        <p>Work on baseline drive to the inside reverse. 10 makes each side.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ DAD'S NOTE ============ -->
+  <div class="dads-note">
+    <div class="dads-note-icon">D</div>
+    <div>
+      <div class="dads-note-label">Dad says</div>
+      <div class="dads-note-body">Proud of how you handled the math yesterday. Keep going — slow is smooth, smooth is fast.</div>
+    </div>
+  </div>
+
+  <!-- ============ ASK DAD ============ -->
+  <div class="ask-dad">
+    <div>
+      <h3>Got a <span class="em">question?</span></h3>
+      <p>If Dad's in a meeting, drop it here and he'll get back to you. Don't interrupt him.</p>
+    </div>
+    <button class="btn-ask">Ask Dad</button>
+  </div>
+
+  <!-- ============ FOOTER NAV ============ -->
+  <div class="footer-nav">
+    <div class="nav-group">
+      <a href="#">← Today</a>
+      <a href="#">This Week</a>
+      <a href="#">My Photos</a>
+    </div>
+    <a href="#">Log out</a>
+  </div>
+
+</div>
+
+</body>
+</html>

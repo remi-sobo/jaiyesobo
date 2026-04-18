@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jaiye · Admin — Plan the Week</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,900;1,9..144,400&family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0e0c;
+    --surface: #1a1714;
+    --surface-2: #242019;
+    --surface-3: #2c2720;
+    --surface-hover: #322c24;
+    --red: #E63946;
+    --red-soft: #ff6b73;
+    --amber: #f4a261;
+    --green: #4ade80;
+    --green-deep: #1a6b3a;
+    --bone: #F5F1EA;
+    --warm: #e8dfd0;
+    --mute: #8a8578;
+    --dim: #5a544a;
+    --line: rgba(245, 241, 234, 0.08);
+    --line-strong: rgba(245, 241, 234, 0.15);
+    --font-display: 'Fraunces', serif;
+    --font-body: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--bone);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(circle at 10% 0%, rgba(230, 57, 70, 0.04), transparent 40%);
+  }
+
+  .app {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    min-height: 100vh;
+  }
+
+  /* ============ SIDEBAR ============ */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--line);
+    padding: 2rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+
+  .sidebar-brand {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .brand-logo {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 1.2rem;
+    letter-spacing: -0.02em;
+  }
+  .brand-logo .em { color: var(--red); font-style: italic; font-weight: 400; }
+
+  .brand-sub {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--mute);
+  }
+
+  .nav-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .nav-label {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--dim);
+    padding: 0 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.75rem;
+    border-radius: 3px;
+    font-size: 0.88rem;
+    color: var(--bone);
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .nav-item:hover { background: var(--surface-2); }
+
+  .nav-item.active {
+    background: var(--surface-3);
+    color: var(--bone);
+    border-left: 2px solid var(--red);
+    padding-left: calc(0.75rem - 2px);
+  }
+
+  .nav-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--red);
+    animation: pulse 1.8s infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+  .nav-count {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--mute);
+    background: var(--surface-2);
+    padding: 0.1rem 0.4rem;
+    border-radius: 2px;
+  }
+
+  /* Session info at bottom */
+  .sidebar-footer {
+    margin-top: auto;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--mute);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .sidebar-footer .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); }
+
+  /* ============ MAIN ============ */
+  main {
+    padding: 2rem 2.5rem 4rem;
+    overflow-x: hidden;
+  }
+
+  /* Page header */
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .page-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 2rem;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.4rem;
+    line-height: 1.1;
+  }
+  .page-title .em { color: var(--red); font-style: italic; font-weight: 400; }
+
+  .page-sub {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--mute);
+  }
+
+  .page-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  .btn {
+    background: transparent;
+    border: 1px solid var(--line-strong);
+    color: var(--bone);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    padding: 0.65rem 1rem;
+    border-radius: 3px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--surface-2); border-color: var(--bone); }
+
+  .btn.primary {
+    background: var(--red);
+    border-color: var(--red);
+  }
+  .btn.primary:hover { background: var(--red-soft); border-color: var(--red-soft); }
+
+  .btn.ghost { border-color: transparent; color: var(--mute); }
+  .btn.ghost:hover { color: var(--bone); border-color: var(--line-strong); }
+
+  /* Week selector row */
+  .week-selector {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 1rem 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+  }
+
+  .week-nav {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+  }
+
+  .week-arrow {
+    width: 32px; height: 32px;
+    border: 1px solid var(--line-strong);
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--mute);
+    background: transparent;
+    transition: all 0.2s;
+  }
+  .week-arrow:hover { color: var(--bone); border-color: var(--bone); }
+
+  .week-label {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .week-label .dim { color: var(--mute); font-weight: 400; margin-left: 0.75rem; }
+
+  .week-status {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+  }
+  .week-status .dot-live { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+  .week-status.draft .dot-live { background: var(--amber); }
+
+  /* Quick actions row */
+  .quick-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .quick-row .label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--mute);
+    margin-right: 0.5rem;
+  }
+
+  .chip {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    padding: 0.35rem 0.75rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    color: var(--warm);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-mono);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .chip:hover { background: var(--surface-2); color: var(--bone); }
+  .chip .icon { color: var(--red); }
+
+  /* ============ WEEK GRID ============ */
+  .week-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 3rem;
+  }
+
+  .day {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    min-height: 440px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: all 0.2s;
+  }
+
+  .day.today {
+    border-color: var(--red);
+  }
+  .day.today::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: -1px; right: -1px;
+    height: 2px;
+    background: var(--red);
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+  }
+
+  .day.weekend {
+    background: var(--bg);
+    opacity: 0.7;
+  }
+
+  .day-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 0.75rem;
+  }
+
+  .day-name {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--mute);
+  }
+  .day.today .day-name { color: var(--red); }
+
+  .day-num {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .day-status {
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--mute);
+  }
+  .day-status .frac {
+    color: var(--bone);
+    font-weight: 500;
+  }
+
+  /* Tasks inside day */
+  .day-tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    flex: 1;
+  }
+
+  .task-mini {
+    background: var(--surface-2);
+    border-radius: 3px;
+    padding: 0.55rem 0.65rem;
+    font-size: 0.78rem;
+    line-height: 1.3;
+    cursor: grab;
+    transition: all 0.15s;
+    border-left: 2px solid var(--dim);
+    position: relative;
+  }
+  .task-mini:hover {
+    background: var(--surface-3);
+    transform: translateX(1px);
+  }
+  .task-mini:active { cursor: grabbing; }
+
+  .task-mini.math { border-left-color: #f4a261; }
+  .task-mini.reading { border-left-color: #6b9bd2; }
+  .task-mini.writing { border-left-color: #a084dc; }
+  .task-mini.science { border-left-color: #4ade80; }
+  .task-mini.habit { border-left-color: var(--mute); }
+  .task-mini.ball { border-left-color: var(--red); }
+
+  .task-mini .tag {
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--mute);
+    margin-bottom: 0.15rem;
+  }
+
+  .task-mini .title {
+    color: var(--bone);
+    font-weight: 400;
+  }
+
+  .task-mini.done {
+    opacity: 0.45;
+  }
+  .task-mini.done .title {
+    text-decoration: line-through;
+    text-decoration-color: var(--mute);
+  }
+
+  .task-mini.done::after {
+    content: '✓';
+    position: absolute;
+    top: 0.4rem;
+    right: 0.5rem;
+    color: var(--green);
+    font-size: 0.75rem;
+  }
+
+  /* Add task button */
+  .add-task {
+    margin-top: 0.3rem;
+    background: transparent;
+    border: 1px dashed var(--line-strong);
+    color: var(--mute);
+    padding: 0.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    transition: all 0.2s;
+  }
+  .add-task:hover {
+    border-color: var(--red);
+    color: var(--red);
+  }
+
+  /* ============ BOTTOM GRID: three columns ============ */
+  .bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .panel-title {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--mute);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .panel-title::before {
+    content: '';
+    width: 1.5rem; height: 1px;
+    background: var(--red);
+  }
+
+  .panel-count {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--red);
+    font-weight: 500;
+  }
+
+  /* Uploads panel */
+  .upload-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .upload-row:last-child { border-bottom: none; }
+  .upload-row:hover { background: var(--surface-2); margin: 0 -0.5rem; padding: 0.6rem 0.5rem; border-radius: 3px; }
+
+  .upload-thumb {
+    width: 42px; height: 42px;
+    border-radius: 3px;
+    background: var(--surface-3);
+    background-image: linear-gradient(135deg, #3a2f26, #2a241d);
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .upload-thumb::after {
+    content: '📄';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    filter: grayscale(0.5);
+    opacity: 0.6;
+  }
+
+  .upload-body { flex: 1; min-width: 0; }
+  .upload-title {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--bone);
+    line-height: 1.3;
+    margin-bottom: 0.2rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .upload-meta {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--mute);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .upload-row .dot-new {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--red);
+    flex-shrink: 0;
+  }
+
+  /* Ask Dad queue */
+  .question {
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .question:last-child { border-bottom: none; padding-bottom: 0; }
+
+  .question-meta {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--mute);
+    margin-bottom: 0.4rem;
+  }
+
+  .question-body {
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    line-height: 1.4;
+    color: var(--warm);
+    margin-bottom: 0.6rem;
+    font-style: italic;
+  }
+
+  .question-actions {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+  }
+
+  .reply-input {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    color: var(--bone);
+    padding: 0.5rem 0.7rem;
+    border-radius: 3px;
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    margin-bottom: 0.4rem;
+    transition: border-color 0.2s;
+  }
+  .reply-input:focus {
+    outline: none;
+    border-color: var(--red);
+  }
+
+  /* Dad's note panel */
+  .dads-note-editor {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-left: 2px solid var(--red);
+    border-radius: 3px;
+    padding: 0.85rem 1rem;
+    min-height: 80px;
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-style: italic;
+    line-height: 1.4;
+    color: var(--warm);
+    width: 100%;
+    resize: none;
+  }
+  .dads-note-editor:focus {
+    outline: none;
+    border-color: var(--red);
+  }
+  .dads-note-editor::placeholder {
+    color: var(--mute);
+    font-style: italic;
+  }
+
+  .note-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.75rem;
+  }
+
+  .char-count {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--mute);
+    letter-spacing: 0.1em;
+  }
+
+  /* Templates shelf (bottom) */
+  .templates-shelf {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .templates-shelf h4 {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--mute);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .templates-shelf h4::before {
+    content: '';
+    width: 1.5rem; height: 1px;
+    background: var(--red);
+  }
+
+  .templates-row {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .template-chip {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    padding: 0.5rem 0.85rem;
+    border-radius: 3px;
+    font-size: 0.78rem;
+    color: var(--warm);
+    cursor: grab;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .template-chip:hover { background: var(--surface-2); color: var(--bone); border-color: var(--line-strong); }
+  .template-chip .count {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--mute);
+    background: var(--surface-2);
+    padding: 0.05rem 0.35rem;
+    border-radius: 2px;
+  }
+
+  .template-chip .swatch {
+    width: 3px; height: 14px;
+    border-radius: 1px;
+    background: var(--amber);
+  }
+  .template-chip[data-subject="reading"] .swatch { background: #6b9bd2; }
+  .template-chip[data-subject="writing"] .swatch { background: #a084dc; }
+  .template-chip[data-subject="science"] .swatch { background: #4ade80; }
+  .template-chip[data-subject="ball"] .swatch { background: var(--red); }
+
+  /* Responsive */
+  @media (max-width: 1100px) {
+    .app { grid-template-columns: 200px 1fr; }
+    .bottom-grid { grid-template-columns: 1fr; }
+    .week-grid { grid-template-columns: 1fr; gap: 0.75rem; }
+    .day { min-height: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">Jaiye<span class="em">.</span></div>
+      <div class="brand-sub">Admin</div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">This week</div>
+      <a class="nav-item active">
+        <span>Plan</span>
+      </a>
+      <a class="nav-item">
+        <span>Uploads</span>
+        <span class="nav-count">4</span>
+      </a>
+      <a class="nav-item">
+        <span>Ask Dad</span>
+        <span class="nav-dot"></span>
+      </a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">Longer view</div>
+      <a class="nav-item"><span>Month</span></a>
+      <a class="nav-item"><span>Archive</span></a>
+      <a class="nav-item"><span>Photos</span></a>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-label">Setup</div>
+      <a class="nav-item"><span>Templates</span></a>
+      <a class="nav-item"><span>Settings</span></a>
+    </div>
+
+    <div class="sidebar-footer">
+      <span class="dot"></span>
+      Signed in as Dad
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main>
+
+    <!-- Page header -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Plan the <span class="em">week.</span></h1>
+        <div class="page-sub">Admin · Week of Apr 13</div>
+      </div>
+      <div class="page-actions">
+        <button class="btn ghost">Preview as Jaiye</button>
+        <button class="btn">Duplicate last week</button>
+        <button class="btn primary">Publish week</button>
+      </div>
+    </div>
+
+    <!-- Week selector -->
+    <div class="week-selector">
+      <div class="week-nav">
+        <button class="week-arrow">‹</button>
+        <div class="week-label">Week of April 13 <span class="dim">· Week 16 of 2026</span></div>
+        <button class="week-arrow">›</button>
+      </div>
+      <div class="week-status">
+        <span class="dot-live"></span>
+        <span>Published · Live for Jaiye</span>
+      </div>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="quick-row">
+      <span class="label">Add to every weekday:</span>
+      <button class="chip"><span class="icon">+</span> Math (30 min)</button>
+      <button class="chip"><span class="icon">+</span> Reading (Big Nate)</button>
+      <button class="chip"><span class="icon">+</span> Scripture memory</button>
+      <button class="chip"><span class="icon">+</span> Ball practice (15 min)</button>
+      <button class="chip"><span class="icon">+</span> Make bed</button>
+    </div>
+
+    <!-- Week grid: Mon-Sun -->
+    <div class="week-grid">
+
+      <!-- MONDAY — done -->
+      <div class="day">
+        <div class="day-header">
+          <div>
+            <div class="day-name">Mon</div>
+            <div class="day-num">13</div>
+          </div>
+          <div class="day-status"><span class="frac">7/7</span></div>
+        </div>
+        <div class="day-tasks">
+          <div class="task-mini math done"><div class="tag">Math</div><div class="title">Worksheet pg 21</div></div>
+          <div class="task-mini reading done"><div class="tag">Reading</div><div class="title">Big Nate ch 1</div></div>
+          <div class="task-mini writing done"><div class="tag">Writing</div><div class="title">Journal: weekend</div></div>
+          <div class="task-mini science done"><div class="tag">Science</div><div class="title">Plant video + draw</div></div>
+          <div class="task-mini habit done"><div class="tag">Habit</div><div class="title">Make bed</div></div>
+          <div class="task-mini habit done"><div class="tag">Habit</div><div class="title">Scripture memory</div></div>
+          <div class="task-mini ball done"><div class="tag">Ball</div><div class="title">15 min form shooting</div></div>
+        </div>
+      </div>
+
+      <!-- TUESDAY — done -->
+      <div class="day">
+        <div class="day-header">
+          <div>
+            <div class="day-name">Tue</div>
+            <div class="day-num">14</div>
+          </div>
+          <div class="day-status"><span class="frac">6/7</span></div>
+        </div>
+        <div class="day-tasks">
+          <div class="task-mini math done"><div class="tag">Math</div><div class="title">Worksheet pg 22</div></div>
+          <div class="task-mini reading done"><div class="tag">Reading</div><div class="title">Big Nate ch 2</div></div>
+          <div class="task-mini writing done"><div class="tag">Writing</div><div class="title">3 sentences about Kobe</div></div>
+          <div class="task-mini habit done"><div class="tag">Habit</div><div class="title">Make bed</div></div>
+          <div class="task-mini habit done"><div class="tag">Habit</div><div class="title">Scripture memory</div></div>
+          <div class="task-mini ball"><div class="tag">Ball</div><div class="title">Baseline drive drill</div></div>
+          <div class="task-mini habit done"><div class="tag">Chore</div><div class="title">Help with trash</div></div>
+        </div>
+      </div>
+
+      <!-- WEDNESDAY — done -->
+      <div class="day">
+        <div class="day-header">
+          <div>
+            <div class="day-name">Wed</div>
+            <div class="day-num">15</div>
+          </div>
+          <div class="day-status"><span class="frac">7/7</span></div>
+        </div>
+        <div class="day-tasks">
+          <div class="task-mini math done"><div class="tag">Math</div><div class="title">Worksheet pg 23</div></div>
+          <div class="task-mini reading done"><div class="tag">Reading</div><div class="title">Big Nate ch 3</div></div>
+          <div class="task-mini writing done"><div class="tag">Writing</div><div class="title">Journal: basketball practice</div></div>
+          <div class="task-mini science done"><div class="tag">Science</div><div class="title">Kitchen experiment</div></div>
+          <div class="task-mini habit done"><div class="tag">Habit</div><div class="title">Make bed</div></div>
+          <div class="task-mini habit done"><div class="tag">Habit</div><div class="title">Scripture memory</div></div>
+          <div class="task-mini ball done"><div class="tag">Ball</div><div class="title">Ball handling, 2 balls</div></div>
+        </div>
+      </div>
+
+      <!-- THURSDAY — done -->
+      <div class="day">
+        <div class="day-header">
+          <div>
+            <div class="day-name">Thu</div>
+            <div class="day-num">16</div>
+          </div>
+          <div class="day-status"><span class="frac">5/6</span></div>
+        </div>
+        <div class="day-tasks">
+          <div class="task-mini math done"><div class="tag">Math</div><div class="title">Review quiz</div></div>
+          <div class="task-mini reading done"><div class="tag">Reading</div><div class="title">Big Nate ch 4</div></div>
+          <div class="task-mini writing"><div class="tag">Writing</div><div class="title">3 sentences about Daddy</div></div>
+          <div class="task-mini habit done"><div class="tag">Habit</div><div class="title">Make bed</div></div>
+          <div class="task-mini habit done"><div class="tag">Habit</div><div class="title">Scripture memory</div></div>
+          <div class="task-mini ball done"><div class="tag">Ball</div><div class="title">Baseline reverse x 20</div></div>
+        </div>
+      </div>
+
+      <!-- FRIDAY — today -->
+      <div class="day today">
+        <div class="day-header">
+          <div>
+            <div class="day-name">Fri · Today</div>
+            <div class="day-num">17</div>
+          </div>
+          <div class="day-status"><span class="frac">4/8</span></div>
+        </div>
+        <div class="day-tasks">
+          <div class="task-mini math done"><div class="tag">Math</div><div class="title">Multiplication pg 23</div></div>
+          <div class="task-mini reading done"><div class="tag">Reading</div><div class="title">Big Nate ch 4</div></div>
+          <div class="task-mini writing"><div class="tag">Writing</div><div class="title">Journal: basketball week</div></div>
+          <div class="task-mini science"><div class="tag">Science</div><div class="title">How plants drink water</div></div>
+          <div class="task-mini reading"><div class="tag">Reading</div><div class="title">Read to Kemi · 4pm</div></div>
+          <div class="task-mini habit done"><div class="tag">Habit</div><div class="title">Make bed</div></div>
+          <div class="task-mini habit done"><div class="tag">Habit</div><div class="title">Scripture: Prov 3:5-6</div></div>
+          <div class="task-mini ball"><div class="tag">Ball</div><div class="title">Baseline drive · reverse · 10x each side</div></div>
+          <button class="add-task">+ Add task</button>
+        </div>
+      </div>
+
+      <!-- SATURDAY — weekend -->
+      <div class="day weekend">
+        <div class="day-header">
+          <div>
+            <div class="day-name">Sat</div>
+            <div class="day-num">18</div>
+          </div>
+          <div class="day-status">—</div>
+        </div>
+        <div class="day-tasks">
+          <div class="task-mini ball"><div class="tag">Ball</div><div class="title">Game day · 10am</div></div>
+          <div class="task-mini habit"><div class="tag">Habit</div><div class="title">Make bed</div></div>
+          <button class="add-task">+ Add task</button>
+        </div>
+      </div>
+
+      <!-- SUNDAY -->
+      <div class="day weekend">
+        <div class="day-header">
+          <div>
+            <div class="day-name">Sun</div>
+            <div class="day-num">19</div>
+          </div>
+          <div class="day-status">—</div>
+        </div>
+        <div class="day-tasks">
+          <div class="task-mini habit"><div class="tag">Family</div><div class="title">Church · 9am</div></div>
+          <div class="task-mini writing"><div class="tag">Reflect</div><div class="title">Weekly reflection w/ Dad</div></div>
+          <button class="add-task">+ Add task</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Templates shelf -->
+    <div class="templates-shelf">
+      <h4>Drop templates on any day</h4>
+      <div class="templates-row">
+        <div class="template-chip" data-subject="math"><span class="swatch"></span> Math Monday <span class="count">3</span></div>
+        <div class="template-chip" data-subject="reading"><span class="swatch"></span> Reading block <span class="count">2</span></div>
+        <div class="template-chip" data-subject="writing"><span class="swatch"></span> Writing prompt <span class="count">1</span></div>
+        <div class="template-chip" data-subject="science"><span class="swatch"></span> Science kitchen <span class="count">2</span></div>
+        <div class="template-chip" data-subject="ball"><span class="swatch"></span> Ball skill work <span class="count">3</span></div>
+        <div class="template-chip"><span class="swatch" style="background: #8a8578;"></span> Daily habits <span class="count">4</span></div>
+      </div>
+    </div>
+
+    <!-- Bottom three-column grid -->
+    <div class="bottom-grid">
+
+      <!-- Today's Dad's Note -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Dad's note · Today</div>
+        </div>
+        <textarea class="dads-note-editor" placeholder="Write a line for Jaiye. Something specific, something real. This is the first thing he'll see after unlocking.">Proud of how you handled the math yesterday. Keep going — slow is smooth, smooth is fast.</textarea>
+        <div class="note-footer">
+          <span class="char-count">104 / 200</span>
+          <button class="btn primary" style="padding: 0.5rem 0.85rem; font-size: 0.65rem;">Save for Friday</button>
+        </div>
+      </div>
+
+      <!-- Pending Uploads -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Pending uploads</div>
+          <span class="panel-count">4 new</span>
+        </div>
+        <div class="upload-row">
+          <span class="dot-new"></span>
+          <div class="upload-thumb"></div>
+          <div class="upload-body">
+            <div class="upload-title">Multiplication pg 23</div>
+            <div class="upload-meta">Math · Today · 9:42am</div>
+          </div>
+        </div>
+        <div class="upload-row">
+          <span class="dot-new"></span>
+          <div class="upload-thumb"></div>
+          <div class="upload-body">
+            <div class="upload-title">Big Nate ch 4 · favorite page</div>
+            <div class="upload-meta">Reading · Today · 11:15am</div>
+          </div>
+        </div>
+        <div class="upload-row">
+          <span class="dot-new"></span>
+          <div class="upload-thumb"></div>
+          <div class="upload-body">
+            <div class="upload-title">Baseline reverse drill</div>
+            <div class="upload-meta">Ball · Yesterday · 4:30pm</div>
+          </div>
+        </div>
+        <div class="upload-row">
+          <div class="upload-thumb"></div>
+          <div class="upload-body">
+            <div class="upload-title">Kitchen science · ice cube</div>
+            <div class="upload-meta">Science · Wed · 2:12pm</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ask Dad Queue -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Ask Dad queue</div>
+          <span class="panel-count">1 waiting</span>
+        </div>
+        <div class="question">
+          <div class="question-meta">Today · 10:02am · unread</div>
+          <div class="question-body">"Can I do ball practice before writing today? I'm in the zone."</div>
+          <input class="reply-input" placeholder="Reply to Jaiye...">
+          <div class="question-actions">
+            <button class="btn primary" style="padding: 0.5rem 0.85rem; font-size: 0.65rem;">Send reply</button>
+            <button class="btn ghost" style="padding: 0.5rem 0.85rem; font-size: 0.65rem;">Approve request</button>
+          </div>
+        </div>
+
+        <div class="question" style="opacity: 0.55;">
+          <div class="question-meta">Yesterday · answered</div>
+          <div class="question-body">"How do I spell 'reverse'?"</div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+</div>
+
+</body>
+</html>
