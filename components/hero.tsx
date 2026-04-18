@@ -9,7 +9,7 @@ export default function Hero() {
 
   return (
     <section className="relative min-h-screen grid lg:grid-cols-[1.1fr_0.9fr] overflow-hidden bg-[var(--color-black)]">
-      <div className="relative flex flex-col justify-between px-6 lg:px-12 pt-28 pb-8 lg:pb-16 z-[5]">
+      <div className="relative flex flex-col justify-between px-6 lg:px-12 pt-28 pb-20 lg:pb-24 z-[5]">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? 0 : 0.8, delay: reduced ? 0 : 0.2 }} className="flex items-center gap-3 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.25em] text-[var(--color-mute)]">
           <motion.span
             className="w-1.5 h-1.5 rounded-full bg-[var(--color-red)]"
@@ -21,7 +21,7 @@ export default function Hero() {
           <span>Vol. 01 · 2026</span>
         </motion.div>
 
-        <div className="py-8">
+        <div className="py-12">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? 0 : 0.8, delay: reduced ? 0 : 0.5 }} className="font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.3em] text-[var(--color-red)] mb-6">
             — The official site of —
           </motion.div>
@@ -37,19 +37,15 @@ export default function Hero() {
             })}
           </h1>
 
-          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? 0 : 1, delay: reduced ? 0 : 1.3 }} className="font-[family-name:var(--font-fraunces)] italic text-[clamp(1rem,1.4vw,1.35rem)] text-[var(--color-mute)] mt-8 max-w-[36ch] leading-snug">
+          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? 0 : 1, delay: reduced ? 0 : 1.3 }} className="font-[family-name:var(--font-fraunces)] italic text-[clamp(1rem,1.4vw,1.35rem)] text-[var(--color-mute)] mt-10 max-w-[36ch] leading-snug">
             Just a kid from East Palo Alto. <span className="not-italic font-semibold text-[var(--color-bone)]">Ballin&apos;</span> + <span className="not-italic font-semibold text-[var(--color-bone)]">Buildin&apos;</span>.
           </motion.p>
         </div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? 0 : 1, delay: reduced ? 0 : 1.5 }} className="flex justify-between items-end font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? 0 : 1, delay: reduced ? 0 : 1.5 }} className="flex justify-between items-end max-w-md font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">
           <Stat label="Age" value="8" />
           <Stat label="Jersey" value="23" accent />
           <Stat label="Grade" value="3rd" />
-          <div className="hidden lg:flex flex-col items-end gap-2 text-[0.65rem] tracking-[0.3em]">
-            Scroll
-            <span className="w-px h-10 bg-gradient-to-b from-[var(--color-mute)] to-transparent" />
-          </div>
         </motion.div>
       </div>
 
@@ -77,6 +73,11 @@ export default function Hero() {
           <span>Shot at Capitola Beach</span>
         </motion.div>
       </div>
+
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: reduced ? 0 : 1, delay: reduced ? 0 : 1.8 }} className="absolute bottom-8 left-[30%] -translate-x-1/2 hidden lg:flex flex-col items-center gap-2 font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.3em] text-[var(--color-mute)] z-[6]">
+        Scroll
+        <span className="w-px h-10 bg-gradient-to-b from-[var(--color-mute)] to-transparent" />
+      </motion.div>
 
       {!reduced && <BasketballArc />}
     </section>
