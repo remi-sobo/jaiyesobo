@@ -9,11 +9,12 @@ export default function SummaryCard({ done, total }: Props) {
   const circumference = 2 * Math.PI * 45;
   const offset = circumference * (1 - progress);
 
-  const message = left === 0
-    ? "You crushed the whole list. Go play."
-    : left === 1
-    ? "One more to go. Finish strong."
-    : `You've already knocked out ${done}. Stay with it.`;
+  const message =
+    done === 0
+      ? "Let's get to it."
+      : left === 0
+      ? "You did it. Full day."
+      : `You've already knocked out ${done}. Keep going.`;
 
   return (
     <div className="relative grid grid-cols-[1fr_auto] gap-8 items-center p-8 bg-[var(--color-warm-surface)] border border-[var(--color-line)] rounded overflow-hidden mb-10">

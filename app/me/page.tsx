@@ -4,10 +4,10 @@ import {
   getTasksForDay,
   getDadNoteForDay,
   getPendingQuestionCount,
-  getStreak,
   todayIso,
   type Task,
 } from "@/lib/data";
+import { calculateStreak } from "@/lib/streak";
 import TodayHeader from "@/components/me/today-header";
 import SummaryCard from "@/components/me/summary-card";
 import TaskCard from "@/components/me/task-card";
@@ -30,7 +30,7 @@ export default async function TodayPage() {
     getTasksForDay(jaiye.id, date),
     getDadNoteForDay(date),
     getPendingQuestionCount(jaiye.id),
-    getStreak(jaiye.id),
+    calculateStreak(jaiye.id),
   ]);
 
   const total = tasks.length;

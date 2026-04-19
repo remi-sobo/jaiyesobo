@@ -1,10 +1,12 @@
+import Link from "next/link";
 import type { Task } from "@/lib/data";
+import CheckToggle from "./check-toggle";
 
 type Props = { task: Task };
 
 export default function TaskCard({ task }: Props) {
   const done = !!task.completion;
-  const simple = task.completion_type === "check";
+  const isCheck = task.completion_type === "check";
 
   return (
     <div
@@ -14,23 +16,11 @@ export default function TaskCard({ task }: Props) {
           : "bg-[var(--color-warm-surface)] border-[var(--color-line)] hover:bg-[var(--color-warm-surface-hover)] hover:border-[var(--color-line-strong)]"
       }`}
     >
-      {/* TODO: next session — click dot to toggle completion */}
-      <div
-        className={`rounded-full border-[1.5px] flex items-center justify-center shrink-0 ${
-          simple ? "w-[26px] h-[26px]" : "w-[22px] h-[22px]"
-        } ${
-          done
-            ? "bg-[var(--color-red)] border-[var(--color-red)]"
-            : "border-[var(--color-line-strong)]"
-        }`}
-        aria-hidden
-      >
-        {done && (
-          <span
-            className="block w-[10px] h-[6px] border-l-[1.5px] border-b-[1.5px] border-[var(--color-bone)] -translate-y-[1px] -rotate-45"
-          />
-        )}
-      </div>
+      {isCheck ? (
+        <CheckToggle taskId={task.id} done={done} />
+      ) : (
+        <StaticDot done={done} />
+      )}
 
       <div className="min-w-0">
         {task.subject && (
@@ -79,73 +69,66 @@ export default function TaskCard({ task }: Props) {
   );
 }
 
-/* TODO: next session — wire these buttons to real upload + reflection flows */
-function Action({ task, done }: { task: Task; done: boolean }) {
-  switch (task.completion_type) {
-    case "check":
-      return null;
-    case "photo":
-      return <Btn variant="photo" done={done} label="Upload" />;
-    case "reflection":
-      return <Btn variant="reflect" done={done} label="Reflect" />;
-    case "photo_and_reflection":
-      return <Btn variant="both" done={done} label="Upload + Reflect" />;
-    default:
-      return null;
-  }
+function StaticDot({ done }: { done: boolean }) {
+  return (
+    <div
+      aria-hidden
+      className={`rounded-full border-[1.5px] flex items-center justify-center shrink-0 w-[22px] h-[22px] ${
+        done ? "bg-[var(--color-red)] border-[var(--color-red)]" : "border-[var(--color-line-strong)]"
+      }`}
+    >
+      {done && (
+        <span className="block w-[10px] h-[6px] border-l-[1.5px] border-b-[1.5px] border-[var(--color-bone)] -translate-y-[1px] -rotate-45" />
+      )}
+    </div>
+  );
 }
 
-function Btn({ variant, done, label }: { variant: "photo" | "reflect" | "both"; done: boolean; label: string }) {
+function Action({ task, done }: { task: Task; done: boolean }) {
+  if (task.completion_type === "check") return null;
+  if (done) return <DoneBadge />;
+
+  if (task.completion_type === "photo") {
+    return <ActionLink href={`/me/upload/${task.id}`} variant="photo" label="Upload" />;
+  }
+  if (task.completion_type === "reflection") {
+    return <ActionLink href={`/me/reflect/${task.id}`} variant="reflect" label="Reflect" />;
+  }
+  return <ActionLink href={`/me/upload/${task.id}`} variant="both" label="Upload + Reflect" />;
+}
+
+function ActionLink({
+  href,
+  variant,
+  label,
+}: {
+  href: string;
+  variant: "photo" | "reflect" | "both";
+  label: string;
+}) {
   const base =
     "inline-flex items-center gap-2 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.15em] px-4 py-2.5 rounded-sm whitespace-nowrap transition-colors";
-
-  if (done) {
-    return (
-      <button
-        type="button"
-        disabled
-        className={`${base} border border-[var(--color-line)] text-[var(--color-warm-mute)] cursor-default`}
-      >
-        <span className="w-0 h-0 border-l-[4px] border-r-[4px] border-b-[7px] border-l-transparent border-r-transparent border-b-[var(--color-green)] rotate-45 translate-y-[-1px]" />
-        Done
-      </button>
-    );
-  }
-
-  if (variant === "photo") {
-    return (
-      <button
-        type="button"
-        className={`${base} border border-[var(--color-line-strong)] text-[var(--color-bone)] hover:bg-[var(--color-red)] hover:border-[var(--color-red)]`}
-      >
-        <CameraIcon />
-        {label}
-      </button>
-    );
-  }
-
-  if (variant === "reflect") {
-    return (
-      <button
-        type="button"
-        className={`${base} border border-[var(--color-amber)] text-[var(--color-amber)] hover:bg-[var(--color-amber)] hover:text-[var(--color-warm-bg)]`}
-      >
-        <PencilIcon />
-        {label}
-      </button>
-    );
-  }
-
-  // both
+  const variantClass =
+    variant === "photo"
+      ? "border border-[var(--color-line-strong)] text-[var(--color-bone)] hover:bg-[var(--color-red)] hover:border-[var(--color-red)]"
+      : variant === "reflect"
+      ? "border border-[var(--color-amber)] text-[var(--color-amber)] hover:bg-[var(--color-amber)] hover:text-[var(--color-warm-bg)]"
+      : "bg-[var(--color-red)] border border-[var(--color-red)] text-[var(--color-bone)] hover:bg-[var(--color-red-soft)] hover:border-[var(--color-red-soft)]";
   return (
-    <button
-      type="button"
-      className={`${base} bg-[var(--color-red)] border border-[var(--color-red)] text-[var(--color-bone)] hover:bg-[var(--color-red-soft)] hover:border-[var(--color-red-soft)]`}
-    >
-      <CameraIcon />
-      <PencilIcon />
+    <Link href={href} className={`${base} ${variantClass}`}>
+      {(variant === "photo" || variant === "both") && <CameraIcon />}
+      {(variant === "reflect" || variant === "both") && <PencilIcon />}
       {label}
-    </button>
+    </Link>
+  );
+}
+
+function DoneBadge() {
+  return (
+    <span className="inline-flex items-center gap-2 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.15em] px-4 py-2.5 rounded-sm whitespace-nowrap border border-[var(--color-line)] text-[var(--color-warm-mute)]">
+      <span className="w-0 h-0 border-l-[4px] border-r-[4px] border-b-[7px] border-l-transparent border-r-transparent border-b-[var(--color-green)] rotate-45 translate-y-[-1px]" />
+      Done
+    </span>
   );
 }
 
