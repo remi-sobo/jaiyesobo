@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import imageCompression from "browser-image-compression";
 
 type TaskLite = {
   id: string;
@@ -19,9 +20,24 @@ type Props = {
 };
 
 const MAX_FILES = 3;
-const MAX_BYTES = 10 * 1024 * 1024;
+// Source guard: reject files >25MB up front — too big even to compress cheaply.
+const SOURCE_MAX_BYTES = 25 * 1024 * 1024;
+// Target: well under Vercel's 4.5MB body-size cap even when we send 3 files.
+const DEFAULT_COMPRESSION = {
+  maxSizeMB: 1.2,
+  maxWidthOrHeight: 2400,
+  useWebWorker: true,
+} as const;
+// Fallback used on 413 retry — harder crunch.
+const AGGRESSIVE_COMPRESSION = {
+  maxSizeMB: 0.6,
+  maxWidthOrHeight: 1600,
+  useWebWorker: true,
+} as const;
 
-type Phase = "empty" | "preview" | "uploading" | "success" | "error";
+type Phase = "empty" | "compressing" | "preview" | "uploading" | "success" | "error";
+
+type ErrorKind = "size" | "network" | "auth" | "drive" | "generic";
 
 export default function UploadFlow({ task, streak }: Props) {
   const router = useRouter();
@@ -32,7 +48,9 @@ export default function UploadFlow({ task, streak }: Props) {
   const [reflection, setReflection] = useState("");
   const [phase, setPhase] = useState<Phase>("empty");
   const [inlineError, setInlineError] = useState<string | null>(null);
+  const [errorKind, setErrorKind] = useState<ErrorKind | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [retriedOversize, setRetriedOversize] = useState(false);
 
   const previews = useMemo(
     () =>
@@ -44,26 +62,41 @@ export default function UploadFlow({ task, streak }: Props) {
   );
 
   const addFiles = useCallback(
-    (incoming: FileList | File[]) => {
+    async (incoming: FileList | File[]) => {
       setInlineError(null);
+      setErrorKind(null);
       const arr = Array.from(incoming);
       for (const f of arr) {
         if (!f.type.startsWith("image/")) {
           setInlineError("That's not a picture. Pick a different file.");
           return;
         }
-        if (f.size > MAX_BYTES) {
-          setInlineError("That file's too big. Take a smaller photo.");
+        if (f.size > SOURCE_MAX_BYTES) {
+          setInlineError("That picture is huge. Try one under 25 MB.");
           return;
         }
       }
-      setFiles((prev) => {
-        const combined = [...prev, ...arr].slice(0, MAX_FILES);
-        return combined;
-      });
-      setPhase("preview");
+      setPhase("compressing");
+      try {
+        const compressed: File[] = [];
+        for (const f of arr) {
+          // Skip compression for tiny files — cheaper to just send them.
+          if (f.size < 500 * 1024) {
+            compressed.push(f);
+            continue;
+          }
+          const out = await imageCompression(f, DEFAULT_COMPRESSION);
+          compressed.push(out);
+        }
+        setFiles((prev) => [...prev, ...compressed].slice(0, MAX_FILES));
+        setPhase("preview");
+      } catch (err) {
+        console.error("[upload] compression failed", err);
+        setInlineError("Couldn't prepare that photo. Try a different one.");
+        setPhase(files.length > 0 ? "preview" : "empty");
+      }
     },
-    []
+    [files.length]
   );
 
   const openPicker = () => inputRef.current?.click();
@@ -79,22 +112,77 @@ export default function UploadFlow({ task, streak }: Props) {
   const canSend =
     files.length > 0 &&
     (!requiresReflection || reflection.trim().length > 0) &&
-    phase !== "uploading";
+    phase !== "uploading" &&
+    phase !== "compressing";
 
-  async function send() {
-    if (!canSend) return;
+  async function send(toSend: File[] = files) {
+    if (toSend.length === 0) return;
     setPhase("uploading");
     setInlineError(null);
+    setErrorKind(null);
     try {
       const form = new FormData();
       form.append("taskId", task.id);
-      for (const f of files) form.append("files", f);
+      for (const f of toSend) form.append("files", f);
       if (reflection.trim()) form.append("reflection", reflection.trim());
+
       const res = await fetch("/api/upload", { method: "POST", body: form });
-      if (!res.ok) throw new Error(`upload failed: ${res.status}`);
-      setPhase("success");
+
+      if (res.ok) {
+        setPhase("success");
+        setRetriedOversize(false);
+        return;
+      }
+
+      // 413: body too large — auto-compress harder and retry once.
+      if (res.status === 413 && !retriedOversize) {
+        setRetriedOversize(true);
+        setInlineError("That picture's a little big for our system. Shrinking it and trying again…");
+        setErrorKind("size");
+        try {
+          const shrunk: File[] = [];
+          for (const f of toSend) {
+            const out = await imageCompression(f, AGGRESSIVE_COMPRESSION);
+            shrunk.push(out);
+          }
+          setFiles(shrunk);
+          // Recurse once — retriedOversize prevents infinite loop.
+          await send(shrunk);
+          return;
+        } catch (retryErr) {
+          console.error("[upload] aggressive compression failed", retryErr);
+          setInlineError("Couldn't shrink the photo. Try taking a new one.");
+          setErrorKind("size");
+          setPhase("error");
+          return;
+        }
+      }
+
+      if (res.status === 401) {
+        setInlineError("Your session timed out. Refresh the page and try again.");
+        setErrorKind("auth");
+      } else if (res.status === 502 || res.status === 503) {
+        setInlineError("Dad's Drive is down right now. Wait a minute and tap Try again.");
+        setErrorKind("drive");
+      } else if (res.status === 413) {
+        setInlineError("That picture's still too big after shrinking. Pick a different photo.");
+        setErrorKind("size");
+      } else {
+        let msg = "Something didn't go through. Try again, or ask Dad.";
+        try {
+          const body = await res.json();
+          if (body?.error) msg = `${msg} (${body.error})`;
+        } catch {
+          // ignore
+        }
+        setInlineError(msg);
+        setErrorKind("generic");
+      }
+      setPhase("error");
     } catch (err) {
-      console.error(err);
+      console.error("[upload] network error", err);
+      setInlineError("Lost internet for a second. Tap Try again.");
+      setErrorKind("network");
       setPhase("error");
     }
   }
@@ -102,6 +190,15 @@ export default function UploadFlow({ task, streak }: Props) {
   function goHome() {
     router.push("/me");
     router.refresh();
+  }
+
+  function resetAll() {
+    setFiles([]);
+    setReflection("");
+    setPhase("empty");
+    setInlineError(null);
+    setErrorKind(null);
+    setRetriedOversize(false);
   }
 
   return (
@@ -120,6 +217,10 @@ export default function UploadFlow({ task, streak }: Props) {
         />
       )}
 
+      {phase === "compressing" && (
+        <CompressingState count={files.length} />
+      )}
+
       {(phase === "preview" || phase === "uploading" || phase === "error") && (
         <PreviewState
           previews={previews}
@@ -131,15 +232,11 @@ export default function UploadFlow({ task, streak }: Props) {
           reflectionPrompt={task.reflection_prompt}
           canAddMore={files.length < MAX_FILES}
           phase={phase}
-          onSend={send}
-          onReset={() => {
-            setFiles([]);
-            setReflection("");
-            setPhase("empty");
-            setInlineError(null);
-          }}
+          onSend={() => send()}
+          onReset={resetAll}
           canSend={canSend}
           inlineError={inlineError}
+          errorKind={errorKind}
         />
       )}
 
@@ -196,6 +293,18 @@ function TaskBanner({ task }: { task: TaskLite }) {
       {task.description && (
         <p className="text-[var(--color-warm-bone)] leading-relaxed max-w-[60ch]">{task.description}</p>
       )}
+    </div>
+  );
+}
+
+function CompressingState({ count }: { count: number }) {
+  return (
+    <div className="bg-[var(--color-warm-surface)] border border-[var(--color-line)] rounded-md py-20 px-8 text-center">
+      <div className="inline-flex items-center gap-3 font-[family-name:var(--font-fraunces)] italic text-[1.15rem] text-[var(--color-warm-bone)]">
+        <Spinner />
+        Getting your photo{count > 1 ? "s" : ""} ready…
+      </div>
+      <p className="text-[var(--color-warm-mute)] text-sm mt-3">Happens on your device. Only takes a second.</p>
     </div>
   );
 }
@@ -297,6 +406,7 @@ function PreviewState({
   onReset,
   canSend,
   inlineError,
+  errorKind,
 }: {
   previews: { file: File; url: string }[];
   onRemove: (i: number) => void;
@@ -311,6 +421,7 @@ function PreviewState({
   onReset: () => void;
   canSend: boolean;
   inlineError: string | null;
+  errorKind: ErrorKind | null;
 }) {
   const uploading = phase === "uploading";
   const errored = phase === "error";
@@ -413,9 +524,9 @@ function PreviewState({
           )}
         </div>
 
-        {(errored || inlineError) && (
+        {inlineError && (
           <div className="px-4 py-3 rounded border border-[var(--color-red)] bg-[rgba(230,57,70,0.08)] text-[var(--color-red-soft)] text-sm font-[family-name:var(--font-fraunces)] italic">
-            {inlineError ?? "Something went wrong. Try again, or ask Dad."}
+            {inlineError}
           </div>
         )}
 
@@ -423,13 +534,19 @@ function PreviewState({
           <button
             type="button"
             onClick={onSend}
-            disabled={!canSend}
-            className="bg-[var(--color-red)] text-[var(--color-bone)] font-[family-name:var(--font-jetbrains)] text-sm uppercase tracking-[0.2em] py-4 rounded-sm hover:bg-[var(--color-red-soft)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            disabled={!canSend && !errored}
+            className={`text-[var(--color-bone)] font-[family-name:var(--font-jetbrains)] text-sm uppercase tracking-[0.2em] py-4 rounded-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+              errored
+                ? "bg-[var(--color-red)] hover:bg-[var(--color-red-soft)] ring-2 ring-[var(--color-red)] ring-offset-2 ring-offset-[var(--color-warm-surface)] animate-pulse"
+                : "bg-[var(--color-red)] hover:bg-[var(--color-red-soft)]"
+            }`}
           >
             {uploading ? (
               <>
                 <Spinner /> Sending...
               </>
+            ) : errored ? (
+              <>Try again {errorKind === "size" ? "↻" : "→"}</>
             ) : (
               <>Send to Dad <span>→</span></>
             )}
