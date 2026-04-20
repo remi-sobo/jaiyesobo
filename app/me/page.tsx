@@ -8,12 +8,14 @@ import {
   type Task,
 } from "@/lib/data";
 import { calculateStreak } from "@/lib/streak";
+import { isDatePublished, getUnseenAnswer } from "@/lib/admin-data";
 import TodayHeader from "@/components/me/today-header";
 import SummaryCard from "@/components/me/summary-card";
 import TaskCard from "@/components/me/task-card";
 import DadsNote from "@/components/me/dads-note";
 import AskDadCard from "@/components/me/ask-dad-card";
 import BottomNav from "@/components/me/bottom-nav";
+import AnsweredQuestion from "@/components/me/answered-question";
 
 export const dynamic = "force-dynamic";
 
@@ -26,12 +28,16 @@ export default async function TodayPage() {
   }
 
   const date = todayIso();
-  const [tasks, dadNote, pending, streak] = await Promise.all([
+  const [rawTasks, dadNote, pending, streak, published, answered] = await Promise.all([
     getTasksForDay(jaiye.id, date),
     getDadNoteForDay(date),
     getPendingQuestionCount(jaiye.id),
     calculateStreak(jaiye.id),
+    isDatePublished(date),
+    getUnseenAnswer(jaiye.id),
   ]);
+
+  const tasks = published ? rawTasks : [];
 
   const total = tasks.length;
   const done = tasks.filter((t) => t.completion).length;
@@ -47,16 +53,34 @@ export default async function TodayPage() {
     <main className="max-w-[1100px] mx-auto px-6 lg:px-8 py-8">
       <TodayHeader greetingName={jaiye.display_name} streak={streak} />
 
-      {total > 0 ? <SummaryCard done={done} total={total} /> : null}
+      {!published && (
+        <div className="p-8 rounded border border-dashed border-[var(--color-line-strong)] text-center text-[var(--color-warm-mute)] mb-10">
+          <div className="font-[family-name:var(--font-fraunces)] italic text-xl text-[var(--color-warm-bone)] mb-2">
+            Dad is still writing your week.
+          </div>
+          <p className="text-sm">Come back soon. Nothing goes live until he publishes.</p>
+        </div>
+      )}
 
-      {homeschool.length > 0 && (
+      {published && total > 0 && <SummaryCard done={done} total={total} />}
+
+      {answered && answered.answer && (
+        <AnsweredQuestion
+          questionId={answered.id}
+          question={answered.body}
+          answer={answered.answer}
+          answeredAt={answered.answered_at ?? answered.asked_at}
+        />
+      )}
+
+      {published && homeschool.length > 0 && (
         <>
           <SectionHeader title="Homeschool" right={homeschoolLeft === 0 ? "all done" : `${homeschoolLeft} left`} />
           <TaskList tasks={homeschool} />
         </>
       )}
 
-      {restOfDay.length > 0 && (
+      {published && restOfDay.length > 0 && (
         <>
           <SectionHeader
             title="Rest of Day"
@@ -67,9 +91,9 @@ export default async function TodayPage() {
         </>
       )}
 
-      {total === 0 && (
+      {published && total === 0 && (
         <div className="p-10 border border-dashed border-[var(--color-line-strong)] rounded text-center text-[var(--color-warm-mute)]">
-          No tasks yet for today. Ask Dad to publish the week.
+          No tasks today. Take a breath.
         </div>
       )}
 

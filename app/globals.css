@@ -26,6 +26,15 @@
   --color-green: #4ade80;
   --color-green-deep: #1a6b3a;
 
+  /* subject stripe palette — shared between kid Today and admin Plan grid */
+  --color-math: #f4a261;
+  --color-reading: #6b9bd2;
+  --color-writing: #a084dc;
+  --color-science: #4ade80;
+  --color-ball: #E63946;
+  --color-habit: #8a8578;
+  --color-family: #e8b04e;
+
   --font-display: 'Fraunces', serif;
   --font-body: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
