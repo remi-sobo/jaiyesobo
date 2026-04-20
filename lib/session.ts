@@ -63,15 +63,21 @@ export async function getAdminSession() {
   return verify(c.get(ADMIN_COOKIE)?.value);
 }
 
-export async function requireKid() {
+export async function requireKid(returnPath?: string) {
   const s = await getKidSession();
-  if (!s) redirect("/me/lock");
+  if (!s) {
+    const q = returnPath && returnPath !== "/me" ? `?next=${encodeURIComponent(returnPath)}` : "";
+    redirect(`/me/lock${q}`);
+  }
   return s;
 }
 
-export async function requireAdmin() {
+export async function requireAdmin(returnPath?: string) {
   const s = await getAdminSession();
-  if (!s) redirect("/admin/lock");
+  if (!s) {
+    const q = returnPath && returnPath !== "/admin" ? `?next=${encodeURIComponent(returnPath)}` : "";
+    redirect(`/admin/lock${q}`);
+  }
   return s;
 }
 

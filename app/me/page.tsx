@@ -28,7 +28,7 @@ export default async function TodayPage() {
   }
 
   const date = todayIso();
-  const [rawTasks, dadNote, pending, streak, published, answered] = await Promise.all([
+  const [rawTasks, dadNote, pending, streakResult, published, answered] = await Promise.all([
     getTasksForDay(jaiye.id, date),
     getDadNoteForDay(date),
     getPendingQuestionCount(jaiye.id),
@@ -51,7 +51,7 @@ export default async function TodayPage() {
 
   return (
     <main className="max-w-[1100px] mx-auto px-6 lg:px-8 py-8">
-      <TodayHeader greetingName={jaiye.display_name} streak={streak} />
+      <TodayHeader greetingName={jaiye.display_name} streak={streakResult.current} bestStreak={streakResult.best} />
 
       {!published && (
         <div className="p-8 rounded border border-dashed border-[var(--color-line-strong)] text-center text-[var(--color-warm-mute)] mb-10">

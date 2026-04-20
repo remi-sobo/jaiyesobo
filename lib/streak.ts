@@ -1,17 +1,27 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import { getStreakRules } from "@/lib/config";
+
+export type StreakResult = { current: number; best: number };
 
 /**
- * Consecutive days walking back from today where at least 80% of tasks for
- * that day have a completion. Today counts only if today is already ≥80%.
- * Returns 0 when there's no qualifying day.
+ * Current streak: consecutive qualifying days walking back from today.
+ * Best streak: longest run of qualifying days in the history.
+ *
+ * A day "qualifies" if:
+ *   - It has at least one task that day AND completion ratio ≥ threshold, OR
+ *   - weekdays_only=true and the day is Sat/Sun — it's a skip (doesn't count, doesn't break)
+ *
+ * Today counts toward current streak only if it's already ≥ threshold.
  */
-export async function calculateStreak(userId: string): Promise<number> {
+export async function calculateStreak(userId: string): Promise<StreakResult> {
+  const rules = await getStreakRules();
   const supa = createServiceClient();
+
   const { data, error } = await supa
     .from("tasks")
     .select("date, completions(id)")
     .eq("user_id", userId)
-    .order("date", { ascending: false });
+    .order("date", { ascending: true });
   if (error) throw error;
 
   const byDate = new Map<string, { total: number; done: number }>();
@@ -22,16 +32,55 @@ export async function calculateStreak(userId: string): Promise<number> {
     byDate.set(row.date, entry);
   }
 
-  let streak = 0;
+  const isWeekend = (iso: string): boolean => {
+    const dow = new Date(`${iso}T00:00:00`).getDay();
+    return dow === 0 || dow === 6;
+  };
+
+  const qualifies = (entry: { total: number; done: number } | undefined): boolean => {
+    if (!entry || entry.total === 0) return false;
+    return entry.done / entry.total >= rules.completion_threshold;
+  };
+
+  // Current streak: walk backwards from today
+  let current = 0;
   const cursor = new Date();
   cursor.setHours(0, 0, 0, 0);
   for (;;) {
-    const key = cursor.toISOString().slice(0, 10);
-    const entry = byDate.get(key);
+    const iso = cursor.toISOString().slice(0, 10);
+    if (rules.weekdays_only && isWeekend(iso)) {
+      // Skip — doesn't break, doesn't count
+      cursor.setDate(cursor.getDate() - 1);
+      // But only if we've already started a streak, otherwise keep walking back
+      if (current === 0 && !byDate.has(iso)) {
+        // Edge: today is a weekend and no prior qualifying weekday exists yet
+        // Continue walking back to find the most recent weekday
+        continue;
+      }
+      continue;
+    }
+    const entry = byDate.get(iso);
     if (!entry) break;
-    if (entry.done / entry.total < 0.8) break;
-    streak += 1;
+    if (!qualifies(entry)) break;
+    current += 1;
     cursor.setDate(cursor.getDate() - 1);
   }
-  return streak;
+
+  // Best streak: scan sorted dates
+  const sortedDates = Array.from(byDate.keys()).sort();
+  let best = 0;
+  let run = 0;
+  for (const iso of sortedDates) {
+    const entry = byDate.get(iso);
+    if (rules.weekdays_only && isWeekend(iso)) continue;
+    if (qualifies(entry)) {
+      run += 1;
+      if (run > best) best = run;
+    } else {
+      run = 0;
+    }
+  }
+  if (current > best) best = current;
+
+  return { current, best };
 }

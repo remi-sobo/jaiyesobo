@@ -47,7 +47,7 @@ export default async function ReflectPage({ params }: PageProps) {
         subject: task.subject,
         reflection_prompt: task.reflection_prompt,
       }}
-      streak={streak}
+      streak={streak.current}
     />
   );
 }

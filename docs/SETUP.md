@@ -56,13 +56,21 @@ Adds:
 - `questions.seen_at` — track when kid has read Dad's reply.
 - `completions.reviewed_at` — track when Dad has reviewed an upload.
 
+### 005 — session 6
+
+New query → paste `supabase/migrations/005_session_6.sql` → Run.
+
+Adds:
+- `pin_attempts` — one row per PIN attempt, for rate-limiting. 5 failures in 15 min → 15-min lockout.
+- `app_config` — key/value config, seeded with `streak_rules` (`weekdays_only: true`, `completion_threshold: 0.8`).
+
 ### Reset (drops everything)
 
 ```sql
-drop table if exists drive_tokens, weekly_briefs, week_status, templates, dad_notes, questions, completions, tasks, users cascade;
+drop table if exists pin_attempts, app_config, drive_tokens, weekly_briefs, week_status, templates, dad_notes, questions, completions, tasks, users cascade;
 ```
 
-Then re-run 001 → 002 → 003 → 004 in order.
+Then re-run 001 → 002 → 003 → 004 → 005 in order.
 
 ## 3. Seed
 

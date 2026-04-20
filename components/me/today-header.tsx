@@ -1,9 +1,10 @@
 type Props = {
   greetingName: string;
   streak: number;
+  bestStreak?: number;
 };
 
-export default function TodayHeader({ greetingName, streak }: Props) {
+export default function TodayHeader({ greetingName, streak, bestStreak }: Props) {
   const now = new Date();
   const dayName = now.toLocaleDateString("en-US", { weekday: "long" });
   const month = now.toLocaleDateString("en-US", { month: "long" });
@@ -12,6 +13,8 @@ export default function TodayHeader({ greetingName, streak }: Props) {
 
   const hour = now.getHours();
   const greeting = hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : "Evening";
+
+  const showBest = typeof bestStreak === "number" && streak > 7 && bestStreak >= streak;
 
   return (
     <header className="flex flex-col md:flex-row md:justify-between md:items-end gap-6 mb-12 pb-8 border-b border-[var(--color-line)]">
@@ -37,6 +40,11 @@ export default function TodayHeader({ greetingName, streak }: Props) {
             <span className="italic font-normal text-[var(--color-red)] mr-1">★</span>
             {streak}
           </div>
+          {showBest && (
+            <div className="font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.2em] text-[var(--color-warm-mute)] mt-1">
+              Best: {bestStreak}
+            </div>
+          )}
         </div>
         <div className="w-14 h-14 rounded-full border border-[var(--color-line-strong)] bg-[var(--color-warm-surface-2)] flex items-center justify-center font-[family-name:var(--font-fraunces)] italic font-black text-2xl text-[var(--color-red)]">
           J

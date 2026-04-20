@@ -13,14 +13,16 @@ type Props = {
 export default function PinPad({ length, endpoint, successRedirect, label }: Props) {
   const router = useRouter();
   const [pin, setPin] = useState("");
-  const [status, setStatus] = useState<"idle" | "submitting" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "submitting" | "error" | "locked">("idle");
+  const [remainingTries, setRemainingTries] = useState<number | null>(null);
+  const [retryAt, setRetryAt] = useState<string | null>(null);
   const inFlight = useRef(false);
 
   const reset = useCallback(() => {
     setPin("");
-    setStatus("idle");
+    if (status !== "locked") setStatus("idle");
     inFlight.current = false;
-  }, []);
+  }, [status]);
 
   useEffect(() => {
     if (pin.length !== length || inFlight.current) return;
@@ -33,8 +35,20 @@ export default function PinPad({ length, endpoint, successRedirect, label }: Pro
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ pin }),
         });
+        const payload = await res.json().catch(() => ({}));
+        if (res.status === 429 || payload?.error === "locked_out") {
+          setStatus("locked");
+          setRetryAt(payload?.retryAt ?? null);
+          setRemainingTries(0);
+          setTimeout(() => setPin(""), 400);
+          inFlight.current = false;
+          return;
+        }
         if (!res.ok) {
           setStatus("error");
+          if (typeof payload?.remainingTries === "number") {
+            setRemainingTries(payload.remainingTries);
+          }
           setTimeout(reset, 650);
           return;
         }
@@ -49,16 +63,16 @@ export default function PinPad({ length, endpoint, successRedirect, label }: Pro
 
   const push = useCallback(
     (d: string) => {
-      if (inFlight.current || status === "submitting") return;
+      if (status === "submitting" || status === "locked" || inFlight.current) return;
       setPin((p) => (p.length >= length ? p : p + d));
     },
     [length, status]
   );
 
   const back = useCallback(() => {
-    if (inFlight.current) return;
+    if (inFlight.current || status === "locked") return;
     setPin((p) => p.slice(0, -1));
-  }, []);
+  }, [status]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -70,13 +84,14 @@ export default function PinPad({ length, endpoint, successRedirect, label }: Pro
   }, [push, back]);
 
   const digits = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
+  const locked = status === "locked";
 
   return (
     <div
       className="w-full max-w-[320px] mx-auto"
       style={status === "error" ? { animation: "pin-shake 0.55s" } : undefined}
     >
-      <div className="flex flex-col items-center gap-3 mb-12">
+      <div className="flex flex-col items-center gap-3 mb-10">
         <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-red)] animate-pulse" />
         <div className="font-[family-name:var(--font-fraunces)] font-black text-3xl tracking-tight">
           Jaiye<span className="italic font-normal text-[var(--color-red)]">.</span>
@@ -86,7 +101,7 @@ export default function PinPad({ length, endpoint, successRedirect, label }: Pro
         </div>
       </div>
 
-      <div className="flex justify-center gap-4 mb-12" aria-label={`PIN: ${pin.length} of ${length} digits entered`}>
+      <div className="flex justify-center gap-4 mb-6" aria-label={`PIN: ${pin.length} of ${length} digits entered`}>
         {Array.from({ length }).map((_, i) => {
           const filled = i < pin.length;
           return (
@@ -104,13 +119,17 @@ export default function PinPad({ length, endpoint, successRedirect, label }: Pro
         })}
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="text-center mb-6 min-h-[28px] font-[family-name:var(--font-fraunces)] italic text-sm text-[var(--color-warm-bone)]">
+        <HintMessage locked={locked} remainingTries={remainingTries} retryAt={retryAt} />
+      </div>
+
+      <fieldset disabled={locked} className="grid grid-cols-3 gap-3 disabled:opacity-50">
         {digits.map((d) => (
           <button
             key={d}
             type="button"
             onClick={() => push(d)}
-            className="h-16 rounded-md border border-[var(--color-line)] bg-[var(--color-warm-surface)] hover:bg-[var(--color-warm-surface-2)] active:bg-[var(--color-warm-surface-3)] transition-colors font-[family-name:var(--font-fraunces)] font-black text-2xl tracking-tight text-[var(--color-bone)]"
+            className="h-16 rounded-md border border-[var(--color-line)] bg-[var(--color-warm-surface)] hover:bg-[var(--color-warm-surface-2)] active:bg-[var(--color-warm-surface-3)] transition-colors font-[family-name:var(--font-fraunces)] font-black text-2xl tracking-tight text-[var(--color-bone)] disabled:cursor-not-allowed"
           >
             {d}
           </button>
@@ -131,7 +150,26 @@ export default function PinPad({ length, endpoint, successRedirect, label }: Pro
         >
           ⌫
         </button>
-      </div>
+      </fieldset>
     </div>
   );
+}
+
+function HintMessage({
+  locked,
+  remainingTries,
+  retryAt,
+}: {
+  locked: boolean;
+  remainingTries: number | null;
+  retryAt: string | null;
+}) {
+  if (locked) {
+    const whenStr = retryAt ? new Date(retryAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : null;
+    return <>Locked out. Try again {whenStr ? `at ${whenStr}.` : "in 15 minutes."}</>;
+  }
+  if (remainingTries !== null && remainingTries <= 2 && remainingTries > 0) {
+    return <>{remainingTries === 1 ? "1 try left." : `${remainingTries} tries left.`}</>;
+  }
+  return null;
 }

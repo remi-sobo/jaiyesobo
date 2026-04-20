@@ -44,7 +44,7 @@ export default async function UploadPage({ params }: PageProps) {
         reflection_prompt: task.reflection_prompt,
         completion_type: task.completion_type as "photo" | "photo_and_reflection",
       }}
-      streak={streak}
+      streak={streak.current}
     />
   );
 }
