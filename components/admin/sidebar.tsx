@@ -51,16 +51,7 @@ export default function Sidebar({ uploadsCount, pendingQuestions }: Props) {
         />
       </NavGroup>
 
-      <NavGroup label="Longer view">
-        <DisabledItem label="Month" />
-        <DisabledItem label="Archive" />
-        <DisabledItem label="Photos" />
-      </NavGroup>
-
-      <NavGroup label="Setup">
-        <DisabledItem label="Templates" />
-        <DisabledItem label="Settings" />
-      </NavGroup>
+      {/* v2 sections (Month, Archive, Photos, Templates, Settings) removed for v1 launch. Restore from git history when ready to build. */}
 
       <div className="mt-auto pt-6 border-t border-[var(--color-line)] flex items-center justify-between font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-warm-mute)]">
         <span className="flex items-center gap-2">
@@ -102,11 +93,3 @@ function NavItem({ href, active, label, right }: { href: string; active: boolean
   );
 }
 
-function DisabledItem({ label }: { label: string }) {
-  return (
-    <span className="flex items-center justify-between px-3 py-2.5 rounded-sm text-[0.88rem] text-[var(--color-warm-dim)] cursor-not-allowed">
-      <span>{label}</span>
-      <span className="font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-wider">soon</span>
-    </span>
-  );
-}

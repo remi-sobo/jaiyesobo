@@ -10,11 +10,7 @@ export default function Footer() {
       </div>
       <div className="flex justify-between items-center font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.2em] text-[var(--color-mute)] pt-8 border-t border-[var(--color-line)]">
         <div>© 2026 Jaiye Sobo · East Palo Alto</div>
-        <div className="flex gap-4">
-          <a href="#" className="hover:text-[var(--color-red)] transition-colors">YouTube</a>
-          <span>·</span>
-          <a href="#" className="hover:text-[var(--color-red)] transition-colors">Instagram</a>
-        </div>
+        <div>Built by Jaiye + Dad · 2026</div>
       </div>
     </footer>
   );
