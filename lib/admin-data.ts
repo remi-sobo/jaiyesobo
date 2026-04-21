@@ -21,7 +21,7 @@ export async function getWeekTasks(userId: string, weekStart: Date): Promise<Day
 
   const { data, error } = await supa
     .from("tasks")
-    .select("*, completions(id, completed_at, reflection)")
+    .select("*, completions(id, completed_at, reflection, deleted_at)")
     .eq("user_id", userId)
     .gte("date", startIso)
     .lte("date", endIso)
@@ -31,14 +31,16 @@ export async function getWeekTasks(userId: string, weekStart: Date): Promise<Day
 
   const byDate = new Map<string, Task[]>();
   for (const row of data ?? []) {
-    const completions = (row.completions ?? []) as {
+    const allCompletions = (row.completions ?? []) as {
       id: string;
       completed_at: string;
       reflection: string | null;
+      deleted_at: string | null;
     }[];
+    const active = allCompletions.filter((c) => !c.deleted_at);
     const { completions: _c, ...rest } = row as typeof row & { completions: unknown };
     void _c;
-    const task: Task = { ...(rest as Omit<Task, "completion">), completion: completions[0] ?? null };
+    const task: Task = { ...(rest as Omit<Task, "completion">), completion: active[0] ?? null };
     const arr = byDate.get(task.date) ?? [];
     arr.push(task);
     byDate.set(task.date, arr);
@@ -182,10 +184,10 @@ export async function getUnseenAnswer(userId: string): Promise<Question | null> 
 }
 
 export async function getSidebarCounts(userId: string) {
-  const [uploads, asks] = await Promise.all([
+  const supa = createServiceClient();
+  const [uploads, asks, feedback] = await Promise.all([
     getPendingUploads(userId, 2),
     (async () => {
-      const supa = createServiceClient();
       const { count } = await supa
         .from("questions")
         .select("id", { count: "exact", head: true })
@@ -193,11 +195,86 @@ export async function getSidebarCounts(userId: string) {
         .eq("status", "pending");
       return count ?? 0;
     })(),
+    (async () => {
+      try {
+        const { count } = await supa
+          .from("feedback")
+          .select("id", { count: "exact", head: true })
+          .eq("submitted_by", userId)
+          .eq("status", "new")
+          .is("archived_at", null);
+        return count ?? 0;
+      } catch {
+        return 0;
+      }
+    })(),
   ]);
   return {
     uploadsCount: uploads.filter((u) => !u.reviewed_at).length,
     pendingQuestions: asks,
+    newFeedback: feedback,
   };
+}
+
+export type FeedbackEntry = {
+  id: string;
+  body: string;
+  kind: "bug" | "idea" | "unsure" | null;
+  page_url: string | null;
+  user_agent: string | null;
+  submitted_at: string;
+  status: "new" | "in_progress" | "fixed" | "closed";
+  dad_reply: string | null;
+  dad_replied_at: string | null;
+  seen_by_kid_at: string | null;
+  archived_at: string | null;
+};
+
+export async function getFeedback(userId: string, limit = 100): Promise<FeedbackEntry[]> {
+  const supa = createServiceClient();
+  const { data, error } = await supa
+    .from("feedback")
+    .select("*")
+    .eq("submitted_by", userId)
+    .order("submitted_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as FeedbackEntry[];
+}
+
+export type UnseenDadReply = {
+  kind: "question" | "feedback";
+  id: string;
+  body: string;
+  reply: string;
+  replied_at: string;
+};
+
+/** Feedback reply that the kid hasn't seen yet. */
+export async function getUnseenFeedbackReply(userId: string): Promise<UnseenDadReply | null> {
+  try {
+    const supa = createServiceClient();
+    const { data, error } = await supa
+      .from("feedback")
+      .select("id, body, dad_reply, dad_replied_at")
+      .eq("submitted_by", userId)
+      .is("seen_by_kid_at", null)
+      .not("dad_reply", "is", null)
+      .order("dad_replied_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data || !data.dad_reply) return null;
+    return {
+      kind: "feedback",
+      id: data.id,
+      body: data.body,
+      reply: data.dad_reply,
+      replied_at: data.dad_replied_at ?? new Date().toISOString(),
+    };
+  } catch {
+    return null;
+  }
 }
 
 /**

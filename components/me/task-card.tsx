@@ -1,6 +1,9 @@
 import Link from "next/link";
 import type { Task } from "@/lib/data";
 import CheckToggle from "./check-toggle";
+import UndoButton from "./undo-button";
+
+const GRACE_MS = 10 * 60 * 1000;
 
 type Props = { task: Task };
 
@@ -64,9 +67,18 @@ export default function TaskCard({ task }: Props) {
         )}
       </div>
 
-      <Action task={task} done={done} />
+      <div className="flex items-center gap-2">
+        {done && task.completion && isWithinGrace(task.completion.completed_at) && (
+          <UndoButton taskId={task.id} completedAt={task.completion.completed_at} />
+        )}
+        <Action task={task} done={done} />
+      </div>
     </div>
   );
+}
+
+function isWithinGrace(completedAt: string): boolean {
+  return Date.now() - new Date(completedAt).getTime() < GRACE_MS;
 }
 
 function StaticDot({ done }: { done: boolean }) {

@@ -8,7 +8,7 @@ import {
   type Task,
 } from "@/lib/data";
 import { calculateStreak } from "@/lib/streak";
-import { isDatePublished, getUnseenAnswer } from "@/lib/admin-data";
+import { isDatePublished, getUnseenAnswer, getUnseenFeedbackReply } from "@/lib/admin-data";
 import TodayHeader from "@/components/me/today-header";
 import SummaryCard from "@/components/me/summary-card";
 import TaskCard from "@/components/me/task-card";
@@ -16,6 +16,7 @@ import DadsNote from "@/components/me/dads-note";
 import AskDadCard from "@/components/me/ask-dad-card";
 import BottomNav from "@/components/me/bottom-nav";
 import AnsweredQuestion from "@/components/me/answered-question";
+import FeedbackReply from "@/components/me/feedback-reply";
 
 export const dynamic = "force-dynamic";
 
@@ -28,13 +29,14 @@ export default async function TodayPage() {
   }
 
   const date = todayIso();
-  const [rawTasks, dadNote, pending, streakResult, published, answered] = await Promise.all([
+  const [rawTasks, dadNote, pending, streakResult, published, answered, feedbackReply] = await Promise.all([
     getTasksForDay(jaiye.id, date),
     getDadNoteForDay(date),
     getPendingQuestionCount(jaiye.id),
     calculateStreak(jaiye.id),
     isDatePublished(date),
     getUnseenAnswer(jaiye.id),
+    getUnseenFeedbackReply(jaiye.id),
   ]);
 
   const tasks = published ? rawTasks : [];
@@ -70,6 +72,15 @@ export default async function TodayPage() {
           question={answered.body}
           answer={answered.answer}
           answeredAt={answered.answered_at ?? answered.asked_at}
+        />
+      )}
+
+      {feedbackReply && (
+        <FeedbackReply
+          feedbackId={feedbackReply.id}
+          body={feedbackReply.body}
+          reply={feedbackReply.reply}
+          repliedAt={feedbackReply.replied_at}
         />
       )}
 

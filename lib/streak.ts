@@ -19,7 +19,7 @@ export async function calculateStreak(userId: string): Promise<StreakResult> {
 
   const { data, error } = await supa
     .from("tasks")
-    .select("date, completions(id)")
+    .select("date, completions(id, deleted_at)")
     .eq("user_id", userId)
     .order("date", { ascending: true });
   if (error) throw error;
@@ -28,7 +28,8 @@ export async function calculateStreak(userId: string): Promise<StreakResult> {
   for (const row of data ?? []) {
     const entry = byDate.get(row.date) ?? { total: 0, done: 0 };
     entry.total += 1;
-    if ((row.completions as { id: string }[] | null)?.length) entry.done += 1;
+    const comps = (row.completions as { id: string; deleted_at: string | null }[] | null) ?? [];
+    if (comps.some((c) => !c.deleted_at)) entry.done += 1;
     byDate.set(row.date, entry);
   }
 

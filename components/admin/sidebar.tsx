@@ -6,9 +6,10 @@ import { usePathname, useRouter } from "next/navigation";
 type Props = {
   uploadsCount: number;
   pendingQuestions: number;
+  newFeedback: number;
 };
 
-export default function Sidebar({ uploadsCount, pendingQuestions }: Props) {
+export default function Sidebar({ uploadsCount, pendingQuestions, newFeedback }: Props) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -46,6 +47,18 @@ export default function Sidebar({ uploadsCount, pendingQuestions }: Props) {
           right={
             pendingQuestions > 0 ? (
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-red)] animate-pulse" aria-label={`${pendingQuestions} pending`} />
+            ) : null
+          }
+        />
+        <NavItem
+          href="/admin/feedback"
+          active={is("/admin/feedback")}
+          label="Feedback"
+          right={
+            newFeedback > 0 ? (
+              <span className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] text-[var(--color-bone)] bg-[var(--color-red)] px-1.5 py-0.5 rounded-sm">
+                {newFeedback}
+              </span>
             ) : null
           }
         />

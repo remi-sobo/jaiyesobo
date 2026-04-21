@@ -40,20 +40,23 @@ export async function getTasksForDay(userId: string, date: string): Promise<Task
   const supa = createServiceClient();
   const { data, error } = await supa
     .from("tasks")
-    .select("*, completions(id, completed_at, reflection)")
+    .select("*, completions(id, completed_at, reflection, deleted_at)")
     .eq("user_id", userId)
     .eq("date", date)
     .order("sort_order", { ascending: true });
   if (error) throw error;
   return (data ?? []).map((row) => {
-    const completions = (row.completions ?? []) as {
+    const allCompletions = (row.completions ?? []) as {
       id: string;
       completed_at: string;
       reflection: string | null;
+      deleted_at: string | null;
     }[];
+    // Only count active (non-deleted) completions as "done"
+    const active = allCompletions.filter((c) => !c.deleted_at);
     const { completions: _drop, ...rest } = row as typeof row & { completions: unknown };
     void _drop;
-    return { ...(rest as Omit<Task, "completion">), completion: completions[0] ?? null };
+    return { ...(rest as Omit<Task, "completion">), completion: active[0] ?? null };
   });
 }
 

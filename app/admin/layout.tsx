@@ -17,6 +17,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   // Pass zeros if we're on /admin/lock (unauthenticated); Sidebar won't render there.
   let uploadsCount = 0;
   let pendingQuestions = 0;
+  let newFeedback = 0;
 
   if (session) {
     try {
@@ -24,6 +25,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       const counts = await getSidebarCounts(jaiye.id);
       uploadsCount = counts.uploadsCount;
       pendingQuestions = counts.pendingQuestions;
+      newFeedback = counts.newFeedback;
     } catch {
       // schema or seed not ready yet; just show zeros
     }
@@ -35,7 +37,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         children
       ) : (
         <div className="flex min-h-screen">
-          <Sidebar uploadsCount={uploadsCount} pendingQuestions={pendingQuestions} />
+          <Sidebar
+            uploadsCount={uploadsCount}
+            pendingQuestions={pendingQuestions}
+            newFeedback={newFeedback}
+          />
           <div className="flex-1 min-w-0">{children}</div>
         </div>
       )}

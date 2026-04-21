@@ -1,14 +1,18 @@
 import type { Metadata } from "next";
+import { getKidSession } from "@/lib/session";
+import FeedbackButton from "@/components/me/feedback-button";
 
 export const metadata: Metadata = {
   title: "Jaiye — Today",
   robots: { index: false, follow: false, nocache: true },
 };
 
-export default function MeLayout({ children }: { children: React.ReactNode }) {
+export default async function MeLayout({ children }: { children: React.ReactNode }) {
+  const session = await getKidSession();
   return (
     <div className="min-h-screen bg-[var(--color-warm-bg)] text-[var(--color-bone)] [background-image:radial-gradient(circle_at_10%_0%,rgba(230,57,70,0.05),transparent_40%),radial-gradient(circle_at_90%_100%,rgba(230,57,70,0.03),transparent_40%)]">
       {children}
+      {session && <FeedbackButton />}
     </div>
   );
 }
