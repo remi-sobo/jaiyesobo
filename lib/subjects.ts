@@ -3,6 +3,7 @@ export const SUBJECTS = {
   reading: { label: "Reading", hex: "#6b9bd2", cssVar: "--color-reading" },
   writing: { label: "Writing", hex: "#a084dc", cssVar: "--color-writing" },
   science: { label: "Science", hex: "#4ade80", cssVar: "--color-science" },
+  history: { label: "History", hex: "#c9a36b", cssVar: "--color-history" },
   ball: { label: "Ball", hex: "#E63946", cssVar: "--color-ball" },
   habit: { label: "Habit", hex: "#8a8578", cssVar: "--color-habit" },
   family: { label: "Family", hex: "#e8b04e", cssVar: "--color-family" },

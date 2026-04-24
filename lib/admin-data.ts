@@ -143,6 +143,61 @@ export async function getPendingUploads(userId: string, daysBack = 2): Promise<P
     }));
 }
 
+export type LessonCompletion = {
+  completion_id: string;
+  task_id: string;
+  task_title: string;
+  subject: string | null;
+  lesson_slug: string | null;
+  completed_at: string;
+  responses: Record<string, unknown>;
+  reviewed_at: string | null;
+};
+
+export async function getLessonCompletions(userId: string, daysBack = 60): Promise<LessonCompletion[]> {
+  const supa = createServiceClient();
+  const since = isoDate(addDays(today(), -daysBack));
+  const { data, error } = await supa
+    .from("completions")
+    .select(
+      "id, completed_at, reviewed_at, lesson_responses, deleted_at, tasks!inner(id, title, subject, user_id, completion_type, lesson_slug)"
+    )
+    .gte("completed_at", `${since}T00:00:00`)
+    .order("completed_at", { ascending: false });
+  if (error) throw error;
+
+  const rows = (data ?? []) as unknown as {
+    id: string;
+    completed_at: string;
+    reviewed_at: string | null;
+    lesson_responses: Record<string, unknown> | null;
+    deleted_at: string | null;
+    tasks: {
+      id: string;
+      title: string;
+      subject: string | null;
+      user_id: string;
+      completion_type: string;
+      lesson_slug: string | null;
+    };
+  }[];
+
+  return rows
+    .filter((r) => r.tasks.user_id === userId)
+    .filter((r) => !r.deleted_at)
+    .filter((r) => r.tasks.completion_type === "lesson" && r.lesson_responses)
+    .map((r) => ({
+      completion_id: r.id,
+      task_id: r.tasks.id,
+      task_title: r.tasks.title,
+      subject: r.tasks.subject,
+      lesson_slug: r.tasks.lesson_slug,
+      completed_at: r.completed_at,
+      responses: r.lesson_responses ?? {},
+      reviewed_at: r.reviewed_at,
+    }));
+}
+
 export type Question = {
   id: string;
   asked_by: string;

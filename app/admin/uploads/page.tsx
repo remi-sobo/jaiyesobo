@@ -1,28 +1,54 @@
 import { requireAdmin } from "@/lib/session";
-import { ensureJaiye, getPendingUploads } from "@/lib/admin-data";
+import { ensureJaiye, getPendingUploads, getLessonCompletions } from "@/lib/admin-data";
 import ReviewButton from "@/components/admin/review-button";
+import LessonReceipt from "@/components/admin/lesson-receipt";
 
 export const dynamic = "force-dynamic";
 
 export default async function UploadsPage() {
   await requireAdmin();
   const jaiye = await ensureJaiye();
-  const uploads = await getPendingUploads(jaiye.id, 30);
+  const [uploads, lessons] = await Promise.all([
+    getPendingUploads(jaiye.id, 30),
+    getLessonCompletions(jaiye.id, 60),
+  ]);
 
   return (
     <main className="p-8 lg:p-10 pb-24">
       <div className="pb-6 mb-8 border-b border-[var(--color-line)]">
         <div className="font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.2em] text-[var(--color-warm-mute)] mb-2">
-          Admin · Last 30 days · {uploads.length} total
+          Admin · {uploads.length} uploads · {lessons.length} lessons
         </div>
         <h1 className="font-[family-name:var(--font-fraunces)] font-semibold text-3xl tracking-[-0.02em]">
           Uploads <span className="italic font-normal text-[var(--color-red)]">queue.</span>
         </h1>
       </div>
 
-      {uploads.length === 0 ? (
-        <p className="text-[var(--color-warm-mute)]">No uploads yet. When Jaiye submits a photo, it shows here.</p>
-      ) : (
+      {lessons.length > 0 && (
+        <section className="mb-14">
+          <div className="flex items-center gap-3 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.25em] text-[var(--color-warm-mute)] mb-5">
+            <span className="w-6 h-px bg-[var(--color-history)]" />
+            Lesson receipts · {lessons.length}
+          </div>
+          <div className="flex flex-col gap-3 max-w-[960px]">
+            {lessons.map((l) => (
+              <LessonReceipt key={l.completion_id} item={l} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section>
+        {lessons.length > 0 && (
+          <div className="flex items-center gap-3 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.25em] text-[var(--color-warm-mute)] mb-5">
+            <span className="w-6 h-px bg-[var(--color-red)]" />
+            Photo uploads · {uploads.length}
+          </div>
+        )}
+
+      {uploads.length === 0 && lessons.length === 0 ? (
+        <p className="text-[var(--color-warm-mute)]">Nothing yet. When Jaiye submits a photo or finishes a lesson, it shows here.</p>
+      ) : uploads.length === 0 ? null : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {uploads.map((u) => (
             <article
@@ -70,6 +96,7 @@ export default async function UploadsPage() {
           ))}
         </div>
       )}
+      </section>
     </main>
   );
 }

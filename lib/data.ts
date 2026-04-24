@@ -1,6 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 
-export type CompletionType = "photo" | "reflection" | "check" | "photo_and_reflection";
+export type CompletionType = "photo" | "reflection" | "check" | "photo_and_reflection" | "lesson";
 
 export type Task = {
   id: string;
@@ -14,6 +14,7 @@ export type Task = {
   requires_photo: boolean;
   completion_type: CompletionType;
   reflection_prompt: string | null;
+  lesson_slug: string | null;
   sort_order: number;
   completion: { id: string; completed_at: string; reflection: string | null } | null;
 };
