@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Task } from "@/lib/data";
 import CheckToggle from "./check-toggle";
 import UndoButton from "./undo-button";
+import { getLesson } from "@/lib/lessons";
 
 const GRACE_MS = 10 * 60 * 1000;
 
@@ -98,6 +99,19 @@ function StaticDot({ done }: { done: boolean }) {
 
 function Action({ task, done }: { task: Task; done: boolean }) {
   if (task.completion_type === "check") return null;
+
+  if (task.completion_type === "lesson") {
+    if (done) {
+      return (
+        <span className="inline-flex items-center gap-2 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.15em] px-4 py-2.5 rounded-sm whitespace-nowrap border border-[var(--color-line)] text-[var(--color-warm-mute)]">
+          <span className="w-0 h-0 border-l-[4px] border-r-[4px] border-b-[7px] border-l-transparent border-r-transparent border-b-[var(--color-green)] rotate-45 translate-y-[-1px]" />
+          Lesson complete
+        </span>
+      );
+    }
+    return <LessonLink taskId={task.id} lessonSlug={task.lesson_slug} />;
+  }
+
   if (done) return <DoneBadge />;
 
   if (task.completion_type === "photo") {
@@ -107,6 +121,30 @@ function Action({ task, done }: { task: Task; done: boolean }) {
     return <ActionLink href={`/me/reflect/${task.id}`} variant="reflect" label="Reflect" />;
   }
   return <ActionLink href={`/me/upload/${task.id}`} variant="both" label="Upload + Reflect" />;
+}
+
+function LessonLink({ taskId, lessonSlug }: { taskId: string; lessonSlug: string | null }) {
+  const lesson = lessonSlug ? getLesson(lessonSlug) : null;
+  const estMin = lesson?.estimatedMinutes;
+  return (
+    <div className="flex flex-col items-end gap-1.5">
+      <Link
+        href={`/me/lesson/${taskId}`}
+        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-sm bg-[var(--color-red)] text-[var(--color-bone)] hover:bg-[var(--color-red-soft)] transition-colors whitespace-nowrap"
+      >
+        <span className="font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.15em]">
+          Start
+        </span>
+        <span className="font-[family-name:var(--font-fraunces)] italic text-[0.95rem]">Lesson</span>
+        <span className="text-base leading-none -mt-0.5">→</span>
+      </Link>
+      {estMin && (
+        <span className="font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.2em] text-[var(--color-warm-mute)]">
+          ~{estMin} min
+        </span>
+      )}
+    </div>
+  );
 }
 
 function ActionLink({
