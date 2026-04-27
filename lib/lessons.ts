@@ -1,4 +1,5 @@
 import EpaHistoryLesson from "@/lessons/epa-history";
+import SportsJournalistLab from "@/lessons/sports-journalist-lab";
 
 export type LessonMeta = {
   component: React.ComponentType<{ taskId: string }>;
@@ -13,6 +14,12 @@ export const LESSONS: Record<string, LessonMeta> = {
     title: "The Story of East Palo Alto",
     subject: "history",
     estimatedMinutes: 45,
+  },
+  "sports-journalist-lab": {
+    component: SportsJournalistLab,
+    title: "Sports Desk: Playoff Recap",
+    subject: "writing",
+    estimatedMinutes: 60,
   },
 };
 

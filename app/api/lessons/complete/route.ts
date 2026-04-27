@@ -50,5 +50,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "insert_failed" }, { status: 500 });
   }
 
+  // Drafts now live on the completion record; clear them so a re-attempt starts clean.
+  const { error: dErr } = await supa.from("lesson_drafts").delete().eq("task_id", taskId);
+  if (dErr) {
+    console.error(JSON.stringify({ scope: "lessons.complete", msg: "draft_clear_failed", err: dErr.message }));
+    // Non-fatal — completion is already saved.
+  }
+
   return NextResponse.json({ ok: true, redirect: "/me" });
 }
