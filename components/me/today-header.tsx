@@ -17,8 +17,8 @@ export default function TodayHeader({ greetingName, streak, bestStreak }: Props)
   const showBest = typeof bestStreak === "number" && streak > 7 && bestStreak >= streak;
 
   return (
-    <header className="flex flex-col md:flex-row md:justify-between md:items-end gap-6 mb-12 pb-8 border-b border-[var(--color-line)]">
-      <div className="flex flex-col gap-2">
+    <header className="flex flex-col md:flex-row md:justify-between md:items-end gap-8 mb-16 pb-10 border-b border-[var(--color-line)]">
+      <div className="flex flex-col gap-3">
         <div className="flex items-center gap-3 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.25em] text-[var(--color-warm-mute)]">
           <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-red)]" />
           <span>Today</span>
@@ -26,7 +26,7 @@ export default function TodayHeader({ greetingName, streak, bestStreak }: Props)
         <h1 className="font-[family-name:var(--font-fraunces)] text-[clamp(2rem,3.5vw,3rem)] font-semibold leading-[1.1] tracking-[-0.02em]">
           {greeting}, <span className="italic font-normal text-[var(--color-red)]">{greetingName}.</span>
         </h1>
-        <div className="font-[family-name:var(--font-jetbrains)] text-xs uppercase tracking-[0.2em] text-[var(--color-warm-mute)] mt-1">
+        <div className="font-[family-name:var(--font-jetbrains)] text-xs uppercase tracking-[0.2em] text-[var(--color-warm-mute)] mt-2">
           {dayName} · {month} {dayNum} · Week {weekNum}
         </div>
       </div>

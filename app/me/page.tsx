@@ -52,15 +52,15 @@ export default async function TodayPage() {
   const restLeft = restOfDay.filter((t) => !t.completion).length;
 
   return (
-    <main className="max-w-[1100px] mx-auto px-6 lg:px-8 py-8">
+    <main className="max-w-[1100px] mx-auto px-6 lg:px-10 py-12 lg:py-16">
       <TodayHeader greetingName={jaiye.display_name} streak={streakResult.current} bestStreak={streakResult.best} />
 
       {!published && (
-        <div className="p-8 rounded border border-dashed border-[var(--color-line-strong)] text-center text-[var(--color-warm-mute)] mb-10">
-          <div className="font-[family-name:var(--font-fraunces)] italic text-xl text-[var(--color-warm-bone)] mb-2">
+        <div className="p-12 rounded border border-dashed border-[var(--color-line-strong)] text-center text-[var(--color-warm-mute)] mb-14">
+          <div className="font-[family-name:var(--font-fraunces)] italic text-xl text-[var(--color-warm-bone)] mb-3">
             Dad is still writing your week.
           </div>
-          <p className="text-sm">Come back soon. Nothing goes live until he publishes.</p>
+          <p className="text-sm leading-relaxed">Come back soon. Nothing goes live until he publishes.</p>
         </div>
       )}
 
@@ -119,7 +119,7 @@ export default async function TodayPage() {
 
 function SectionHeader({ title, right, spacedTop }: { title: string; right: string; spacedTop?: boolean }) {
   return (
-    <div className={`flex items-center justify-between mb-5 ${spacedTop ? "mt-10" : ""}`}>
+    <div className={`flex items-center justify-between mb-7 ${spacedTop ? "mt-16" : "mt-4"}`}>
       <h3 className="flex items-center gap-3 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.25em] text-[var(--color-warm-mute)]">
         <span className="w-8 h-px bg-[var(--color-red)]" />
         {title}
@@ -141,7 +141,7 @@ function SectionHeader({ title, right, spacedTop }: { title: string; right: stri
 
 function TaskList({ tasks }: { tasks: Task[] }) {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
       {tasks.map((t) => (
         <TaskCard key={t.id} task={t} />
       ))}

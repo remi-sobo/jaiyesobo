@@ -110,18 +110,18 @@ export default function TopFiveGame({ promptId, promptText }: Props) {
   }
 
   return (
-    <div className="max-w-[680px] mx-auto px-6 py-20 lg:py-28">
-      <div className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.3em] text-[var(--color-games-yellow)] mb-6">
+    <div className="max-w-[700px] mx-auto px-6 py-24 lg:py-32">
+      <div className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.3em] text-[var(--color-games-yellow)] mb-8">
         Today&apos;s Top 5
       </div>
-      <h1 className="font-[family-name:var(--font-fraunces)] font-black text-[clamp(2.25rem,5.5vw,4rem)] leading-[1.05] tracking-[-0.03em] mb-7">
+      <h1 className="font-[family-name:var(--font-fraunces)] font-black text-[clamp(2.25rem,5.5vw,4rem)] leading-[1.05] tracking-[-0.03em] mb-8">
         {promptText}
       </h1>
-      <p className="text-[var(--color-mute)] text-[1.05rem] mb-16 max-w-[44ch] leading-relaxed">
+      <p className="text-[var(--color-mute)] text-[1.05rem] mb-20 max-w-[44ch] leading-relaxed">
         Pick your five. AI will rate your list and tell you what&apos;s based, what&apos;s a reach, and what&apos;s a stretch.
       </p>
 
-      <ol className="flex flex-col gap-5 list-none mb-14">
+      <ol className="flex flex-col gap-6 list-none mb-16">
         {picks.map((value, i) => (
           <li key={i} className="grid grid-cols-[auto_1fr] gap-5 items-center">
             <span className="font-[family-name:var(--font-fraunces)] font-black text-3xl text-[var(--color-mute)] leading-none w-8 text-center">
