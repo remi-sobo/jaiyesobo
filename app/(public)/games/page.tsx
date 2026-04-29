@@ -24,27 +24,27 @@ export default async function GamesHubPage() {
 
   return (
     <GameShell liveLabel="Daily prompts · New verdicts every day">
-      <section className="px-6 lg:px-10 pt-20 pb-8 max-w-[1100px] mx-auto">
-        <div className="font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.3em] text-[var(--color-mute)] mb-4">
+      <section className="px-6 lg:px-10 pt-28 pb-12 max-w-[1100px] mx-auto">
+        <div className="font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.3em] text-[var(--color-mute)] mb-6">
           jaiyesobo.com / games
         </div>
-        <h1 className="font-[family-name:var(--font-fraunces)] font-black text-[clamp(3rem,8vw,7rem)] leading-[0.9] tracking-[-0.04em] mb-6">
+        <h1 className="font-[family-name:var(--font-fraunces)] font-black text-[clamp(3rem,8vw,7rem)] leading-[0.9] tracking-[-0.04em] mb-8">
           Jaiye&apos;s <span className="italic font-normal text-[var(--color-red)]">Games.</span>
         </h1>
-        <p className="font-[family-name:var(--font-fraunces)] italic text-[clamp(1.1rem,1.7vw,1.5rem)] text-[var(--color-bone)] max-w-[44ch] leading-snug mb-10">
+        <p className="font-[family-name:var(--font-fraunces)] italic text-[clamp(1.15rem,1.8vw,1.5rem)] text-[var(--color-bone)] max-w-[48ch] leading-snug mb-14">
           NBA games made by my son. Made for fans. Play one.
         </p>
       </section>
 
-      <section className="px-6 lg:px-10 pb-12 max-w-[1100px] mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      <section className="px-6 lg:px-10 pb-16 max-w-[1100px] mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {ordered.map((g, i) => (
             <GameCard key={g.slug} game={g} number={String(i + 1).padStart(2, "0")} />
           ))}
         </div>
       </section>
 
-      <section className="px-6 lg:px-10 pb-20 max-w-[1100px] mx-auto">
+      <section className="px-6 lg:px-10 pb-24 pt-4 max-w-[1100px] mx-auto">
         <Link
           href="/games/about"
           className="inline-flex items-center gap-2 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.25em] text-[var(--color-mute)] hover:text-[var(--color-red)] transition-colors"

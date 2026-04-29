@@ -8,17 +8,18 @@ export const runtime = "nodejs";
 export const maxDuration = 30;
 export const dynamic = "force-dynamic";
 
+// Note: Anthropic's structured output API does NOT support `minimum`/`maximum`
+// on integer types, and rejects `length` on arrays. Keep the schema lean and
+// clamp/normalize after parse.
 const VerdictSchema = z.object({
-  rating: z.number().int().min(1).max(10),
-  take: z.string().max(200),
-  per_pick: z
-    .array(
-      z.object({
-        name: z.string(),
-        verdict: z.enum(["based", "reach", "interesting", "disrespectful", "cap"]),
-      })
-    )
-    .length(5),
+  rating: z.number().int(),
+  take: z.string(),
+  per_pick: z.array(
+    z.object({
+      name: z.string(),
+      verdict: z.enum(["based", "reach", "interesting", "disrespectful", "cap"]),
+    })
+  ),
 });
 
 const SYSTEM_PROMPT = `You are a trash-talking but knowledgeable NBA expert. You rate users' Top 5 lists for Jaiye Sobo's NBA games platform. Be specific. Reference real basketball history. Don't be generic. Don't be cruel — make it fun. Audience includes kids, so keep it spirited but clean.
@@ -81,10 +82,22 @@ export async function POST(req: Request) {
       prompt: userPrompt,
     });
 
-    // Persist verdict so re-fetches and OG image generation are stable.
-    await supa.from("plays").update({ result: object }).eq("id", play_id);
+    // Normalize: clamp rating to 1-10, ensure per_pick has exactly 5 entries
+    // padded with the user's pick names + a default verdict if AI omitted any.
+    const normalized = {
+      rating: Math.max(1, Math.min(10, Math.round(object.rating))),
+      take: object.take.slice(0, 280),
+      per_pick: picks.map((name, i) => {
+        const found = object.per_pick.find((p) => p.name.toLowerCase() === name.toLowerCase()) ?? object.per_pick[i];
+        return {
+          name,
+          verdict: found?.verdict ?? "interesting",
+        };
+      }),
+    };
 
-    return NextResponse.json({ verdict: object });
+    await supa.from("plays").update({ result: normalized }).eq("id", play_id);
+    return NextResponse.json({ verdict: normalized });
   } catch (err) {
     const detail = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
     console.error(

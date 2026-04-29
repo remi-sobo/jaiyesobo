@@ -110,20 +110,20 @@ export default function TopFiveGame({ promptId, promptText }: Props) {
   }
 
   return (
-    <div className="max-w-[640px] mx-auto px-6 py-12">
-      <div className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.3em] text-[var(--color-games-yellow)] mb-4">
+    <div className="max-w-[680px] mx-auto px-6 py-20 lg:py-28">
+      <div className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.3em] text-[var(--color-games-yellow)] mb-6">
         Today&apos;s Top 5
       </div>
-      <h1 className="font-[family-name:var(--font-fraunces)] font-black text-[clamp(2rem,5vw,3.5rem)] leading-[1.05] tracking-[-0.03em] mb-3">
+      <h1 className="font-[family-name:var(--font-fraunces)] font-black text-[clamp(2.25rem,5.5vw,4rem)] leading-[1.05] tracking-[-0.03em] mb-7">
         {promptText}
       </h1>
-      <p className="text-[var(--color-mute)] mb-10 max-w-[40ch] leading-relaxed">
+      <p className="text-[var(--color-mute)] text-[1.05rem] mb-16 max-w-[44ch] leading-relaxed">
         Pick your five. AI will rate your list and tell you what&apos;s based, what&apos;s a reach, and what&apos;s a stretch.
       </p>
 
-      <ol className="flex flex-col gap-3 list-none mb-10">
+      <ol className="flex flex-col gap-5 list-none mb-14">
         {picks.map((value, i) => (
-          <li key={i} className="grid grid-cols-[auto_1fr] gap-4 items-center">
+          <li key={i} className="grid grid-cols-[auto_1fr] gap-5 items-center">
             <span className="font-[family-name:var(--font-fraunces)] font-black text-3xl text-[var(--color-mute)] leading-none w-8 text-center">
               {i + 1}
             </span>
@@ -133,14 +133,14 @@ export default function TopFiveGame({ promptId, promptText }: Props) {
               onChange={(e) => setPick(i, e.target.value)}
               placeholder="Player name"
               maxLength={60}
-              className="bg-[var(--color-card)] border border-[var(--color-line)] rounded p-3 text-[var(--color-bone)] font-[family-name:var(--font-fraunces)] text-[1.05rem] focus:outline-none focus:border-[var(--color-games-yellow)]"
+              className="bg-[var(--color-card)] border border-[var(--color-line)] rounded px-4 py-4 text-[var(--color-bone)] font-[family-name:var(--font-fraunces)] text-[1.1rem] focus:outline-none focus:border-[var(--color-games-yellow)]"
             />
           </li>
         ))}
       </ol>
 
       {errorMessage && (
-        <p className="mb-5 text-sm italic font-[family-name:var(--font-fraunces)] text-[var(--color-red-bright)]">
+        <p className="mb-7 text-sm italic font-[family-name:var(--font-fraunces)] text-[var(--color-red-bright)]">
           {errorMessage}
         </p>
       )}
@@ -149,7 +149,7 @@ export default function TopFiveGame({ promptId, promptText }: Props) {
         type="button"
         onClick={submit}
         disabled={!allFilled}
-        className="w-full sm:w-auto bg-[var(--color-red)] text-[var(--color-bone)] font-[family-name:var(--font-jetbrains)] text-sm uppercase tracking-[0.2em] px-8 py-4 rounded-sm hover:bg-[var(--color-red-bright)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        className="w-full sm:w-auto bg-[var(--color-red)] text-[var(--color-bone)] font-[family-name:var(--font-jetbrains)] text-sm uppercase tracking-[0.2em] px-10 py-5 rounded-sm hover:bg-[var(--color-red-bright)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
         Get your verdict →
       </button>

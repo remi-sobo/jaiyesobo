@@ -16,33 +16,33 @@ const VERDICT_STYLES: Record<TopFiveVerdict["per_pick"][number]["verdict"], { fg
 
 export default function TopFiveResult({ prompt, picks, verdict }: Props) {
   return (
-    <div className="max-w-[760px] mx-auto px-6 py-12">
-      <div className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.3em] text-[var(--color-mute)] mb-3">
+    <div className="max-w-[820px] mx-auto px-6 py-20 lg:py-24">
+      <div className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.3em] text-[var(--color-mute)] mb-5">
         {prompt}
       </div>
 
-      <div className="grid sm:grid-cols-[auto_1fr] gap-8 items-start mb-10 pb-10 border-b border-[var(--color-line)]">
+      <div className="grid sm:grid-cols-[auto_1fr] gap-10 sm:gap-12 items-start mb-14 pb-14 border-b border-[var(--color-line)]">
         <div className="flex flex-col items-center justify-center">
-          <div className="font-[family-name:var(--font-fraunces)] font-black text-[5rem] leading-none tracking-[-0.04em] text-[var(--color-games-yellow)]">
+          <div className="font-[family-name:var(--font-fraunces)] font-black text-[6rem] leading-none tracking-[-0.04em] text-[var(--color-games-yellow)]">
             {verdict.rating}
           </div>
-          <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.3em] text-[var(--color-mute)] -mt-1">
+          <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.3em] text-[var(--color-mute)] mt-2">
             of 10
           </div>
         </div>
-        <p className="font-[family-name:var(--font-fraunces)] italic text-[clamp(1.15rem,1.6vw,1.4rem)] leading-snug text-[var(--color-bone)]">
+        <p className="font-[family-name:var(--font-fraunces)] italic text-[clamp(1.2rem,1.7vw,1.5rem)] leading-snug text-[var(--color-bone)]">
           &ldquo;{verdict.take}&rdquo;
         </p>
       </div>
 
-      <ol className="flex flex-col gap-3 list-none">
+      <ol className="flex flex-col gap-4 list-none">
         {picks.map((name, i) => {
           const pickVerdict = verdict.per_pick[i];
           const styles = pickVerdict ? VERDICT_STYLES[pickVerdict.verdict] : null;
           return (
             <li
               key={i}
-              className="grid grid-cols-[auto_1fr_auto] gap-4 items-center bg-[var(--color-card)] border border-[var(--color-line)] rounded px-5 py-4"
+              className="grid grid-cols-[auto_1fr_auto] gap-5 items-center bg-[var(--color-card)] border border-[var(--color-line)] rounded px-6 py-5"
             >
               <span className="font-[family-name:var(--font-fraunces)] font-black text-3xl text-[var(--color-mute)] leading-none w-8">
                 {i + 1}
