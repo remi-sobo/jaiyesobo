@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { anthropic } from "@ai-sdk/anthropic";
-import { generateObject } from "ai";
+import { generateText } from "ai";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/server";
 
@@ -8,26 +8,32 @@ export const runtime = "nodejs";
 export const maxDuration = 30;
 export const dynamic = "force-dynamic";
 
-// Note: Anthropic's structured-output schema validator is strict about
-// constraints — even `.int()` can trigger implicit min/max generation that
-// gets rejected. Keep raw z.number() / z.string() and clamp + round after.
+const VERDICT_TAGS = ["based", "reach", "interesting", "disrespectful", "cap"] as const;
+
+// Used to validate after manual JSON.parse — never sent to Anthropic.
 const VerdictSchema = z.object({
   rating: z.number(),
   take: z.string(),
   per_pick: z.array(
     z.object({
       name: z.string(),
-      verdict: z.enum(["based", "reach", "interesting", "disrespectful", "cap"]),
+      verdict: z.enum(VERDICT_TAGS),
     })
   ),
 });
 
 const SYSTEM_PROMPT = `You are a trash-talking but knowledgeable NBA expert. You rate users' Top 5 lists for Jaiye Sobo's NBA games platform. Be specific. Reference real basketball history. Don't be generic. Don't be cruel — make it fun. Audience includes kids, so keep it spirited but clean.
 
-Output is a JSON object with:
-- rating: integer 1-10
-- take: ONE sentence verdict, 25 words max
-- per_pick: array of 5 objects, one per pick, each { name, verdict } where verdict is one of: based | reach | interesting | disrespectful | cap
+You MUST respond with ONLY a JSON object. No prose before, no prose after, no markdown code fence.
+
+Schema:
+{
+  "rating": (integer 1-10),
+  "take": (string, ONE sentence verdict, 25 words max),
+  "per_pick": [
+    { "name": (the user's pick name as you received it), "verdict": "based" | "reach" | "interesting" | "disrespectful" | "cap" }
+  ]
+}
 
 Tag definitions:
 - based: solid, defensible, smart pick
@@ -58,7 +64,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "play_not_found" }, { status: 404 });
   }
 
-  // Idempotent: if already judged, return cached verdict.
   if (play.result && typeof play.result === "object" && "rating" in play.result) {
     return NextResponse.json({ verdict: play.result });
   }
@@ -75,29 +80,33 @@ export async function POST(req: Request) {
     .join("\n")}\n\nReturn the JSON verdict.`;
 
   try {
-    const { object } = await generateObject({
+    const { text } = await generateText({
       model: anthropic("claude-sonnet-4-5"),
-      schema: VerdictSchema,
       system: SYSTEM_PROMPT,
       prompt: userPrompt,
     });
 
-    // Normalize: clamp rating to 1-10, ensure per_pick has exactly 5 entries
-    // padded with the user's pick names + a default verdict if AI omitted any.
-    const normalized = {
-      rating: Math.max(1, Math.min(10, Math.round(object.rating))),
-      take: object.take.slice(0, 280),
+    // Extract JSON object from the response (model is told no prose, but be defensive).
+    const jsonText = extractJson(text);
+    if (!jsonText) throw new Error(`No JSON found in response: ${text.slice(0, 200)}`);
+
+    const parsed = JSON.parse(jsonText);
+    const validated = VerdictSchema.parse(parsed);
+
+    // Normalize: clamp rating, truncate take, ensure 5 per_pick rows aligned to user picks.
+    const verdict = {
+      rating: Math.max(1, Math.min(10, Math.round(validated.rating))),
+      take: validated.take.slice(0, 280),
       per_pick: picks.map((name, i) => {
-        const found = object.per_pick.find((p) => p.name.toLowerCase() === name.toLowerCase()) ?? object.per_pick[i];
-        return {
-          name,
-          verdict: found?.verdict ?? "interesting",
-        };
+        const found =
+          validated.per_pick.find((p) => p.name.toLowerCase().trim() === name.toLowerCase().trim()) ??
+          validated.per_pick[i];
+        return { name, verdict: found?.verdict ?? "interesting" };
       }),
     };
 
-    await supa.from("plays").update({ result: normalized }).eq("id", play_id);
-    return NextResponse.json({ verdict: normalized });
+    await supa.from("plays").update({ result: verdict }).eq("id", play_id);
+    return NextResponse.json({ verdict });
   } catch (err) {
     const detail = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
     console.error(
@@ -105,4 +114,26 @@ export async function POST(req: Request) {
     );
     return NextResponse.json({ error: "ai_failed", detail }, { status: 502 });
   }
+}
+
+/** Pull the first {...} JSON block out of a string — tolerates surrounding prose. */
+function extractJson(text: string): string | null {
+  const trimmed = text.trim();
+  if (trimmed.startsWith("{")) return trimmed;
+  // Strip ``` fences if present
+  const fence = /```(?:json)?\s*([\s\S]*?)```/i.exec(trimmed);
+  if (fence) return fence[1].trim();
+  // Find the first { ... balanced } pair
+  const start = trimmed.indexOf("{");
+  if (start < 0) return null;
+  let depth = 0;
+  for (let i = start; i < trimmed.length; i++) {
+    const ch = trimmed[i];
+    if (ch === "{") depth++;
+    else if (ch === "}") {
+      depth--;
+      if (depth === 0) return trimmed.slice(start, i + 1);
+    }
+  }
+  return null;
 }
