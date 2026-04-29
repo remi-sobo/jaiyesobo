@@ -36,6 +36,10 @@
   --color-habit: #8a8578;
   --color-family: #e8b04e;
 
+  /* /games-only accents — do not bleed into /me or public brand pages */
+  --color-games-yellow: #F5C842;
+  --color-games-green: #3ECFB2;
+
   --font-display: 'Fraunces', serif;
   --font-body: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;

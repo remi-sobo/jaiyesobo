@@ -14,8 +14,8 @@ const url = requireEnv("NEXT_PUBLIC_SUPABASE_URL");
 const key = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
 const supa = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 
-// Tue–Fri of the week containing 2026-04-24. Monday is intentionally skipped.
-const DATES = ["2026-04-21", "2026-04-22", "2026-04-23", "2026-04-24"];
+// Mon–Fri of the current week (2026-04-27 to 2026-05-01).
+const DATES = ["2026-04-27", "2026-04-28", "2026-04-29", "2026-04-30", "2026-05-01"];
 
 function requireEnv(name: string): string {
   const v = process.env[name];
