@@ -8,11 +8,11 @@ export const runtime = "nodejs";
 export const maxDuration = 30;
 export const dynamic = "force-dynamic";
 
-// Note: Anthropic's structured output API does NOT support `minimum`/`maximum`
-// on integer types, and rejects `length` on arrays. Keep the schema lean and
-// clamp/normalize after parse.
+// Note: Anthropic's structured-output schema validator is strict about
+// constraints — even `.int()` can trigger implicit min/max generation that
+// gets rejected. Keep raw z.number() / z.string() and clamp + round after.
 const VerdictSchema = z.object({
-  rating: z.number().int(),
+  rating: z.number(),
   take: z.string(),
   per_pick: z.array(
     z.object({
