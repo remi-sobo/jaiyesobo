@@ -75,7 +75,7 @@ export async function POST(req: Request) {
 
   try {
     const { object } = await generateObject({
-      model: anthropic("claude-sonnet-4-6"),
+      model: anthropic("claude-sonnet-4-5"),
       schema: VerdictSchema,
       system: SYSTEM_PROMPT,
       prompt: userPrompt,
@@ -86,7 +86,10 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ verdict: object });
   } catch (err) {
-    console.error(JSON.stringify({ scope: "games.top-five.judge", err: String(err) }));
-    return NextResponse.json({ error: "ai_failed" }, { status: 502 });
+    const detail = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+    console.error(
+      JSON.stringify({ scope: "games.top-five.judge", play_id, picks_count: picks.length, err: detail })
+    );
+    return NextResponse.json({ error: "ai_failed", detail }, { status: 502 });
   }
 }
