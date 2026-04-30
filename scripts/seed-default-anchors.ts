@@ -33,14 +33,6 @@ const ANCHORS: Seed[] = [
     end_time: "09:00",
     recurring_pattern: "weekdays",
   },
-  {
-    title: "Lunch",
-    subtitle: null,
-    emoji: "🍽️",
-    start_time: "12:00",
-    end_time: "13:00",
-    recurring_pattern: "weekdays",
-  },
 ];
 
 function requireEnv(name: string): string {
