@@ -16,6 +16,7 @@ export type Task = {
   reflection_prompt: string | null;
   lesson_slug: string | null;
   scheduled_time: string | null;
+  scheduled_end_time: string | null;
   estimated_minutes: number | null;
   sort_order: number;
   completion: { id: string; completed_at: string; reflection: string | null } | null;

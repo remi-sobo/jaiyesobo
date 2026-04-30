@@ -8,6 +8,7 @@ import {
   addMinutes,
   toMinutes,
   DEFAULT_TASK_MINUTES,
+  SLOT_INTERVAL_MINUTES,
 } from "@/lib/schedule";
 import { getAllAnchorsForUser } from "@/lib/anchors";
 
@@ -23,10 +24,16 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
-  const { task_id, time } = body as { task_id?: unknown; time?: unknown };
+  const { task_id, time, end_time } = body as {
+    task_id?: unknown;
+    time?: unknown;
+    end_time?: unknown;
+  };
   if (typeof task_id !== "string" || typeof time !== "string" || !/^\d{2}:\d{2}$/.test(time)) {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
+  const newStart = time;
+  const explicitEnd = typeof end_time === "string" && /^\d{2}:\d{2}$/.test(end_time) ? end_time : null;
 
   const jaiye = await getJaiye();
   if (!jaiye) return NextResponse.json({ error: "no_user" }, { status: 500 });
@@ -34,17 +41,27 @@ export async function POST(req: Request) {
   const supa = createServiceClient();
   const { data: task, error: tErr } = await supa
     .from("tasks")
-    .select("id, user_id, date, estimated_minutes, scheduled_time")
+    .select("id, user_id, date, estimated_minutes")
     .eq("id", task_id)
     .maybeSingle();
   if (tErr || !task) return NextResponse.json({ error: "task_not_found" }, { status: 404 });
   if (task.user_id !== jaiye.id) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
-  const dur = task.estimated_minutes ?? DEFAULT_TASK_MINUTES;
-  const newStart = time;
-  const newEnd = addMinutes(time, dur);
+  const floor = task.estimated_minutes ?? DEFAULT_TASK_MINUTES;
+  const newEnd = explicitEnd ?? addMinutes(newStart, floor);
 
-  // Check overlap with anchors for that date
+  // End must be after start, divisible by SLOT_INTERVAL_MINUTES, and meet the floor.
+  if (toMinutes(newEnd) <= toMinutes(newStart)) {
+    return NextResponse.json({ error: "end_before_start" }, { status: 400 });
+  }
+  if ((toMinutes(newEnd) - toMinutes(newStart)) < floor) {
+    return NextResponse.json({ error: "below_floor", floor }, { status: 400 });
+  }
+  if ((toMinutes(newEnd) - toMinutes(newStart)) % SLOT_INTERVAL_MINUTES !== 0) {
+    return NextResponse.json({ error: "must_be_30_min_aligned" }, { status: 400 });
+  }
+
+  // Conflict checks
   const anchorsAll = await getAllAnchorsForUser(jaiye.id);
   const anchors = expandAnchorsForDate(anchorsAll, new Date(`${task.date}T00:00:00`));
   for (const a of anchors) {
@@ -53,10 +70,9 @@ export async function POST(req: Request) {
     }
   }
 
-  // Check overlap with other scheduled tasks on the same date
   const { data: same } = await supa
     .from("tasks")
-    .select("id, scheduled_time, estimated_minutes")
+    .select("id, scheduled_time, scheduled_end_time, estimated_minutes")
     .eq("user_id", jaiye.id)
     .eq("date", task.date)
     .neq("id", task_id)
@@ -64,7 +80,9 @@ export async function POST(req: Request) {
   for (const o of same ?? []) {
     if (!o.scheduled_time) continue;
     const oStart = normTime(o.scheduled_time);
-    const oEnd = addMinutes(oStart, o.estimated_minutes ?? DEFAULT_TASK_MINUTES);
+    const oEnd = o.scheduled_end_time
+      ? normTime(o.scheduled_end_time)
+      : addMinutes(oStart, o.estimated_minutes ?? DEFAULT_TASK_MINUTES);
     if (rangesOverlap(newStart, newEnd, oStart, oEnd)) {
       return NextResponse.json({ error: "task_conflict" }, { status: 409 });
     }
@@ -72,14 +90,14 @@ export async function POST(req: Request) {
 
   const { error: uErr } = await supa
     .from("tasks")
-    .update({ scheduled_time: newStart })
+    .update({ scheduled_time: newStart, scheduled_end_time: newEnd })
     .eq("id", task_id);
   if (uErr) {
     console.error(JSON.stringify({ scope: "tasks.schedule", err: uErr.message }));
     return NextResponse.json({ error: "update_failed" }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, scheduled_time: newStart });
+  return NextResponse.json({ ok: true, scheduled_time: newStart, scheduled_end_time: newEnd });
 }
 
 function rangesOverlap(aStart: string, aEnd: string, bStart: string, bEnd: string): boolean {

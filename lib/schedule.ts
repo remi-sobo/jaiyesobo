@@ -118,26 +118,45 @@ export type CoverageEvent = {
   end: string;
 };
 
-/** Available start slots where a task of `taskMinutes` fits without overlap. */
-export function findAvailableSlots(
-  taskMinutes: number,
-  anchors: TimeAnchor[],
-  scheduledTasks: { scheduled_time: string | null; estimated_minutes: number | null }[],
-  daySlots: TimeSlot[],
-  dayStart = DEFAULT_DAY_START,
-  dayEnd = DEFAULT_DAY_END
-): TimeSlot[] {
-  const need = Math.max(1, Math.ceil(taskMinutes / SLOT_INTERVAL_MINUTES));
+type ScheduledLike = {
+  scheduled_time: string | null;
+  scheduled_end_time?: string | null;
+  estimated_minutes: number | null;
+};
+
+/** End time a task occupies on the timeline (kid-chosen end, or floor fallback). */
+export function effectiveEndTime(task: ScheduledLike): string | null {
+  if (!task.scheduled_time) return null;
+  if (task.scheduled_end_time) return normTime(task.scheduled_end_time);
+  const floor = task.estimated_minutes ?? DEFAULT_TASK_MINUTES;
+  return addMinutes(normTime(task.scheduled_time), floor);
+}
+
+function buildEvents(anchors: TimeAnchor[], scheduledTasks: ScheduledLike[]): CoverageEvent[] {
   const events: CoverageEvent[] = [];
   for (const a of anchors) {
     events.push({ kind: "anchor", start: normTime(a.start_time), end: normTime(a.end_time) });
   }
   for (const t of scheduledTasks) {
     if (!t.scheduled_time) continue;
-    const start = normTime(t.scheduled_time);
-    const dur = t.estimated_minutes ?? DEFAULT_TASK_MINUTES;
-    events.push({ kind: "task", start, end: addMinutes(start, dur) });
+    const end = effectiveEndTime(t);
+    if (!end) continue;
+    events.push({ kind: "task", start: normTime(t.scheduled_time), end });
   }
+  return events;
+}
+
+/** Start slots where a task of at least `floorMinutes` fits without overlap. */
+export function findAvailableSlots(
+  floorMinutes: number,
+  anchors: TimeAnchor[],
+  scheduledTasks: ScheduledLike[],
+  daySlots: TimeSlot[],
+  dayStart = DEFAULT_DAY_START,
+  dayEnd = DEFAULT_DAY_END
+): TimeSlot[] {
+  const need = Math.max(1, Math.ceil(floorMinutes / SLOT_INTERVAL_MINUTES));
+  const events = buildEvents(anchors, scheduledTasks);
 
   const isCovered = (time: string): boolean => {
     for (const e of events) {
@@ -163,5 +182,37 @@ export function findAvailableSlots(
     if (ok) out.push(slot);
   }
   void dayStart;
+  return out;
+}
+
+/**
+ * Given a chosen start time and floor, return valid END times — the floor end
+ * plus every 30-min step up until the next conflict (or end of day).
+ * The smallest valid end is `start + floor`. The first conflict caps the rest.
+ */
+export function findAvailableEndTimes(
+  startTime: string,
+  floorMinutes: number,
+  anchors: TimeAnchor[],
+  scheduledTasks: ScheduledLike[],
+  dayEnd = DEFAULT_DAY_END
+): string[] {
+  const events = buildEvents(anchors, scheduledTasks);
+  const startMin = toMinutes(startTime);
+  const minEndMin = startMin + Math.max(SLOT_INTERVAL_MINUTES, floorMinutes);
+  const dayEndMin = toMinutes(dayEnd);
+
+  // Find the earliest conflict that begins AT or AFTER startMin.
+  let nextConflictStart = dayEndMin;
+  for (const e of events) {
+    const eStart = toMinutes(e.start);
+    if (eStart >= startMin && eStart < nextConflictStart) nextConflictStart = eStart;
+  }
+
+  // Valid ends: minEndMin, minEndMin + 30, ..., up to nextConflictStart, all snapped to 30-min slots.
+  const out: string[] = [];
+  for (let m = minEndMin; m <= Math.min(nextConflictStart, dayEndMin); m += SLOT_INTERVAL_MINUTES) {
+    out.push(fromMinutes(m));
+  }
   return out;
 }

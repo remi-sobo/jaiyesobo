@@ -47,7 +47,7 @@ export default function TasksToPlaceColumn({ tasks, onPick }: Props) {
             </div>
             <div className="flex justify-between items-baseline gap-3">
               <span className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.15em] text-[var(--color-warm-mute)]">
-                ~{minutes} min
+                Min {minutes} min
               </span>
               <span className="font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.2em] text-[var(--color-red)]">
                 Tap to schedule →

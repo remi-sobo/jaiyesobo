@@ -27,6 +27,9 @@ export async function PATCH(req: Request, { params }: Context) {
     "date",
     "requires_photo",
     "sort_order",
+    "estimated_minutes",
+    "scheduled_time",
+    "scheduled_end_time",
   ] as const;
   const update: Record<string, unknown> = {};
   for (const k of allowed) {

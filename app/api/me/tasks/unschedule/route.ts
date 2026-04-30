@@ -32,7 +32,10 @@ export async function POST(req: Request) {
   if (!task) return NextResponse.json({ error: "task_not_found" }, { status: 404 });
   if (task.user_id !== jaiye.id) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
-  const { error } = await supa.from("tasks").update({ scheduled_time: null }).eq("id", task_id);
+  const { error } = await supa
+    .from("tasks")
+    .update({ scheduled_time: null, scheduled_end_time: null })
+    .eq("id", task_id);
   if (error) {
     console.error(JSON.stringify({ scope: "tasks.unschedule", err: error.message }));
     return NextResponse.json({ error: "update_failed" }, { status: 500 });

@@ -14,6 +14,7 @@ const COMPLETION_TYPES = [
   { value: "check", label: "Check" },
   { value: "photo_and_reflection", label: "Photo + Reflection" },
 ] as const;
+const FLOOR_OPTIONS = [5, 10, 15, 20, 30, 45, 60, 90] as const;
 
 export default function TaskEditDrawer({ task, onClose }: Props) {
   const router = useRouter();
@@ -54,6 +55,8 @@ export default function TaskEditDrawer({ task, onClose }: Props) {
           link: form.link,
           completion_type: form.completion_type,
           reflection_prompt: form.reflection_prompt,
+          estimated_minutes: form.estimated_minutes,
+          scheduled_time: form.scheduled_time,
         }),
       });
       if (!res.ok) throw new Error("save failed");
@@ -188,6 +191,42 @@ export default function TaskEditDrawer({ task, onClose }: Props) {
               placeholder="https://…"
               className="w-full bg-[var(--color-warm-bg)] border border-[var(--color-line-strong)] rounded px-3 py-2.5 text-[var(--color-bone)] focus:outline-none focus:border-[var(--color-red)]"
             />
+          </Field>
+
+          <Field label="Floor — minimum minutes">
+            <div className="flex flex-wrap gap-2">
+              {FLOOR_OPTIONS.map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setForm({ ...form, estimated_minutes: m })}
+                  className={`px-3 py-1.5 rounded-sm font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.15em] border transition-colors ${
+                    (form.estimated_minutes ?? 30) === m
+                      ? "bg-[var(--color-games-yellow)] border-[var(--color-games-yellow)] text-[var(--color-warm-bg)]"
+                      : "border-[var(--color-line-strong)] text-[var(--color-warm-mute)] hover:text-[var(--color-bone)]"
+                  }`}
+                >
+                  {m} min
+                </button>
+              ))}
+            </div>
+            <p className="font-[family-name:var(--font-fraunces)] italic text-[0.8rem] text-[var(--color-warm-mute)] mt-1.5">
+              The smallest block Jaiye can pick. He can extend on his side.
+            </p>
+          </Field>
+
+          <Field label="Pre-schedule (optional)">
+            <input
+              type="time"
+              value={form.scheduled_time ? form.scheduled_time.slice(0, 5) : ""}
+              onChange={(e) =>
+                setForm({ ...form, scheduled_time: e.target.value ? e.target.value : null })
+              }
+              className="w-full bg-[var(--color-warm-bg)] border border-[var(--color-line-strong)] rounded px-3 py-2.5 text-[var(--color-bone)] focus:outline-none focus:border-[var(--color-red)]"
+            />
+            <p className="font-[family-name:var(--font-fraunces)] italic text-[0.8rem] text-[var(--color-warm-mute)] mt-1.5">
+              Leave empty so it lands in his &ldquo;to place&rdquo; column. Or pin it to a specific time.
+            </p>
           </Field>
 
           {error && <p className="text-sm text-[var(--color-red-soft)] italic">{error}</p>}

@@ -45,7 +45,9 @@ export default function TimelineColumn({ anchors, tasks }: Props) {
     })),
     ...tasks.map((t) => {
       const start = normTime(t.scheduled_time ?? "00:00");
-      const end = addMinutes(start, t.estimated_minutes ?? DEFAULT_TASK_MINUTES);
+      const end = t.scheduled_end_time
+        ? normTime(t.scheduled_end_time)
+        : addMinutes(start, t.estimated_minutes ?? DEFAULT_TASK_MINUTES);
       return { kind: "task" as const, start, end, data: t };
     }),
   ].sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
