@@ -1,5 +1,6 @@
 import EpaHistoryLesson from "@/lessons/epa-history";
 import SportsJournalistLab from "@/lessons/sports-journalist-lab";
+import GamesCuratorOnboarding from "@/lessons/games-curator-onboarding";
 
 export type LessonMeta = {
   component: React.ComponentType<{ taskId: string }>;
@@ -20,6 +21,12 @@ export const LESSONS: Record<string, LessonMeta> = {
     title: "Sports Desk: Playoff Recap",
     subject: "writing",
     estimatedMinutes: 60,
+  },
+  "games-curator-onboarding": {
+    component: GamesCuratorOnboarding,
+    title: "Games Platform — Curator Onboarding",
+    subject: "other",
+    estimatedMinutes: 30,
   },
 };
 

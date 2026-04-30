@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import ReviewButton from "./review-button";
+import CopySqlButton from "./copy-sql-button";
 import type { LessonCompletion } from "@/lib/admin-data";
 
 type Props = { item: LessonCompletion };
@@ -10,8 +11,11 @@ export default function LessonReceipt({ item }: Props) {
   const [open, setOpen] = useState(false);
   const r = item.responses as Record<string, unknown>;
   const isSports = item.lesson_slug === "sports-journalist-lab";
+  const isCurator = item.lesson_slug === "games-curator-onboarding";
   const names = isSports
     ? `${asString(r["pick.team_a"])} vs ${asString(r["pick.team_b"])}`.trim()
+    : isCurator
+    ? "Jaiye · Curator"
     : typeof r.names === "string"
     ? r.names
     : "";
@@ -28,7 +32,7 @@ export default function LessonReceipt({ item }: Props) {
         className="w-full flex items-start gap-4 p-5 text-left hover:bg-[var(--color-warm-surface-2)] transition-colors"
       >
         <div className="w-12 h-12 rounded bg-[var(--color-warm-surface-3)] flex items-center justify-center text-2xl shrink-0">
-          {isSports ? "🎙️" : "📚"}
+          {isSports ? "🎙️" : isCurator ? "🎮" : "📚"}
         </div>
         <div className="flex-1 min-w-0">
           <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-warm-mute)] mb-1">
@@ -52,7 +56,13 @@ export default function LessonReceipt({ item }: Props) {
 
       {open && (
         <div className="p-6 border-t border-[var(--color-line)] flex flex-col gap-6">
-          {isSports ? <SportsRecapBody r={r} /> : <EpaHistoryBody r={r} />}
+          {isSports ? (
+            <SportsRecapBody r={r} />
+          ) : isCurator ? (
+            <GamesCuratorBody r={r} />
+          ) : (
+            <EpaHistoryBody r={r} />
+          )}
           <div className="flex justify-end pt-2">
             <ReviewButton completionId={item.completion_id} reviewed={!!item.reviewed_at} />
           </div>
@@ -61,6 +71,107 @@ export default function LessonReceipt({ item }: Props) {
     </article>
   );
 }
+
+function GamesCuratorBody({ r }: { r: Record<string, unknown> }) {
+  const visit = (r.visit as { noticed?: string } | undefined)?.noticed ?? "";
+  const play = (r.play as { prompt_played?: string; ai_verdict?: string } | undefined) ?? {};
+  const bugs = Array.isArray(r.bugs) ? (r.bugs as string[]) : [];
+  const promptsObj = (r.prompts as Record<string, string[]> | undefined) ?? {};
+  const position = promptsObj.position ?? [];
+  const team = promptsObj.team ?? [];
+  const skill = promptsObj.skill ?? [];
+  const spicy = promptsObj.spicy ?? [];
+  const favorites = Array.isArray(r.favorites) ? (r.favorites as string[]) : [];
+
+  const allBrainstormed = [...position, ...team, ...skill, ...spicy].length;
+
+  return (
+    <div className="flex flex-col gap-7">
+      <ResponseBlock label="What he noticed on /games" value={visit} />
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        <ResponseBlock label="Top 5 round he played" value={play.prompt_played} />
+        <ResponseBlock label="AI verdict (his words)" value={play.ai_verdict} />
+      </div>
+
+      {bugs.length > 0 && (
+        <div>
+          <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-warm-mute)] mb-2">
+            Bugs / ideas · {bugs.length}
+          </div>
+          <ul className="flex flex-col gap-2 list-none">
+            {bugs.map((b, i) => (
+              <li
+                key={i}
+                className="font-[family-name:var(--font-fraunces)] italic text-[var(--color-warm-bone)] leading-relaxed pl-4 border-l-2 border-[var(--color-amber)]"
+              >
+                {b}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div>
+        <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-warm-mute)] mb-3">
+          Prompts brainstormed · {allBrainstormed}
+        </div>
+        <div className="grid sm:grid-cols-2 gap-5">
+          <PromptList label="By Position" items={position} />
+          <PromptList label="By Team" items={team} />
+          <PromptList label="By Skill" items={skill} />
+          <PromptList label="Spicy / Weird" items={spicy} />
+        </div>
+      </div>
+
+      {favorites.length > 0 && (
+        <div className="bg-[var(--color-warm-surface-2)] border border-[var(--color-line)] border-l-[3px] border-l-[var(--color-red)] rounded p-5">
+          <div className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.25em] text-[var(--color-red)] mb-3">
+            ★ Starred favorites · {favorites.length}
+          </div>
+          <ol className="flex flex-col gap-2 list-none mb-5">
+            {favorites.map((f, i) => (
+              <li key={i} className="flex gap-3 items-baseline">
+                <span className="font-[family-name:var(--font-jetbrains)] font-bold text-sm text-[var(--color-red)] w-8 shrink-0">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <span className="font-[family-name:var(--font-fraunces)] font-semibold text-[1.05rem] text-[var(--color-bone)]">
+                  {f}
+                </span>
+              </li>
+            ))}
+          </ol>
+          <CopySqlButton favorites={favorites} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PromptList({ label, items }: { label: string; items: string[] }) {
+  return (
+    <div>
+      <div className="font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.2em] text-[var(--color-warm-mute)] mb-2">
+        {label} · {items.length}
+      </div>
+      {items.length === 0 ? (
+        <p className="text-sm italic text-[var(--color-warm-dim)]">—</p>
+      ) : (
+        <ul className="flex flex-col gap-1.5 list-none">
+          {items.map((p, i) => (
+            <li
+              key={i}
+              className="font-[family-name:var(--font-fraunces)] italic text-[0.95rem] text-[var(--color-warm-bone)] leading-snug"
+            >
+              {p}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 
 function asString(v: unknown): string {
   return typeof v === "string" ? v : "";
