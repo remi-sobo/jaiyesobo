@@ -3,10 +3,12 @@ import Link from "next/link";
 import GameShell from "@/components/games/game-shell";
 import TopFiveResult from "@/components/games/top-five/top-five-result";
 import TriviaResultReadOnly from "@/components/games/trivia/trivia-result-readonly";
+import FinalJudgment from "@/components/games/draft/final-judgment";
 import { getPlayByToken } from "@/lib/games/data";
 import type { TopFiveVerdict } from "@/lib/games/top-five-types";
 import type { Breakdown } from "@/components/games/trivia/trivia-result";
 import type { TriviaDifficultyKey } from "@/lib/games/trivia-config";
+import type { DraftPlayPayload, DraftJudgement } from "@/lib/draft-game";
 
 type Props = { params: Promise<{ token: string }> };
 
@@ -45,6 +47,34 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         title,
         description,
         images: [ogUrl],
+      },
+    };
+  }
+
+  if (play.game_slug === "draft") {
+    const payload = play.payload as DraftPlayPayload | null;
+    const verdict = play.result as DraftJudgement | null;
+    const teamLabel = payload ? `${payload.team.city} ${payload.team.name}` : "the all-time draft";
+    const winnerText =
+      verdict?.winner === "human"
+        ? `Beat the AI drafting ${teamLabel}`
+        : verdict?.winner === "ai"
+        ? `Got drafted by AI on ${teamLabel}`
+        : verdict?.winner === "tie"
+        ? `Tied the AI drafting ${teamLabel}`
+        : `Drafted ${teamLabel} vs AI`;
+    return {
+      title: `${winnerText} · Jaiye's Games`,
+      description: verdict?.verdict ?? "Snake draft. 5 picks each. AI judges.",
+      openGraph: {
+        title: winnerText,
+        description: verdict?.verdict ?? "Play yours at jaiyesobo.com/games/draft",
+        type: "website",
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: winnerText,
+        description: verdict?.verdict ?? "Play yours at jaiyesobo.com/games/draft",
       },
     };
   }
@@ -123,6 +153,52 @@ export default async function SharePage({ params }: Props) {
             className="inline-block bg-[var(--color-red)] text-[var(--color-bone)] font-[family-name:var(--font-jetbrains)] text-xs uppercase tracking-[0.2em] px-7 py-4 rounded-sm hover:bg-[var(--color-red-bright)] transition-colors"
           >
             Play your own round →
+          </Link>
+        </div>
+      </GameShell>
+    );
+  }
+
+  if (play.game_slug === "draft") {
+    const payload = play.payload as DraftPlayPayload | null;
+    const verdict = play.result as DraftJudgement | null;
+    if (!payload) {
+      return (
+        <GameShell>
+          <main className="max-w-[640px] mx-auto px-6 py-20 text-center">
+            <h1 className="font-[family-name:var(--font-fraunces)] font-semibold text-2xl mb-3">
+              That draft is corrupted.
+            </h1>
+            <Link href="/games/draft" className="text-[var(--color-red)] underline">
+              Start a new one
+            </Link>
+          </main>
+        </GameShell>
+      );
+    }
+    return (
+      <GameShell liveLabel="Shared draft">
+        {!verdict ? (
+          <main className="max-w-[640px] mx-auto px-6 py-20 text-center">
+            <h1 className="font-[family-name:var(--font-fraunces)] font-semibold text-2xl mb-3">
+              This draft is still being judged.
+            </h1>
+            <p className="text-[var(--color-mute)]">Refresh in a moment.</p>
+          </main>
+        ) : (
+          <FinalJudgment
+            team={payload.team}
+            picks={payload.picks}
+            starts={payload.starts}
+            verdict={verdict}
+          />
+        )}
+        <div className="max-w-[760px] mx-auto px-6 pb-24 pt-2 text-center">
+          <Link
+            href="/games/draft"
+            className="inline-block bg-[var(--color-red)] text-[var(--color-bone)] font-[family-name:var(--font-jetbrains)] text-xs uppercase tracking-[0.2em] px-7 py-4 rounded-sm hover:bg-[var(--color-red-bright)] transition-colors"
+          >
+            Draft your own →
           </Link>
         </div>
       </GameShell>

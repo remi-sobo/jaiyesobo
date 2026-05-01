@@ -1,0 +1,149 @@
+import { NextResponse } from "next/server";
+import { anthropic } from "@ai-sdk/anthropic";
+import { generateText } from "ai";
+import { z } from "zod";
+import { createServiceClient } from "@/lib/supabase/server";
+import {
+  type DraftJudgement,
+  type DraftPick,
+  type DraftPlayPayload,
+  TOTAL_PICKS,
+} from "@/lib/draft-game";
+
+export const runtime = "nodejs";
+export const maxDuration = 30;
+export const dynamic = "force-dynamic";
+
+const SYSTEM_PROMPT = `You are a sharp, kid-friendly NBA analyst. You're judging a snake draft from a single franchise's all-time pool. Two rosters of 5: a HUMAN's and an AI's.
+
+Pick a winner based on:
+- Star power / ceiling
+- Roster balance (G/F/C — but 1 missing position is OK if the talent is there)
+- Era variety bonus
+- Iconic-ness
+
+Be specific. Reference real players. No generic praise. Audience includes kids — keep it spirited but clean.
+
+You MUST respond with ONLY a JSON object. No prose before or after, no markdown fences.
+
+Schema:
+{
+  "winner": "human" | "ai" | "tie",
+  "human_grade": (string letter grade like "A-", "B+", "C")
+  "ai_grade": (string letter grade like "A-", "B+", "C"),
+  "human_summary": (one or two sentences on the human roster, ≤45 words),
+  "ai_summary": (one or two sentences on the AI roster, ≤45 words),
+  "verdict": (one sentence closer that names the winner and why, ≤30 words)
+}`;
+
+const VerdictSchema = z.object({
+  winner: z.enum(["human", "ai", "tie"]),
+  human_grade: z.string().min(1).max(4),
+  ai_grade: z.string().min(1).max(4),
+  human_summary: z.string().min(1).max(400),
+  ai_summary: z.string().min(1).max(400),
+  verdict: z.string().min(1).max(300),
+});
+
+export async function POST(req: Request) {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return NextResponse.json({ error: "missing_key" }, { status: 501 });
+  }
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "bad_request" }, { status: 400 });
+  }
+  const { play_id } = body as { play_id?: unknown };
+  if (typeof play_id !== "string") {
+    return NextResponse.json({ error: "bad_request" }, { status: 400 });
+  }
+
+  const supa = createServiceClient();
+  const { data: play } = await supa.from("plays").select("*").eq("id", play_id).maybeSingle();
+  if (!play || play.game_slug !== "draft") {
+    return NextResponse.json({ error: "play_not_found" }, { status: 404 });
+  }
+
+  // Idempotent: if already judged, return existing
+  if (play.result && typeof play.result === "object" && "winner" in play.result) {
+    return NextResponse.json({ verdict: play.result });
+  }
+
+  const payload = play.payload as DraftPlayPayload;
+  if (!payload || !Array.isArray(payload.picks) || payload.picks.length !== TOTAL_PICKS) {
+    return NextResponse.json({ error: "draft_incomplete" }, { status: 400 });
+  }
+
+  const human = payload.picks.filter((p) => p.side === "human");
+  const ai = payload.picks.filter((p) => p.side === "ai");
+
+  const userPrompt = `Team: ${payload.team.city} ${payload.team.name}
+
+HUMAN ROSTER:
+${describeRoster(human)}
+
+AI ROSTER:
+${describeRoster(ai)}
+
+Judge the matchup. Return JSON only.`;
+
+  try {
+    const { text } = await generateText({
+      model: anthropic("claude-sonnet-4-6"),
+      system: SYSTEM_PROMPT,
+      prompt: userPrompt,
+      maxOutputTokens: 1000,
+    });
+    const jsonText = extractJson(text);
+    if (!jsonText) throw new Error(`no_json: ${text.slice(0, 200)}`);
+    const parsed = JSON.parse(jsonText);
+    const validated = VerdictSchema.parse(parsed);
+
+    const verdict: DraftJudgement = {
+      winner: validated.winner,
+      human_grade: validated.human_grade,
+      ai_grade: validated.ai_grade,
+      human_summary: validated.human_summary,
+      ai_summary: validated.ai_summary,
+      verdict: validated.verdict,
+    };
+
+    await supa.from("plays").update({ result: verdict }).eq("id", play_id);
+    return NextResponse.json({ verdict });
+  } catch (err) {
+    console.error(
+      JSON.stringify({
+        scope: "games.draft.judge",
+        play_id,
+        err: err instanceof Error ? `${err.name}: ${err.message}` : String(err),
+      })
+    );
+    return NextResponse.json({ error: "ai_failed" }, { status: 502 });
+  }
+}
+
+function describeRoster(picks: DraftPick[]): string {
+  return picks.map((p, i) => `${i + 1}. ${p.player_name} (${p.primary_position})`).join("\n");
+}
+
+function extractJson(text: string): string | null {
+  const trimmed = text.trim();
+  if (trimmed.startsWith("{")) return trimmed;
+  const fence = /```(?:json)?\s*([\s\S]*?)```/i.exec(trimmed);
+  if (fence) return fence[1].trim();
+  const start = trimmed.indexOf("{");
+  if (start < 0) return null;
+  let depth = 0;
+  for (let i = start; i < trimmed.length; i++) {
+    const ch = trimmed[i];
+    if (ch === "{") depth++;
+    else if (ch === "}") {
+      depth--;
+      if (depth === 0) return trimmed.slice(start, i + 1);
+    }
+  }
+  return null;
+}
