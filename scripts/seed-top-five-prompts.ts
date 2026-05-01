@@ -18,6 +18,7 @@ const supa = createClient(url, key, { auth: { persistSession: false, autoRefresh
 type Seed = { prompt: string; category: string; tags: string[] };
 
 const PROMPTS: Seed[] = [
+  // ===== Launch 10 =====
   { prompt: "Top 5 Small Forwards of all time", category: "position", tags: ["positions", "all-time"] },
   { prompt: "Top 5 dunkers ever", category: "skill", tags: ["dunks", "all-time"] },
   { prompt: "Top 5 NBA logos of all time", category: "design", tags: ["logos", "branding"] },
@@ -28,6 +29,24 @@ const PROMPTS: Seed[] = [
   { prompt: "Top 5 NBA point guards", category: "position", tags: ["positions", "point-guards"] },
   { prompt: "Top 5 NBA centers ever", category: "position", tags: ["positions", "centers"] },
   { prompt: "Top 5 NBA Finals MVPs", category: "achievement", tags: ["finals", "mvps"] },
+
+  // ===== Round 2 — pulled from Jaiye's curator submission =====
+  // ⭐ = Jaiye's stated favorite categories
+  { prompt: "Top 5 NBA nicknames ever", category: "design", tags: ["nicknames", "culture", "jaiye-pick"] },
+  { prompt: "Top 5 NBA trash talkers", category: "personality", tags: ["trash-talk", "culture", "jaiye-pick"] },
+  { prompt: "Top 5 NBA shooting guards", category: "position", tags: ["positions", "shooting-guards", "jaiye-pick"] },
+  { prompt: "Top 5 NBA power forwards", category: "position", tags: ["positions", "power-forwards"] },
+  { prompt: "Top 5 NBA passers ever", category: "skill", tags: ["passing", "playmaking"] },
+  { prompt: "Top 5 NBA shot blockers", category: "skill", tags: ["defense", "blocks"] },
+  { prompt: "Top 5 drippiest NBA stars", category: "design", tags: ["fashion", "culture", "drip"] },
+  { prompt: "Top 5 NBA self-lobbers", category: "skill", tags: ["highlights", "self-alleys"] },
+  { prompt: "Top 5 small-ball superstars", category: "skill", tags: ["small-ball", "modern"] },
+  { prompt: "Top 5 Celtics of all time", category: "team", tags: ["celtics", "franchise"] },
+  { prompt: "Top 5 Warriors of all time", category: "team", tags: ["warriors", "franchise"] },
+  { prompt: "Top 5 Knicks of all time", category: "team", tags: ["knicks", "franchise"] },
+  { prompt: "Top 5 Trail Blazers of all time", category: "team", tags: ["blazers", "franchise"] },
+  { prompt: "Top 5 Bulls of all time", category: "team", tags: ["bulls", "franchise"] },
+  { prompt: "Top 5 NBA MVPs of all time", category: "achievement", tags: ["mvps", "regular-season"] },
 ];
 
 function requireEnv(name: string): string {
