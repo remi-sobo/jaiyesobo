@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# Draft Room: AI-generated player JSONs awaiting human review
+/data/draft-players-pending/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
