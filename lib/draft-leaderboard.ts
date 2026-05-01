@@ -101,7 +101,9 @@ export async function getLeaderboardForCurrentSession(): Promise<LeaderboardData
       result: DraftJudgement;
       created_at: string;
     };
-    if (p.payload?.mode !== "vs-friend") continue;
+    // Include both 2P (vs-friend) and 1P claimed (vs-ai with player_names).
+    // The leaderboard only needs a name on each side to render — for vs-ai
+    // claimed plays, that's the human's name and "Claude".
     if (!p.payload?.player_names) continue;
     if (!p.result?.winner) continue;
     const p1 = p.payload.player_names.human;

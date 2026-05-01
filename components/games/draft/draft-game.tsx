@@ -6,6 +6,7 @@ import ShareModal from "@/components/games/share-modal";
 import CoinFlip from "./coin-flip";
 import DraftBoard from "./draft-board";
 import FinalJudgment from "./final-judgment";
+import ClaimLeaderboard from "./claim-leaderboard";
 import {
   type DraftJudgement,
   type DraftPick,
@@ -41,6 +42,7 @@ export default function DraftGame({ teamSlug, team }: Props) {
   const [verdict, setVerdict] = useState<DraftJudgement | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [aiThinking, setAiThinking] = useState(false);
+  const [knownName, setKnownName] = useState<string | null>(null);
 
   const startedRef = useRef(false);
 
@@ -70,6 +72,7 @@ export default function DraftGame({ teamSlug, team }: Props) {
       setStarts(data.starts);
       setPool(data.pool);
       setPicks([]);
+      setKnownName(typeof data.known_name === "string" ? data.known_name : null);
       setPhase("coin");
     } catch (err) {
       console.error(err);
@@ -216,7 +219,10 @@ export default function DraftGame({ teamSlug, team }: Props) {
           picks={picks}
           starts={starts}
           verdict={verdict}
+          humanName={knownName ?? undefined}
+          aiName={knownName ? "Claude" : undefined}
         />
+        {playId && <ClaimLeaderboard playId={playId} knownName={knownName} />}
         <div className="max-w-[760px] mx-auto px-6 pb-16 flex flex-col sm:flex-row gap-3 justify-center">
           <button
             type="button"
@@ -231,6 +237,12 @@ export default function DraftGame({ teamSlug, team }: Props) {
             className="bg-transparent border border-[var(--color-line)] text-[var(--color-bone)] font-[family-name:var(--font-jetbrains)] text-xs uppercase tracking-[0.2em] px-7 py-4 rounded-sm hover:border-[var(--color-bone)] transition-colors text-center"
           >
             Draft another team
+          </a>
+          <a
+            href="/games/draft/leaderboard"
+            className="bg-transparent text-[var(--color-mute)] font-[family-name:var(--font-jetbrains)] text-xs uppercase tracking-[0.2em] px-7 py-4 rounded-sm hover:text-[var(--color-bone)] transition-colors text-center"
+          >
+            Record book →
           </a>
         </div>
         <ShareModal

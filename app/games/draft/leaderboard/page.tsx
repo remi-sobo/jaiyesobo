@@ -29,7 +29,9 @@ export default async function DraftLeaderboardPage() {
           The <span className="italic font-normal text-[var(--color-red)]">record book.</span>
         </h1>
         <p className="text-[var(--color-mute)] mb-12 max-w-[58ch] leading-relaxed">
-          Two-player drafts on this device. Head-to-head, all-time wins, most-drafted teams.
+          Drafts played on this device. 2-player matches, plus solo runs vs. Claude
+          once you&apos;ve put your name on a result. Head-to-head, all-time wins,
+          most-drafted teams.
         </p>
 
         {data.matches.length === 0 ? (
@@ -53,17 +55,25 @@ function EmptyState({ hasSession }: { hasSession: boolean }) {
       <h2 className="font-[family-name:var(--font-fraunces)] font-semibold text-2xl mb-3">
         No matches yet.
       </h2>
-      <p className="text-[var(--color-mute)] mb-6 max-w-[40ch] mx-auto leading-relaxed">
+      <p className="text-[var(--color-mute)] mb-6 max-w-[44ch] mx-auto leading-relaxed">
         {hasSession
-          ? "Play a few 2-player drafts and your record will show up here."
-          : "Once you play your first 2-player draft, the leaderboard will start tracking."}
+          ? "Play a draft and add your name afterward — your record will show up here."
+          : "Once you finish your first draft and put your name on it, the leaderboard starts tracking."}
       </p>
-      <Link
-        href="/games/draft?mode=friend"
-        className="inline-block bg-[var(--color-red)] text-[var(--color-bone)] font-[family-name:var(--font-jetbrains)] text-xs uppercase tracking-[0.2em] px-6 py-3.5 rounded-sm hover:bg-[var(--color-red-bright)] transition-colors"
-      >
-        Start a draft →
-      </Link>
+      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+        <Link
+          href="/games/draft"
+          className="inline-block bg-[var(--color-red)] text-[var(--color-bone)] font-[family-name:var(--font-jetbrains)] text-xs uppercase tracking-[0.2em] px-6 py-3.5 rounded-sm hover:bg-[var(--color-red-bright)] transition-colors"
+        >
+          Solo vs Claude →
+        </Link>
+        <Link
+          href="/games/draft?mode=friend"
+          className="inline-block bg-transparent border border-[var(--color-line)] text-[var(--color-bone)] font-[family-name:var(--font-jetbrains)] text-xs uppercase tracking-[0.2em] px-6 py-3.5 rounded-sm hover:border-[var(--color-bone)] transition-colors"
+        >
+          2-player draft →
+        </Link>
+      </div>
     </div>
   );
 }

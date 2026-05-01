@@ -21,6 +21,7 @@ import type { DraftTeamPayload } from "@/lib/draft-data";
 type Props = {
   teamSlug: string;
   team: DraftTeamPayload;
+  knownName?: string | null;
 };
 
 type Phase =
@@ -33,7 +34,7 @@ type Phase =
   | "result"
   | "error";
 
-export default function LocalDraftGame({ teamSlug, team }: Props) {
+export default function LocalDraftGame({ teamSlug, team, knownName }: Props) {
   const [phase, setPhase] = useState<Phase>("names");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -162,7 +163,7 @@ export default function LocalDraftGame({ teamSlug, team }: Props) {
   }
 
   if (phase === "names") {
-    return <LocalNameEntry team={team} onSubmit={startDraft} />;
+    return <LocalNameEntry team={team} onSubmit={startDraft} initialP1={knownName ?? ""} />;
   }
 
   if (phase === "starting" || phase === "judging") {

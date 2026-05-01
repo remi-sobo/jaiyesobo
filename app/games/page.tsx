@@ -44,7 +44,13 @@ export default async function GamesHubPage() {
         </div>
       </section>
 
-      <section className="px-6 lg:px-10 pb-24 pt-4 max-w-[1100px] mx-auto">
+      <section className="px-6 lg:px-10 pb-24 pt-4 max-w-[1100px] mx-auto flex flex-wrap gap-x-8 gap-y-3 items-center">
+        <Link
+          href="/games/draft/leaderboard"
+          className="inline-flex items-center gap-2 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.25em] text-[var(--color-games-yellow)] hover:text-[var(--color-bone)] transition-colors"
+        >
+          Draft record book <span>→</span>
+        </Link>
         <Link
           href="/games/about"
           className="inline-flex items-center gap-2 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.25em] text-[var(--color-mute)] hover:text-[var(--color-red)] transition-colors"

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import GameShell from "@/components/games/game-shell";
 import LocalDraftGame from "@/components/games/draft/local-draft-game";
 import { getDraftTeamBySlug } from "@/lib/draft-data";
+import { getCurrentSession } from "@/lib/games/session";
 
 type Props = { params: Promise<{ teamSlug: string }> };
 
@@ -25,6 +26,15 @@ export default async function DraftFriendPage({ params }: Props) {
   const team = await getDraftTeamBySlug(teamSlug);
   if (!team) return notFound();
 
+  // Pre-fill Player 1 from session display_name if known.
+  const session = await getCurrentSession();
+  const knownName =
+    session?.kind === "anon"
+      ? session.session.display_name || null
+      : session?.kind === "auth"
+      ? session.user.display_name || null
+      : null;
+
   return (
     <GameShell liveLabel={`2P · ${team.payload.abbreviation}`}>
       <div className="max-w-[1200px] mx-auto px-6 lg:px-10 pt-8">
@@ -35,7 +45,7 @@ export default async function DraftFriendPage({ params }: Props) {
           ← Pick a different team
         </Link>
       </div>
-      <LocalDraftGame teamSlug={teamSlug} team={team.payload} />
+      <LocalDraftGame teamSlug={teamSlug} team={team.payload} knownName={knownName} />
     </GameShell>
   );
 }

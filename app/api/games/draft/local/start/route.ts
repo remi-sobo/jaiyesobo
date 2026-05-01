@@ -86,6 +86,12 @@ export async function POST(req: Request) {
   const session = await ensureCurrentSession();
   const { user_id, anon_session_id } = sessionKey(session);
 
+  // Remember player 1's name on the session so future vs-Claude games auto-track.
+  // Fire-and-forget — failure here doesn't block the draft.
+  if (anon_session_id) {
+    void supa.from("anon_sessions").update({ display_name: p1 }).eq("id", anon_session_id);
+  }
+
   const token = shareToken();
   const { data: play, error: playErr } = await supa
     .from("plays")

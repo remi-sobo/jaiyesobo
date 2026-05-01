@@ -61,15 +61,26 @@ export async function POST(req: Request) {
   // Coin flip
   const starts: DraftSide = Math.random() < 0.5 ? "human" : "ai";
 
+  const session = await ensureCurrentSession();
+  const { user_id, anon_session_id } = sessionKey(session);
+
+  // If we already know the player's name (from a prior claim), auto-track
+  // this draft so it shows up on the leaderboard without a post-game prompt.
+  const knownName: string | null =
+    session.kind === "anon" && session.session.display_name
+      ? session.session.display_name
+      : session.kind === "auth"
+      ? session.user.display_name
+      : null;
+
   const initialPayload: DraftPlayPayload = {
     team_slug,
     team: team.payload,
     starts,
     picks: [],
+    mode: "vs-ai",
+    ...(knownName ? { player_names: { human: knownName, ai: "Claude" } } : {}),
   };
-
-  const session = await ensureCurrentSession();
-  const { user_id, anon_session_id } = sessionKey(session);
 
   const token = shareToken();
   const { data: play, error: playErr } = await supa
@@ -95,5 +106,6 @@ export async function POST(req: Request) {
     team: team.payload,
     starts,
     pool: poolPlayers,
+    known_name: knownName,
   });
 }

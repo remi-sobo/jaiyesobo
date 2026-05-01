@@ -6,10 +6,11 @@ import type { DraftTeamPayload } from "@/lib/draft-data";
 type Props = {
   team: DraftTeamPayload;
   onSubmit: (p1: string, p2: string) => Promise<void>;
+  initialP1?: string;
 };
 
-export default function LocalNameEntry({ team, onSubmit }: Props) {
-  const [p1, setP1] = useState("");
+export default function LocalNameEntry({ team, onSubmit, initialP1 = "" }: Props) {
+  const [p1, setP1] = useState(initialP1);
   const [p2, setP2] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
