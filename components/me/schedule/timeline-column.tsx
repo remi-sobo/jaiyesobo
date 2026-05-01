@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Task } from "@/lib/data";
 import {
-  type TimeSlot,
   type TimeAnchor,
   generateTimeSlots,
   toMinutes,
@@ -18,24 +17,29 @@ import {
 } from "@/lib/schedule";
 import { SUBJECTS, subjectKeyFor } from "@/lib/subjects";
 
-const SLOT_HEIGHT_PX = 56; // each 30-min slot
+const SLOT_HEIGHT_PX = 56;
 
 type Props = {
   anchors: TimeAnchor[];
-  tasks: Task[]; // scheduled tasks only
+  tasks: Task[];
+  showNowIndicator: boolean;
+  onEditTask: (task: Task) => void;
 };
 
-export default function TimelineColumn({ anchors, tasks }: Props) {
+export default function TimelineColumn({ anchors, tasks, showNowIndicator, onEditTask }: Props) {
   const slots = generateTimeSlots();
   const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
+    if (!showNowIndicator) {
+      setNow(null);
+      return;
+    }
     setNow(new Date());
     const t = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(t);
-  }, []);
+  }, [showNowIndicator]);
 
-  // Compute coverage so we don't render covered slot rows; events render at their start row.
   const events = [
     ...anchors.map((a) => ({
       kind: "anchor" as const,
@@ -56,9 +60,8 @@ export default function TimelineColumn({ anchors, tasks }: Props) {
   const slotMinutesEnd = toMinutes(DEFAULT_DAY_END);
   const totalHeight = ((slotMinutesEnd - slotMinutesStart) / SLOT_INTERVAL_MINUTES) * SLOT_HEIGHT_PX;
 
-  // "Now" indicator position (only if within day range)
   let nowTop: number | null = null;
-  if (now) {
+  if (now && showNowIndicator) {
     const nowMin = now.getHours() * 60 + now.getMinutes();
     if (nowMin >= slotMinutesStart && nowMin <= slotMinutesEnd) {
       nowTop = ((nowMin - slotMinutesStart) / SLOT_INTERVAL_MINUTES) * SLOT_HEIGHT_PX;
@@ -70,8 +73,10 @@ export default function TimelineColumn({ anchors, tasks }: Props) {
       className="relative bg-[var(--color-warm-surface)] border border-[var(--color-line)] rounded overflow-hidden"
       style={{ height: totalHeight }}
     >
-      {/* Slot rows (background grid + time labels) */}
-      <div className="absolute inset-0 grid" style={{ gridTemplateRows: `repeat(${slots.length}, ${SLOT_HEIGHT_PX}px)` }}>
+      <div
+        className="absolute inset-0 grid"
+        style={{ gridTemplateRows: `repeat(${slots.length}, ${SLOT_HEIGHT_PX}px)` }}
+      >
         {slots.map((slot, i) => {
           const isHourMark = slot.minute === 0;
           return (
@@ -89,7 +94,6 @@ export default function TimelineColumn({ anchors, tasks }: Props) {
         })}
       </div>
 
-      {/* Now indicator */}
       {nowTop !== null && (
         <>
           <div
@@ -105,7 +109,6 @@ export default function TimelineColumn({ anchors, tasks }: Props) {
         </>
       )}
 
-      {/* Events: anchors and scheduled tasks, absolutely positioned. */}
       {events.map((ev) => {
         const startMin = toMinutes(ev.start);
         const endMin = toMinutes(ev.end);
@@ -114,7 +117,7 @@ export default function TimelineColumn({ anchors, tasks }: Props) {
           SLOT_HEIGHT_PX - 2,
           ((endMin - startMin) / SLOT_INTERVAL_MINUTES) * SLOT_HEIGHT_PX - 2
         );
-        const left = 64; // past the time label gutter
+        const left = 64;
         const right = 8;
 
         if (ev.kind === "anchor") {
@@ -155,42 +158,64 @@ export default function TimelineColumn({ anchors, tasks }: Props) {
           : `/me/upload/${task.id}`;
 
         return (
-          <Link
+          <div
             key={`task-${task.id}`}
-            href={done ? "#" : href}
-            className={`absolute z-20 rounded bg-[var(--color-warm-surface-2)] border border-[var(--color-line)] hover:border-[var(--color-line-strong)] hover:bg-[var(--color-warm-surface-3)] transition-colors px-4 flex items-center gap-3 ${
+            className={`absolute z-20 rounded bg-[var(--color-warm-surface-2)] border border-[var(--color-line)] hover:border-[var(--color-line-strong)] flex overflow-hidden ${
               done ? "opacity-65" : ""
             }`}
             style={{ top, height, left, right, borderLeftColor: subjectHex, borderLeftWidth: 3 }}
           >
-            <div className="min-w-0 flex-1">
-              {task.subject && (
-                <div className="font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.2em] text-[var(--color-warm-mute)] truncate">
-                  {task.subject}
-                </div>
-              )}
-              <div
-                className={`font-[family-name:var(--font-fraunces)] font-semibold text-[1rem] leading-tight truncate ${
-                  done ? "line-through decoration-[var(--color-warm-mute)] text-[var(--color-warm-mute)]" : "text-[var(--color-bone)]"
-                }`}
-              >
-                {task.title}
-              </div>
-            </div>
-            <div className="flex flex-col items-end gap-1 shrink-0">
-              <div className="font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.15em] text-[var(--color-warm-mute)]">
-                {shortTimeLabel(ev.start)}
-              </div>
-              {done && (
-                <span
-                  className="w-4 h-4 rounded-full bg-[var(--color-red)] flex items-center justify-center"
-                  aria-hidden
+            <Link
+              href={done ? "#" : href}
+              className="flex-1 min-w-0 flex items-center gap-3 px-4 hover:bg-[var(--color-warm-surface-3)] transition-colors"
+            >
+              <div className="min-w-0 flex-1">
+                {task.subject && (
+                  <div className="font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.2em] text-[var(--color-warm-mute)] truncate">
+                    {task.subject}
+                  </div>
+                )}
+                <div
+                  className={`font-[family-name:var(--font-fraunces)] font-semibold text-[1rem] leading-tight truncate ${
+                    done ? "line-through decoration-[var(--color-warm-mute)] text-[var(--color-warm-mute)]" : "text-[var(--color-bone)]"
+                  }`}
                 >
-                  <span className="block w-[6px] h-[3px] border-l-[1.4px] border-b-[1.4px] border-[var(--color-bone)] -translate-y-[1px] -rotate-45" />
-                </span>
-              )}
-            </div>
-          </Link>
+                  {task.title}
+                </div>
+              </div>
+              <div className="flex flex-col items-end gap-1 shrink-0">
+                <div className="font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.15em] text-[var(--color-warm-mute)]">
+                  {shortTimeLabel(ev.start)}–{shortTimeLabel(ev.end)}
+                </div>
+                {done && (
+                  <span
+                    className="w-4 h-4 rounded-full bg-[var(--color-red)] flex items-center justify-center"
+                    aria-hidden
+                  >
+                    <span className="block w-[6px] h-[3px] border-l-[1.4px] border-b-[1.4px] border-[var(--color-bone)] -translate-y-[1px] -rotate-45" />
+                  </span>
+                )}
+              </div>
+            </Link>
+
+            {!done && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEditTask(task);
+                }}
+                className="border-l border-[var(--color-line)] px-3 flex items-center justify-center text-[var(--color-warm-mute)] hover:text-[var(--color-bone)] hover:bg-[var(--color-warm-surface-3)] transition-colors"
+                aria-label={`Edit time for ${task.title}`}
+                title="Edit time"
+              >
+                <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden>
+                  <circle cx="8" cy="8" r="6.5" />
+                  <path d="M8 4.5v3.5l2.2 1.4" strokeLinecap="round" />
+                </svg>
+              </button>
+            )}
+          </div>
         );
       })}
     </div>
