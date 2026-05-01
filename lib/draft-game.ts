@@ -27,12 +27,32 @@ export type DraftPick = {
   pick_number: number; // 1..10 overall
 };
 
+export type DraftMode = "vs-ai" | "vs-friend";
+
+/** When mode === "vs-friend", `human` is Player 1 and `ai` is Player 2. */
+export type PlayerNames = { human: string; ai: string };
+
 export type DraftPlayPayload = {
   team_slug: string;
   team: DraftTeamPayload; // city/name/abbreviation/primary_color/founded
   starts: DraftSide;
   picks: DraftPick[];
+  /** Defaults to "vs-ai" when missing (backward-compat for plays predating
+   * Stage 3). In vs-friend mode the AI is never invoked for picks; both
+   * sides come from human submissions. The judge still scores the matchup. */
+  mode?: DraftMode;
+  /** Required when mode === "vs-friend"; otherwise ignored. */
+  player_names?: PlayerNames;
 };
+
+/** Display label for a side, given the mode + (optional) names.
+ *  Use this anywhere the UI says "You" / "Claude". */
+export function sideLabel(side: DraftSide, payload: Pick<DraftPlayPayload, "mode" | "player_names">): string {
+  if (payload.mode === "vs-friend" && payload.player_names) {
+    return side === "human" ? payload.player_names.human : payload.player_names.ai;
+  }
+  return side === "human" ? "You" : "Claude";
+}
 
 export type DraftJudgement = {
   winner: DraftSide | "tie";

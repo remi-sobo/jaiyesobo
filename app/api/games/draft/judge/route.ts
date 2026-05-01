@@ -14,7 +14,7 @@ export const runtime = "nodejs";
 export const maxDuration = 30;
 export const dynamic = "force-dynamic";
 
-const SYSTEM_PROMPT = `You are a sharp, kid-friendly NBA analyst. You're judging a snake draft from a single franchise's all-time pool. Two rosters of 5: a HUMAN's and an AI's.
+const SYSTEM_PROMPT_BASE = `You are a sharp, kid-friendly NBA analyst. You're judging a snake draft from a single franchise's all-time pool. Two rosters of 5.
 
 Pick a winner based on:
 - Star power / ceiling
@@ -34,7 +34,11 @@ Schema:
   "human_summary": (one or two sentences on the human roster, ≤45 words),
   "ai_summary": (one or two sentences on the AI roster, ≤45 words),
   "verdict": (one sentence closer that names the winner and why, ≤30 words)
-}`;
+}
+
+The "human" / "ai" labels in your output are just side identifiers — use the
+actual roster names provided in the user message when writing your summaries
+and verdict. Don't say "the human" or "the AI" if real names are given.`;
 
 const VerdictSchema = z.object({
   winner: z.enum(["human", "ai", "tie"]),
@@ -80,12 +84,16 @@ export async function POST(req: Request) {
   const human = payload.picks.filter((p) => p.side === "human");
   const ai = payload.picks.filter((p) => p.side === "ai");
 
-  const userPrompt = `Team: ${payload.team.city} ${payload.team.name}
+  const isFriend = payload.mode === "vs-friend" && !!payload.player_names;
+  const humanLabel = isFriend ? payload.player_names!.human : "HUMAN";
+  const aiLabel = isFriend ? payload.player_names!.ai : "AI";
 
-HUMAN ROSTER:
+  const userPrompt = `Team: ${payload.team.city} ${payload.team.name}
+${isFriend ? `\nThis is a 2-player friend draft. Side "human" = ${humanLabel}. Side "ai" = ${aiLabel}.\n` : ""}
+${humanLabel} ROSTER:
 ${describeRoster(human)}
 
-AI ROSTER:
+${aiLabel} ROSTER:
 ${describeRoster(ai)}
 
 Judge the matchup. Return JSON only.`;
@@ -93,7 +101,7 @@ Judge the matchup. Return JSON only.`;
   try {
     const { text } = await generateText({
       model: anthropic("claude-sonnet-4-6"),
-      system: SYSTEM_PROMPT,
+      system: SYSTEM_PROMPT_BASE,
       prompt: userPrompt,
       maxOutputTokens: 1000,
     });

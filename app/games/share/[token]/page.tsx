@@ -57,14 +57,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const payload = play.payload as DraftPlayPayload | null;
     const verdict = play.result as DraftJudgement | null;
     const teamLabel = payload ? `${payload.team.city} ${payload.team.name}` : "the all-time draft";
-    const winnerText =
-      verdict?.winner === "human"
-        ? `Beat the AI drafting ${teamLabel}`
-        : verdict?.winner === "ai"
-        ? `Got drafted by AI on ${teamLabel}`
-        : verdict?.winner === "tie"
-        ? `Tied the AI drafting ${teamLabel}`
-        : `Drafted ${teamLabel} vs AI`;
+    const isFriend = payload?.mode === "vs-friend" && !!payload?.player_names;
+    const p1 = payload?.player_names?.human;
+    const p2 = payload?.player_names?.ai;
+    let winnerText: string;
+    if (isFriend && p1 && p2) {
+      winnerText =
+        verdict?.winner === "human"
+          ? `${p1} beat ${p2} drafting ${teamLabel}`
+          : verdict?.winner === "ai"
+          ? `${p2} beat ${p1} drafting ${teamLabel}`
+          : verdict?.winner === "tie"
+          ? `${p1} and ${p2} tied drafting ${teamLabel}`
+          : `${p1} vs ${p2} · ${teamLabel} draft`;
+    } else {
+      winnerText =
+        verdict?.winner === "human"
+          ? `Beat the AI drafting ${teamLabel}`
+          : verdict?.winner === "ai"
+          ? `Got drafted by AI on ${teamLabel}`
+          : verdict?.winner === "tie"
+          ? `Tied the AI drafting ${teamLabel}`
+          : `Drafted ${teamLabel} vs AI`;
+    }
     return {
       title: `${winnerText} · Jaiye's Games`,
       description: verdict?.verdict ?? "Snake draft. 5 picks each. AI judges.",
@@ -215,6 +230,8 @@ export default async function SharePage({ params }: Props) {
             picks={payload.picks}
             starts={payload.starts}
             verdict={verdict}
+            humanName={payload.mode === "vs-friend" ? payload.player_names?.human : undefined}
+            aiName={payload.mode === "vs-friend" ? payload.player_names?.ai : undefined}
           />
         )}
         <div className="max-w-[760px] mx-auto px-6 pb-24 pt-2 text-center">

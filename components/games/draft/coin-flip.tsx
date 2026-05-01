@@ -8,9 +8,12 @@ type Props = {
   team: DraftTeamPayload;
   starts: DraftSide;
   onDone: () => void;
+  /** When provided, used instead of "You"/"Claude" — for 2-player friend mode. */
+  humanName?: string;
+  aiName?: string;
 };
 
-export default function CoinFlip({ team, starts, onDone }: Props) {
+export default function CoinFlip({ team, starts, onDone, humanName, aiName }: Props) {
   const [phase, setPhase] = useState<"flipping" | "revealed">("flipping");
 
   useEffect(() => {
@@ -22,7 +25,9 @@ export default function CoinFlip({ team, starts, onDone }: Props) {
     };
   }, [onDone]);
 
-  const youGoFirst = starts === "human";
+  const startName = starts === "human" ? humanName : aiName;
+  const showCustom = !!startName;
+  const youGoFirst = !showCustom && starts === "human";
 
   return (
     <div className="max-w-[700px] mx-auto px-6 py-24 lg:py-32 text-center">
@@ -50,7 +55,12 @@ export default function CoinFlip({ team, starts, onDone }: Props) {
       ) : (
         <>
           <h1 className="font-[family-name:var(--font-fraunces)] font-black text-[clamp(2.5rem,6vw,4.5rem)] leading-[0.95] tracking-[-0.02em] mb-4">
-            {youGoFirst ? (
+            {showCustom ? (
+              <>
+                <span className="text-[var(--color-bone)]">{startName}</span> goes{" "}
+                <span className="italic font-normal text-[var(--color-red)]">first.</span>
+              </>
+            ) : youGoFirst ? (
               <>
                 You go <span className="italic font-normal text-[var(--color-red)]">first.</span>
               </>

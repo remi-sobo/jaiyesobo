@@ -12,12 +12,20 @@ type Props = {
   picks: DraftPick[];
   starts: DraftSide;
   verdict: DraftJudgement;
+  /** When provided, used instead of "You"/"Claude". For 2P friend mode. */
+  humanName?: string;
+  aiName?: string;
 };
 
-export default function FinalJudgment({ team, picks, verdict }: Props) {
+export default function FinalJudgment({ team, picks, verdict, humanName, aiName }: Props) {
   const human = picks.filter((p) => p.side === "human");
   const ai = picks.filter((p) => p.side === "ai");
-  const youWon = verdict.winner === "human";
+  const humanLabel = humanName ?? "You";
+  const aiLabel = aiName ?? "Claude";
+  const showCustom = !!humanName && !!aiName;
+  const winnerLabel =
+    verdict.winner === "human" ? humanLabel : verdict.winner === "ai" ? aiLabel : null;
+  const youWon = !showCustom && verdict.winner === "human";
   const tied = verdict.winner === "tie";
 
   return (
@@ -33,6 +41,11 @@ export default function FinalJudgment({ team, picks, verdict }: Props) {
         {tied ? (
           <>
             It&apos;s a <span className="italic font-normal text-[var(--color-games-yellow)]">tie.</span>
+          </>
+        ) : showCustom && winnerLabel ? (
+          <>
+            <span className="text-[var(--color-bone)]">{winnerLabel}</span>{" "}
+            <span className="italic font-normal text-[var(--color-red)]">won.</span>
           </>
         ) : youWon ? (
           <>
@@ -51,20 +64,20 @@ export default function FinalJudgment({ team, picks, verdict }: Props) {
       {/* Side-by-side rosters with grades */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
         <RosterCard
-          label="You"
+          label={humanLabel}
           accent={team.primary_color}
           grade={verdict.human_grade}
           summary={verdict.human_summary}
           picks={human}
-          isWinner={youWon}
+          isWinner={verdict.winner === "human"}
         />
         <RosterCard
-          label="Claude"
+          label={aiLabel}
           accent="var(--color-games-yellow)"
           grade={verdict.ai_grade}
           summary={verdict.ai_summary}
           picks={ai}
-          isWinner={!youWon && !tied}
+          isWinner={verdict.winner === "ai"}
         />
       </div>
     </div>

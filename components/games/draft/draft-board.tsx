@@ -21,6 +21,11 @@ type Props = {
   aiThinking: boolean;
   onPick: (player_id: string) => Promise<void>;
   onFailedSearch: (query: string) => void;
+  /** When provided, used instead of "You"/"Claude" labels. */
+  humanName?: string;
+  aiName?: string;
+  /** True in vs-friend mode — both turns show input, no AI thinking. */
+  bothHuman?: boolean;
 };
 
 export default function DraftBoard({
@@ -32,14 +37,27 @@ export default function DraftBoard({
   aiThinking,
   onPick,
   onFailedSearch,
+  humanName,
+  aiName,
+  bothHuman,
 }: Props) {
   const human = picks.filter((p) => p.side === "human");
   const ai = picks.filter((p) => p.side === "ai");
   const excludeIds = useMemo(() => new Set(picks.map((p) => p.player_id)), [picks]);
   const round = roundFor(picks.length);
   const pickNum = picks.length + 1;
-  const aiCanRoast = picks.length > 0 && picks[picks.length - 1].side === "ai";
+  const aiCanRoast = !bothHuman && picks.length > 0 && picks[picks.length - 1].side === "ai";
   const lastAiPick = aiCanRoast ? picks[picks.length - 1] : null;
+  const humanLabel = humanName ?? "You";
+  const aiLabel = aiName ?? "Claude";
+
+  const turnLabel = (() => {
+    if (turn === null) return "Draft complete.";
+    const name = turn === "human" ? humanLabel : aiLabel;
+    if (bothHuman) return `${name} — your pick.`;
+    if (turn === "human") return "Your pick.";
+    return aiThinking ? "Claude is thinking…" : "Claude is up.";
+  })();
 
   return (
     <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-8">
@@ -61,18 +79,16 @@ export default function DraftBoard({
             Round {round} of 5 · pick {pickNum} of {TOTAL_PICKS}
           </div>
           <div className="font-[family-name:var(--font-fraunces)] italic text-base text-[var(--color-bone)]">
-            {turn === "human" && "Your pick."}
-            {turn === "ai" && (aiThinking ? "Claude is thinking…" : "Claude is up.")}
-            {turn === null && "Draft complete."}
+            {turnLabel}
           </div>
         </div>
       </div>
 
-      {/* Last AI pick callout */}
+      {/* Last AI pick callout (vs-AI only) */}
       {lastAiPick && (
         <div className="mb-6 px-4 py-3 rounded border border-[var(--color-line)] bg-[var(--color-card)]">
           <div className="font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.25em] text-[var(--color-mute)] mb-1">
-            Claude just picked
+            {aiLabel} just picked
           </div>
           <div className="font-[family-name:var(--font-fraunces)] font-semibold text-lg text-[var(--color-bone)] leading-tight">
             {lastAiPick.player_name}{" "}
@@ -90,21 +106,21 @@ export default function DraftBoard({
 
       <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-5 mb-6">
         <RosterColumn
-          label="You"
+          label={humanLabel}
           accent={team.primary_color}
           picks={human}
           isActive={turn === "human"}
         />
         <RosterColumn
-          label="Claude"
+          label={aiLabel}
           accent="var(--color-games-yellow)"
           picks={ai}
           isActive={turn === "ai"}
-          isThinking={aiThinking}
+          isThinking={!bothHuman && aiThinking}
         />
       </div>
 
-      {turn === "human" && (
+      {turn !== null && (bothHuman || turn === "human") && (
         <PickInput
           pool={pool}
           excludeIds={excludeIds}
@@ -114,9 +130,9 @@ export default function DraftBoard({
         />
       )}
 
-      {turn === "ai" && (
+      {!bothHuman && turn === "ai" && (
         <div className="px-4 py-3 rounded border border-dashed border-[var(--color-line)] bg-[var(--color-card)] text-center font-[family-name:var(--font-fraunces)] italic text-[var(--color-mute)]">
-          Waiting on Claude…
+          Waiting on {aiLabel}…
         </div>
       )}
     </div>
