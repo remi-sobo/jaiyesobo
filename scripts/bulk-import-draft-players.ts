@@ -39,17 +39,26 @@ function loadDotEnv() {
   }
 }
 
-async function importTeam(slug: string, jsonPath: string, status: "verified" | "pending") {
+type ImportResult =
+  | { kind: "fail"; slug: string; error: string }
+  | { kind: "ok"; slug: string; inserted: number; skipped: number; errors: string[] };
+
+async function importTeam(
+  slug: string,
+  jsonPath: string,
+  status: "verified" | "pending"
+): Promise<ImportResult> {
   const raw = readFileSync(jsonPath, "utf8");
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
   } catch (err) {
-    return { slug, error: `JSON parse failed: ${String(err)}` };
+    return { kind: "fail", slug, error: `JSON parse failed: ${String(err)}` };
   }
   const validation = validatePlayerArray(parsed);
   if (!validation.ok) {
     return {
+      kind: "fail",
       slug,
       error: `validation: ${validation.errors.slice(0, 3).join(" | ")}` +
         (validation.errors.length > 3 ? ` (+${validation.errors.length - 3} more)` : ""),
@@ -64,7 +73,7 @@ async function importTeam(slug: string, jsonPath: string, status: "verified" | "
     .eq("content_type", "draft_team")
     .eq("draft_team_slug", slug)
     .maybeSingle();
-  if (!team) return { slug, error: "team_not_found in DB" };
+  if (!team) return { kind: "fail", slug, error: "team_not_found in DB" };
 
   // Pre-fetch existing player names for idempotency
   const { data: existing } = await supa
@@ -107,7 +116,7 @@ async function importTeam(slug: string, jsonPath: string, status: "verified" | "
     inserted++;
   }
 
-  return { slug, inserted, skipped, errors };
+  return { kind: "ok", slug, inserted, skipped, errors };
 }
 
 async function main() {
@@ -137,23 +146,21 @@ async function main() {
   for (const f of files) {
     const slug = basename(f, ".json");
     const result = await importTeam(slug, resolve(PENDING_DIR, f), status);
-    if ("error" in result && result.error) {
+    if (result.kind === "fail") {
       console.log(`  ✗ ${slug.padEnd(12)} ${result.error}`);
       failures.push({ slug, error: result.error });
       continue;
     }
-    if ("inserted" in result) {
-      totalInserted += result.inserted;
-      totalSkipped += result.skipped;
-      totalErrors += result.errors.length;
-      const tag = result.errors.length > 0 ? `  ⚠︎ ${result.errors.length} row errors` : "";
-      console.log(
-        `  ✓ ${slug.padEnd(12)} +${result.inserted} inserted, ${result.skipped} skipped${tag}`
-      );
-      if (result.errors.length > 0) {
-        for (const e of result.errors.slice(0, 3)) console.log(`      • ${e}`);
-        if (result.errors.length > 3) console.log(`      …and ${result.errors.length - 3} more`);
-      }
+    totalInserted += result.inserted;
+    totalSkipped += result.skipped;
+    totalErrors += result.errors.length;
+    const tag = result.errors.length > 0 ? `  ⚠︎ ${result.errors.length} row errors` : "";
+    console.log(
+      `  ✓ ${slug.padEnd(12)} +${result.inserted} inserted, ${result.skipped} skipped${tag}`
+    );
+    if (result.errors.length > 0) {
+      for (const e of result.errors.slice(0, 3)) console.log(`      • ${e}`);
+      if (result.errors.length > 3) console.log(`      …and ${result.errors.length - 3} more`);
     }
   }
 
