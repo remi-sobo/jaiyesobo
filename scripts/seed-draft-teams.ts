@@ -24,8 +24,8 @@ type Team = {
   founded: string;
 };
 
-// 13 launch franchises — picked for historical depth, fan engagement, and coverage
-// across eras (60s through current). Add more later via the admin tool.
+// 23 franchises (13 launch + 10 expansion). Idempotent — running this script
+// re-skips rows that already exist by draft_team_slug.
 const TEAMS: Team[] = [
   { slug: "lakers", name: "Lakers", city: "Los Angeles", abbreviation: "LAL", primary_color: "#552583", founded: "1947" },
   { slug: "celtics", name: "Celtics", city: "Boston", abbreviation: "BOS", primary_color: "#007A33", founded: "1946" },
@@ -40,6 +40,17 @@ const TEAMS: Team[] = [
   { slug: "mavericks", name: "Mavericks", city: "Dallas", abbreviation: "DAL", primary_color: "#00538C", founded: "1980" },
   { slug: "thunder", name: "Thunder", city: "Oklahoma City", abbreviation: "OKC", primary_color: "#007AC1", founded: "1967" },
   { slug: "nuggets", name: "Nuggets", city: "Denver", abbreviation: "DEN", primary_color: "#0E2240", founded: "1967" },
+  // Expansion batch — added round 2.
+  { slug: "suns", name: "Suns", city: "Phoenix", abbreviation: "PHX", primary_color: "#E56020", founded: "1968" },
+  { slug: "bucks", name: "Bucks", city: "Milwaukee", abbreviation: "MIL", primary_color: "#00471B", founded: "1968" },
+  { slug: "hawks", name: "Hawks", city: "Atlanta", abbreviation: "ATL", primary_color: "#E03A3E", founded: "1946" },
+  { slug: "blazers", name: "Trail Blazers", city: "Portland", abbreviation: "POR", primary_color: "#E03A3E", founded: "1970" },
+  { slug: "jazz", name: "Jazz", city: "Utah", abbreviation: "UTA", primary_color: "#002B5C", founded: "1974" },
+  { slug: "cavaliers", name: "Cavaliers", city: "Cleveland", abbreviation: "CLE", primary_color: "#860038", founded: "1970" },
+  { slug: "raptors", name: "Raptors", city: "Toronto", abbreviation: "TOR", primary_color: "#CE1141", founded: "1995" },
+  { slug: "nets", name: "Nets", city: "Brooklyn", abbreviation: "BKN", primary_color: "#000000", founded: "1967" },
+  { slug: "grizzlies", name: "Grizzlies", city: "Memphis", abbreviation: "MEM", primary_color: "#5D76A9", founded: "1995" },
+  { slug: "magic", name: "Magic", city: "Orlando", abbreviation: "ORL", primary_color: "#0077C0", founded: "1989" },
 ];
 
 function requireEnv(name: string): string {

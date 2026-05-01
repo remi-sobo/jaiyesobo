@@ -230,6 +230,12 @@ export default function LocalDraftGame({ teamSlug, team }: Props) {
           >
             New 2-player draft
           </a>
+          <a
+            href="/games/draft/leaderboard"
+            className="bg-transparent text-[var(--color-mute)] font-[family-name:var(--font-jetbrains)] text-xs uppercase tracking-[0.2em] px-7 py-4 rounded-sm hover:text-[var(--color-bone)] transition-colors text-center"
+          >
+            Record book →
+          </a>
         </div>
         <ShareModal
           open={shareOpen}

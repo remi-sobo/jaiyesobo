@@ -55,10 +55,20 @@ export default async function DraftLandingPage({ searchParams }: Props) {
           </>
         )}
 
-        {/* Mode toggle */}
-        <div className="inline-flex items-center gap-1 p-1 rounded-full border border-[var(--color-line)] bg-[var(--color-card)]">
-          <ModePill href="/games/draft" label="vs Claude" active={mode === "ai"} />
-          <ModePill href="/games/draft?mode=friend" label="vs a Friend" active={mode === "friend"} />
+        {/* Mode toggle + leaderboard link */}
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="inline-flex items-center gap-1 p-1 rounded-full border border-[var(--color-line)] bg-[var(--color-card)]">
+            <ModePill href="/games/draft" label="vs Claude" active={mode === "ai"} />
+            <ModePill href="/games/draft?mode=friend" label="vs a Friend" active={mode === "friend"} />
+          </div>
+          {mode === "friend" && (
+            <Link
+              href="/games/draft/leaderboard"
+              className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.25em] text-[var(--color-games-yellow)] hover:text-[var(--color-bone)] transition-colors"
+            >
+              View record book →
+            </Link>
+          )}
         </div>
       </section>
 
