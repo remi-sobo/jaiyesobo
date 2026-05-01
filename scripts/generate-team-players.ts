@@ -104,9 +104,10 @@ async function generateForTeam(team: { slug: string; city: string; name: string 
 
   console.log(`  → ${team.slug}: asking Claude...`);
   const { text } = await generateText({
-    model: anthropic("claude-sonnet-4-5"),
+    model: anthropic("claude-sonnet-4-6"),
     system: SYSTEM_PROMPT,
     prompt: userPrompt,
+    maxOutputTokens: 16000,
   });
 
   const json = extractJson(text);
