@@ -6,7 +6,7 @@ import { shareToken } from "@/lib/games/data";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const ALLOWED_GAMES = new Set(["top-five", "trivia", "draft"]);
+const ALLOWED_GAMES = new Set(["top-five", "trivia", "draft", "goat-roster"]);
 
 export async function POST(req: Request) {
   let body: unknown;

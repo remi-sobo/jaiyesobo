@@ -4,11 +4,13 @@ import GameShell from "@/components/games/game-shell";
 import TopFiveResult from "@/components/games/top-five/top-five-result";
 import TriviaResultReadOnly from "@/components/games/trivia/trivia-result-readonly";
 import FinalJudgment from "@/components/games/draft/final-judgment";
+import GoatResult from "@/components/games/goat-roster/goat-result";
 import { getPlayByToken } from "@/lib/games/data";
 import type { TopFiveVerdict } from "@/lib/games/top-five-types";
 import type { Breakdown } from "@/components/games/trivia/trivia-result";
 import type { TriviaDifficultyKey } from "@/lib/games/trivia-config";
 import type { DraftPlayPayload, DraftJudgement } from "@/lib/draft-game";
+import type { GoatRosterPlayPayload, GoatRosterVerdict } from "@/lib/goat-roster";
 
 type Props = { params: Promise<{ token: string }> };
 
@@ -75,6 +77,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         card: "summary_large_image",
         title: winnerText,
         description: verdict?.verdict ?? "Play yours at jaiyesobo.com/games/draft",
+      },
+    };
+  }
+
+  if (play.game_slug === "goat-roster") {
+    const payload = play.payload as GoatRosterPlayPayload | null;
+    const verdict = play.result as GoatRosterVerdict | null;
+    const teamLabel = payload ? `${payload.team.city} ${payload.team.name}` : "GOAT roster";
+    const scoreLabel = verdict ? `${verdict.score}/100 (${verdict.grade})` : "play";
+    const title = `${scoreLabel} · ${teamLabel} GOAT Roster · Jaiye's Games`;
+    return {
+      title,
+      description: verdict?.take ?? "Build a 5-starter + 6th-man roster. AI scores it.",
+      openGraph: {
+        title,
+        description: verdict?.take ?? "Play yours at jaiyesobo.com/games/goat-roster",
+        type: "website",
+      },
+      twitter: {
+        card: "summary_large_image",
+        title,
+        description: verdict?.take ?? "Play yours at jaiyesobo.com/games/goat-roster",
       },
     };
   }
@@ -199,6 +223,47 @@ export default async function SharePage({ params }: Props) {
             className="inline-block bg-[var(--color-red)] text-[var(--color-bone)] font-[family-name:var(--font-jetbrains)] text-xs uppercase tracking-[0.2em] px-7 py-4 rounded-sm hover:bg-[var(--color-red-bright)] transition-colors"
           >
             Draft your own →
+          </Link>
+        </div>
+      </GameShell>
+    );
+  }
+
+  if (play.game_slug === "goat-roster") {
+    const payload = play.payload as GoatRosterPlayPayload | null;
+    const verdict = play.result as GoatRosterVerdict | null;
+    if (!payload) {
+      return (
+        <GameShell>
+          <main className="max-w-[640px] mx-auto px-6 py-20 text-center">
+            <h1 className="font-[family-name:var(--font-fraunces)] font-semibold text-2xl mb-3">
+              That roster is corrupted.
+            </h1>
+            <Link href="/games/goat-roster" className="text-[var(--color-red)] underline">
+              Build a new one
+            </Link>
+          </main>
+        </GameShell>
+      );
+    }
+    return (
+      <GameShell liveLabel="Shared roster">
+        {!verdict ? (
+          <main className="max-w-[640px] mx-auto px-6 py-20 text-center">
+            <h1 className="font-[family-name:var(--font-fraunces)] font-semibold text-2xl mb-3">
+              This roster is still being scored.
+            </h1>
+            <p className="text-[var(--color-mute)]">Refresh in a moment.</p>
+          </main>
+        ) : (
+          <GoatResult team={payload.team} picks={payload.picks} verdict={verdict} />
+        )}
+        <div className="max-w-[760px] mx-auto px-6 pb-24 pt-2 text-center">
+          <Link
+            href="/games/goat-roster"
+            className="inline-block bg-[var(--color-red)] text-[var(--color-bone)] font-[family-name:var(--font-jetbrains)] text-xs uppercase tracking-[0.2em] px-7 py-4 rounded-sm hover:bg-[var(--color-red-bright)] transition-colors"
+          >
+            Build yours →
           </Link>
         </div>
       </GameShell>
