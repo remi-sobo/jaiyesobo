@@ -61,6 +61,14 @@ export type DraftJudgement = {
   human_summary: string; // why their roster is good/flawed (1-2 sentences)
   ai_summary: string;
   verdict: string;       // overall closing line (one sentence)
+  /** Best-of-7 playoff series score from the winner's POV, e.g. "4-2".
+   * For ties the LLM returns "3-3" (or similar). Optional for backward-compat
+   * with verdicts judged before the playoff-series feature shipped. */
+  series_score?: string;
+  /** Short, fun narrative (1-3 sentences) of what happened in the series —
+   * which game flipped it, who showed up when it mattered. Optional for
+   * backward-compat. */
+  series_story?: string;
 };
 
 export const PICKS_PER_SIDE = 5;

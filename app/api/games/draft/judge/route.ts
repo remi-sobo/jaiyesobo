@@ -22,23 +22,34 @@ Pick a winner based on:
 - Era variety bonus
 - Iconic-ness
 
-Be specific. Reference real players. No generic praise. Audience includes kids — keep it spirited but clean.
+Then SIMULATE the matchup as a best-of-7 playoff series. Decide the series score
+(4-0, 4-1, 4-2, or 4-3 from the winner's POV — or "3-3" only if you returned
+"tie") and tell a short, fun story about how it played out: which game flipped
+the series, who showed up in the clutch, the moment that took it over the top.
+Reference the actual drafted players by name. Keep it punchy and specific —
+imagine a TNT halftime hit, not a press release.
+
+Be specific everywhere. Reference real players. No generic praise. Audience
+includes kids — keep it spirited but clean.
 
 You MUST respond with ONLY a JSON object. No prose before or after, no markdown fences.
 
 Schema:
 {
   "winner": "human" | "ai" | "tie",
-  "human_grade": (string letter grade like "A-", "B+", "C")
+  "human_grade": (string letter grade like "A-", "B+", "C"),
   "ai_grade": (string letter grade like "A-", "B+", "C"),
   "human_summary": (one or two sentences on the human roster, ≤45 words),
   "ai_summary": (one or two sentences on the AI roster, ≤45 words),
-  "verdict": (one sentence closer that names the winner and why, ≤30 words)
+  "verdict": (one sentence closer that names the winner and why, ≤30 words),
+  "series_score": (string like "4-0" / "4-1" / "4-2" / "4-3", or "3-3" only if winner is "tie"),
+  "series_story": (1-3 sentences, ≤70 words, naming the moment/player that decided the series)
 }
 
 The "human" / "ai" labels in your output are just side identifiers — use the
-actual roster names provided in the user message when writing your summaries
-and verdict. Don't say "the human" or "the AI" if real names are given.`;
+actual roster names provided in the user message when writing your summaries,
+verdict, and series_story. Don't say "the human" or "the AI" if real names are
+given.`;
 
 const VerdictSchema = z.object({
   winner: z.enum(["human", "ai", "tie"]),
@@ -47,6 +58,8 @@ const VerdictSchema = z.object({
   human_summary: z.string().min(1).max(400),
   ai_summary: z.string().min(1).max(400),
   verdict: z.string().min(1).max(300),
+  series_score: z.string().min(1).max(10).optional(),
+  series_story: z.string().min(1).max(600).optional(),
 });
 
 export async function POST(req: Request) {
@@ -117,6 +130,8 @@ Judge the matchup. Return JSON only.`;
       human_summary: validated.human_summary,
       ai_summary: validated.ai_summary,
       verdict: validated.verdict,
+      ...(validated.series_score ? { series_score: validated.series_score } : {}),
+      ...(validated.series_story ? { series_story: validated.series_story } : {}),
     };
 
     await supa.from("plays").update({ result: verdict }).eq("id", play_id);

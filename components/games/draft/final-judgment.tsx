@@ -27,6 +27,11 @@ export default function FinalJudgment({ team, picks, verdict, humanName, aiName 
     verdict.winner === "human" ? humanLabel : verdict.winner === "ai" ? aiLabel : null;
   const youWon = !showCustom && verdict.winner === "human";
   const tied = verdict.winner === "tie";
+  // Resolved label for the series caption — handles vs-Claude where the
+  // headline says "You won" but the series block should still address the
+  // actual person.
+  const seriesWinnerLabel =
+    verdict.winner === "human" ? humanLabel : verdict.winner === "ai" ? aiLabel : null;
 
   return (
     <div className="max-w-[900px] mx-auto px-6 pt-10 pb-6">
@@ -57,6 +62,32 @@ export default function FinalJudgment({ team, picks, verdict, humanName, aiName 
           </>
         )}
       </h1>
+
+      {/* 7-game playoff series recap (sits directly under the winner banner).
+          Only renders when the AI judge returned series fields — older
+          verdicts judged before this feature shipped fall through. */}
+      {(verdict.series_score || verdict.series_story) && (
+        <div className="mb-8 border-l-2 border-[var(--color-red)] pl-5 py-1">
+          <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.3em] text-[var(--color-mute)] mb-2">
+            Best-of-7 ·{" "}
+            {verdict.series_score ? (
+              <span className="text-[var(--color-bone)]">
+                {seriesWinnerLabel
+                  ? `${seriesWinnerLabel} ${verdict.series_score}`
+                  : `Split ${verdict.series_score}`}
+              </span>
+            ) : (
+              <span className="text-[var(--color-bone)]">Series</span>
+            )}
+          </div>
+          {verdict.series_story && (
+            <p className="font-[family-name:var(--font-fraunces)] text-[clamp(1rem,1.4vw,1.2rem)] text-[var(--color-bone)] leading-snug">
+              {verdict.series_story}
+            </p>
+          )}
+        </div>
+      )}
+
       <p className="font-[family-name:var(--font-fraunces)] italic text-[clamp(1.05rem,1.6vw,1.4rem)] text-[var(--color-bone)] leading-snug mb-12">
         {verdict.verdict}
       </p>
