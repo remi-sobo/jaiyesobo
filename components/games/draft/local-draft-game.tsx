@@ -56,15 +56,6 @@ export default function LocalDraftGame({ teamSlug, team, knownName }: Props) {
 
   const turn = useMemo(() => nextTurn(picks, starts), [picks, starts]);
 
-  // Open the handoff screen automatically when picks update mid-draft
-  useEffect(() => {
-    if (phase !== "drafting") return;
-    if (picks.length === 0) return;
-    if (picks.length >= TOTAL_PICKS) return;
-    // After a successful pick, show handoff to next player
-    setPhase("handoff");
-  }, [picks.length, phase]);
-
   async function startDraft(p1Name: string, p2Name: string) {
     setPhase("starting");
     setErrorMsg(null);
@@ -115,7 +106,13 @@ export default function LocalDraftGame({ teamSlug, team, knownName }: Props) {
       if (!res.ok || !data?.picks) {
         throw new Error(data?.error ?? "pick_failed");
       }
-      setPicks(data.picks as DraftPick[]);
+      const newPicks = data.picks as DraftPick[];
+      setPicks(newPicks);
+      // Hand the keyboard to the next player. If that was the last pick, the
+      // judging effect below will pick it up from any phase.
+      if (newPicks.length < TOTAL_PICKS) {
+        setPhase("handoff");
+      }
     },
     [playId, turn]
   );
