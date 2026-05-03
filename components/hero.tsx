@@ -8,16 +8,16 @@ export default function Hero() {
   const reduced = useReducedMotion();
 
   return (
-    <section className="relative min-h-screen grid lg:grid-cols-[1.1fr_0.9fr] overflow-hidden bg-[var(--color-black)]">
-      <div className="relative flex flex-col justify-between px-6 lg:px-12 pt-28 pb-20 lg:pb-24 z-[5]">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? 0 : 0.8, delay: reduced ? 0 : 0.2 }} className="flex items-center gap-3 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.25em] text-[var(--color-mute)]">
+    <section className="relative min-h-screen grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] overflow-hidden bg-[var(--color-black)]">
+      <div className="relative flex flex-col justify-between px-6 lg:px-12 pt-28 pb-20 lg:pb-24 z-[5] min-w-0">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? 0 : 0.8, delay: reduced ? 0 : 0.2 }} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 font-[family-name:var(--font-jetbrains)] text-[0.65rem] sm:text-[0.7rem] uppercase tracking-[0.2em] sm:tracking-[0.25em] text-[var(--color-mute)]">
           <motion.span
             className="w-1.5 h-1.5 rounded-full bg-[var(--color-red)]"
             animate={reduced ? { opacity: 1, scale: 1 } : { opacity: [1, 0.3, 1], scale: [1, 1.3, 1] }}
             transition={reduced ? { duration: 0 } : { duration: 1.6, repeat: Infinity }}
           />
           <span>EST. EAST PALO ALTO · CA</span>
-          <span className="w-8 h-px bg-[var(--color-line)]" />
+          <span className="hidden sm:block w-8 h-px bg-[var(--color-line)]" />
           <span>Vol. 01 · 2026</span>
         </motion.div>
 

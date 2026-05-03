@@ -28,10 +28,17 @@ export default function Portals() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: i * 0.1 }}
+              // The featured (5th) card spans both columns on mobile so it
+              // doesn't dangle alone after the 2x2 grid above it.
+              className={featured ? "col-span-2 lg:col-span-1" : ""}
             >
               <Link
                 href={p.href}
-                className={`aspect-square p-8 flex flex-col justify-between relative overflow-hidden group transition-colors duration-400 text-[var(--color-bone)] no-underline ${
+                className={`${
+                  featured
+                    ? "aspect-[2/1] lg:aspect-square"
+                    : "aspect-square"
+                } p-8 flex flex-col justify-between relative overflow-hidden group transition-colors duration-400 text-[var(--color-bone)] no-underline ${
                   featured
                     ? "bg-gradient-to-br from-[var(--color-black)] to-[#13110d] hover:from-[var(--color-off-black)] hover:to-[#1a1610]"
                     : "bg-[var(--color-black)] hover:bg-[var(--color-off-black)]"
