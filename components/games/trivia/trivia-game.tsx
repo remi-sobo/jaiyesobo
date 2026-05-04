@@ -237,12 +237,12 @@ export default function TriviaGame({ initialStreak }: { initialStreak: number })
 
       <DifficultyPicker selected={difficulty} onSelect={(d) => setDifficulty(d)} />
 
-      <div className="mt-10 flex justify-end">
+      <div className="mt-10 flex sm:justify-end">
         <button
           type="button"
           onClick={() => difficulty && startRound(difficulty)}
           disabled={!difficulty}
-          className="bg-[var(--color-red)] text-[var(--color-bone)] font-[family-name:var(--font-jetbrains)] text-xs uppercase tracking-[0.2em] px-8 py-4 rounded-sm hover:bg-[var(--color-red-bright)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="w-full sm:w-auto bg-[var(--color-red)] text-[var(--color-bone)] font-[family-name:var(--font-jetbrains)] text-xs uppercase tracking-[0.2em] px-8 py-4 rounded-sm hover:bg-[var(--color-red-bright)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           Start round →
         </button>

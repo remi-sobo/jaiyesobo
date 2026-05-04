@@ -8,7 +8,7 @@ export default function Footer() {
           <span className="text-[var(--color-red)] italic font-normal">+ Buildin&apos;.</span>
         </div>
       </div>
-      <div className="flex justify-between items-center font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.2em] text-[var(--color-mute)] pt-8 border-t border-[var(--color-line)]">
+      <div className="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.2em] text-[var(--color-mute)] pt-8 border-t border-[var(--color-line)]">
         <div>© 2026 Jaiye Sobo · East Palo Alto</div>
         <div>Built by Jaiye + Dad · 2026</div>
       </div>
