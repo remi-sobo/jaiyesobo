@@ -185,7 +185,16 @@ function loadDotEnv() {
     const txt = readFileSync(resolve(process.cwd(), ".env.local"), "utf8");
     for (const line of txt.split("\n")) {
       const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
-      if (m && !process.env[m[1]]) process.env[m[1]] = m[2];
+      if (!m) continue;
+      let value = m[2].trim();
+      // Strip surrounding quotes that vercel env pull writes
+      if (
+        (value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))
+      ) {
+        value = value.slice(1, -1);
+      }
+      if (!process.env[m[1]]) process.env[m[1]] = value;
     }
   } catch {
     /* noop */
