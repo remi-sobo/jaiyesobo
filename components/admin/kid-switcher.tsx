@@ -19,11 +19,12 @@ type Props = {
  * layout re-fetches against the old cookie.
  */
 export default function KidSwitcher({ kids, activeKidId }: Props) {
-  const [pending, setPending] = useState(false);
+  const [targetId, setTargetId] = useState<string | null>(null);
+  const pending = targetId !== null;
 
   async function selectKid(kidId: string) {
     if (kidId === activeKidId || pending) return;
-    setPending(true);
+    setTargetId(kidId); // optimistic: paint the target pill as active immediately
     try {
       const res = await fetch("/api/admin/active-kid", {
         method: "POST",
@@ -31,46 +32,66 @@ export default function KidSwitcher({ kids, activeKidId }: Props) {
         body: JSON.stringify({ kid_id: kidId }),
       });
       if (!res.ok) {
-        setPending(false);
+        setTargetId(null);
         return;
       }
       window.location.reload();
     } catch {
-      setPending(false);
+      setTargetId(null);
     }
   }
 
+  // Display the optimistic target while pending; revert if the request fails.
+  const displayActiveId = targetId ?? activeKidId;
+  const targetName = pending
+    ? kids.find((k) => k.id === targetId)?.display_name
+    : null;
+
   return (
-    <div
-      className="flex items-center gap-2 font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em]"
-      role="group"
-      aria-label="Active kid"
-    >
-      {kids.map((k) => {
-        const active = k.id === activeKidId;
-        const accent = accentForKid(k.display_name);
-        return (
-          <button
-            key={k.id}
-            type="button"
-            onClick={() => selectKid(k.id)}
-            disabled={pending}
-            aria-pressed={active}
-            className={`px-3 py-1.5 rounded-sm border transition-colors disabled:opacity-50 ${
-              active
-                ? "text-[var(--color-bone)] border-transparent"
-                : "text-[var(--color-warm-mute)] border-[var(--color-line)] hover:text-[var(--color-bone)]"
-            }`}
-            style={
-              active
-                ? { backgroundColor: accent.bg, borderColor: accent.bg }
-                : undefined
-            }
-          >
-            {k.display_name}
-          </button>
-        );
-      })}
+    <div className="flex flex-col gap-1.5">
+      <div
+        className="flex items-center gap-2 font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em]"
+        role="group"
+        aria-label="Active kid"
+        aria-busy={pending}
+      >
+        {kids.map((k) => {
+          const active = k.id === displayActiveId;
+          const isTarget = pending && k.id === targetId;
+          const accent = accentForKid(k.display_name);
+          return (
+            <button
+              key={k.id}
+              type="button"
+              onClick={() => selectKid(k.id)}
+              disabled={pending}
+              aria-pressed={active}
+              className={`relative px-3 py-1.5 rounded-sm border transition-colors disabled:cursor-wait ${
+                active
+                  ? "text-[var(--color-bone)] border-transparent"
+                  : "text-[var(--color-warm-mute)] border-[var(--color-line)] hover:text-[var(--color-bone)]"
+              } ${isTarget ? "animate-pulse" : ""} ${
+                pending && !active ? "opacity-40" : ""
+              }`}
+              style={
+                active
+                  ? { backgroundColor: accent.bg, borderColor: accent.bg }
+                  : undefined
+              }
+            >
+              {k.display_name}
+            </button>
+          );
+        })}
+      </div>
+      <div
+        className={`font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.2em] text-[var(--color-warm-mute)] transition-opacity ${
+          pending ? "opacity-100" : "opacity-0"
+        }`}
+        aria-live="polite"
+      >
+        {pending && targetName ? `Switching to ${targetName}…` : " "}
+      </div>
     </div>
   );
 }
