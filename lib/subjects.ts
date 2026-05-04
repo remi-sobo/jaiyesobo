@@ -26,6 +26,7 @@ export const SUBJECTS = {
   art: { label: "Art", hex: "#E8956A", cssVar: "--color-art" },
   music: { label: "Music", hex: "#7BA05B", cssVar: "--color-music" },
   style: { label: "Style", hex: "#C83C78", cssVar: "--color-style" },
+  logic: { label: "Logic", hex: "#1E5762", cssVar: "--color-logic" },
 } as const;
 
 export type SubjectKey = keyof typeof SUBJECTS;
@@ -47,6 +48,7 @@ const KEMI_SUBJECT_KEYS: SubjectKey[] = [
   "math",
   "reading",
   "writing",
+  "logic",
   "art",
   "music",
   "style",

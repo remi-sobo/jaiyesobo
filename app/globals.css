@@ -35,6 +35,10 @@
   --color-ball: #E63946;
   --color-habit: #8a8578;
   --color-family: #e8b04e;
+  --color-art: #E8956A;
+  --color-music: #7BA05B;
+  --color-style: #C83C78;
+  --color-logic: #1E5762;
 
   /* /games-only accents — do not bleed into /me or public brand pages */
   --color-games-yellow: #F5C842;
