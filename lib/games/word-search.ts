@@ -19,6 +19,12 @@ export type WordPackPayload = {
   difficulty: WordSearchDifficulty;
   grid_size: number;
   words: WordEntry[];
+  /**
+   * Optional pre-generated crossword layout — populated by the
+   * /generate-crossword admin route. Cleared whenever the curator
+   * saves edited words (regenerate from the verify UI to refresh).
+   */
+  crossword_grid?: import("./crossword").CrosswordLayout;
 };
 
 export type Direction =

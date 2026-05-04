@@ -74,6 +74,16 @@ export function normalizePackPayload(input: unknown): {
     };
   }
 
+  // Preserve a previously-generated crossword grid through PATCH if the
+  // client sent it back unchanged. If the curator edited words, the verify
+  // UI is expected to NOT include `crossword_grid` in the body — that's
+  // how staleness is signalled (grid clears, "Regenerate" button reappears).
+  const cw = obj.crossword_grid;
+  const preservedGrid =
+    cw && typeof cw === "object" && Array.isArray((cw as { grid?: unknown }).grid)
+      ? (cw as WordPackPayload["crossword_grid"])
+      : undefined;
+
   return {
     ok: true,
     payload: {
@@ -84,6 +94,7 @@ export function normalizePackPayload(input: unknown): {
       difficulty,
       grid_size: gridSize,
       words,
+      ...(preservedGrid ? { crossword_grid: preservedGrid } : {}),
     },
   };
 }

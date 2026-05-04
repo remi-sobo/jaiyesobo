@@ -23,6 +23,48 @@ export default function VerifyPackEditor({ pack }: Props) {
   const gridSize = gridSizeFor(difficulty);
   const isLive = pack.status === "live" && pack.verification_status === "verified";
 
+  // Crossword grid status (lives on the same payload). Cleared whenever
+  // the curator saves edited words — that's how staleness is signalled.
+  const hasCrossword = !!pack.payload.crossword_grid;
+  const [crosswordBusy, setCrosswordBusy] = useState(false);
+  const [crosswordResult, setCrosswordResult] = useState<{
+    placed?: number;
+    dropped?: { word: string; reason: string }[];
+    error?: string;
+  } | null>(null);
+
+  async function generateCrossword() {
+    setCrosswordBusy(true);
+    setCrosswordResult(null);
+    try {
+      const res = await fetch(
+        `/api/games-admin/word-packs/${pack.id}/generate-crossword`,
+        { method: "POST" }
+      );
+      const data = (await res.json()) as {
+        ok?: boolean;
+        placed_count?: number;
+        dropped?: { word: string; reason: string }[];
+        error?: string;
+        detail?: string;
+      };
+      if (!res.ok || !data.ok) {
+        setCrosswordResult({
+          error: data.detail ?? data.error ?? "Couldn't generate grid",
+          dropped: data.dropped,
+        });
+        setCrosswordBusy(false);
+        return;
+      }
+      setCrosswordResult({ placed: data.placed_count, dropped: data.dropped });
+      setCrosswordBusy(false);
+      router.refresh();
+    } catch {
+      setCrosswordResult({ error: "Network error" });
+      setCrosswordBusy(false);
+    }
+  }
+
   function updateWord(idx: number, patch: Partial<WordRow>) {
     setWords((ws) => ws.map((w, i) => (i === idx ? { ...w, ...patch } : w)));
   }
@@ -238,6 +280,48 @@ export default function VerifyPackEditor({ pack }: Props) {
           {error}
         </div>
       )}
+
+      <div className="bg-[var(--color-warm-surface)] border border-[var(--color-line)] rounded p-5 flex flex-wrap items-center gap-4">
+        <div className="flex-1 min-w-[220px]">
+          <div className="font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.25em] text-[var(--color-warm-mute)] mb-1">
+            Crossword grid
+          </div>
+          <div className="font-[family-name:var(--font-fraunces)] text-base leading-snug">
+            {hasCrossword ? (
+              <>
+                <span className="text-[var(--color-green)]">●</span> Live · {pack.payload.crossword_grid!.placed.length} clues
+              </>
+            ) : (
+              <span className="text-[var(--color-warm-mute)]">Not generated yet — click to make this pack playable on /games/crossword.</span>
+            )}
+          </div>
+          {crosswordResult?.placed !== undefined && (
+            <div className="text-[var(--color-green)] text-[0.7rem] mt-1">
+              ✓ Placed {crosswordResult.placed} words
+              {crosswordResult.dropped && crosswordResult.dropped.length > 0
+                ? ` · ${crosswordResult.dropped.length} dropped (${crosswordResult.dropped.map((d) => d.word).join(", ")})`
+                : ""}
+            </div>
+          )}
+          {crosswordResult?.error && (
+            <div className="text-[var(--color-red-soft)] text-[0.7rem] mt-1">
+              ✗ {crosswordResult.error}
+            </div>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={generateCrossword}
+          disabled={crosswordBusy || busy}
+          className="border border-[var(--color-line)] text-[var(--color-bone)] font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.2em] px-5 py-2.5 rounded-sm hover:border-[var(--color-bone)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {crosswordBusy
+            ? "Generating…"
+            : hasCrossword
+            ? "Regenerate grid"
+            : "Generate crossword"}
+        </button>
+      </div>
 
       <div className="flex flex-wrap gap-3">
         <button
