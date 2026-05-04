@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/session";
 import { createServiceClient } from "@/lib/supabase/server";
-import { ensureJaiye } from "@/lib/admin-data";
+import { getActiveKid } from "@/lib/admin-context";
 
 type InTask = {
   date: string;
@@ -29,12 +29,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
 
-  const jaiye = await ensureJaiye();
+  const kid = await getActiveKid();
   const supa = createServiceClient();
 
   // Find current max sort_order per date to preserve existing ordering
   const rows: Array<Record<string, unknown>> = (tasks as InTask[]).map((t, i) => ({
-    user_id: jaiye.id,
+    user_id: kid.id,
     date: t.date,
     title: t.title,
     description: t.description ?? null,

@@ -1,13 +1,14 @@
 import { requireAdmin } from "@/lib/session";
-import { ensureJaiye, getQuestions } from "@/lib/admin-data";
+import { getQuestions } from "@/lib/admin-data";
+import { getActiveKid } from "@/lib/admin-context";
 import AskDadQueue from "@/components/admin/ask-dad-queue";
 
 export const dynamic = "force-dynamic";
 
 export default async function AskDadPage() {
   await requireAdmin();
-  const jaiye = await ensureJaiye();
-  const questions = await getQuestions(jaiye.id, 90);
+  const kid = await getActiveKid();
+  const questions = await getQuestions(kid.id, 90);
 
   const pending = questions.filter((q) => q.status === "pending");
   const answered = questions.filter((q) => q.status === "answered");

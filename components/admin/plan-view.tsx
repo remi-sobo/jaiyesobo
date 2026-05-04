@@ -28,6 +28,8 @@ type Props = {
   questions: Question[];
   prevWeekStart: string;
   nextWeekStart: string;
+  kidName: string;
+  noteLabel: string;
 };
 
 const QUICK_ADD_CHIPS = [
@@ -226,12 +228,22 @@ export default function PlanView(props: Props) {
         </div>
       )}
 
-      {/* Bottom grid: Dad's note / Uploads / Ask Dad */}
+      {/* Bottom grid: note / Uploads / Ask Dad */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-12">
-        <Panel title="Dad's note · Today + Tomorrow">
-          <DadsNoteEditor label="Today" date={props.todayDate} initial={props.todayNote} />
+        <Panel title={`${props.noteLabel} · Today + Tomorrow`}>
+          <DadsNoteEditor
+            label="Today"
+            date={props.todayDate}
+            initial={props.todayNote}
+            kidName={props.kidName}
+          />
           <div className="h-2" />
-          <DadsNoteEditor label="Tomorrow" date={props.tomorrowDate} initial={props.tomorrowNote} />
+          <DadsNoteEditor
+            label="Tomorrow"
+            date={props.tomorrowDate}
+            initial={props.tomorrowNote}
+            kidName={props.kidName}
+          />
         </Panel>
 
         <Panel
@@ -245,7 +257,7 @@ export default function PlanView(props: Props) {
           }
         >
           {props.uploads.length === 0 ? (
-            <p className="text-sm text-[var(--color-warm-mute)]">Nothing pending. When Jaiye uploads, it lands here.</p>
+            <p className="text-sm text-[var(--color-warm-mute)]">Nothing pending. When {props.kidName} uploads, it lands here.</p>
           ) : (
             <ul className="flex flex-col">
               {props.uploads.slice(0, 6).map((u) => (

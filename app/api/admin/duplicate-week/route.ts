@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/session";
 import { createServiceClient } from "@/lib/supabase/server";
-import { ensureJaiye } from "@/lib/admin-data";
+import { getActiveKid } from "@/lib/admin-context";
 import { isoDate, addDays } from "@/lib/week";
 
 export async function POST(req: Request) {
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
 
-  const jaiye = await ensureJaiye();
+  const kid = await getActiveKid();
   const supa = createServiceClient();
 
   const currentStart = new Date(`${weekStartDate}T00:00:00`);
@@ -27,11 +27,11 @@ export async function POST(req: Request) {
   const prevEnd = addDays(prevStart, 6);
   const currentEnd = addDays(currentStart, 6);
 
-  // Wipe this week for Jaiye first (avoid duplicate stacking)
+  // Wipe this week for the active kid first (avoid duplicate stacking)
   const { error: delErr } = await supa
     .from("tasks")
     .delete()
-    .eq("user_id", jaiye.id)
+    .eq("user_id", kid.id)
     .gte("date", isoDate(currentStart))
     .lte("date", isoDate(currentEnd));
   if (delErr) {
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
   const { data: prev, error: readErr } = await supa
     .from("tasks")
     .select("date, title, description, type, subject, link, completion_type, reflection_prompt, requires_photo, sort_order")
-    .eq("user_id", jaiye.id)
+    .eq("user_id", kid.id)
     .gte("date", isoDate(prevStart))
     .lte("date", isoDate(prevEnd));
   if (readErr) {
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
   const rows = prev.map((row) => {
     const d = new Date(`${row.date}T00:00:00`);
     d.setDate(d.getDate() + dayShift);
-    return { ...row, user_id: jaiye.id, date: isoDate(d) };
+    return { ...row, user_id: kid.id, date: isoDate(d) };
   });
 
   const { error: insErr } = await supa.from("tasks").insert(rows);

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/session";
 import { createServiceClient } from "@/lib/supabase/server";
-import { ensureJaiye } from "@/lib/admin-data";
+import { getActiveKid } from "@/lib/admin-context";
 
 export async function POST(req: Request) {
   const session = await getAdminSession();
@@ -29,14 +29,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "missing_fields" }, { status: 400 });
   }
 
-  const jaiye = await ensureJaiye();
+  const kid = await getActiveKid();
   const supa = createServiceClient();
 
   // Compute next sort_order for this day
   const { data: existing } = await supa
     .from("tasks")
     .select("sort_order")
-    .eq("user_id", jaiye.id)
+    .eq("user_id", kid.id)
     .eq("date", date)
     .order("sort_order", { ascending: false })
     .limit(1);
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
   const { data, error } = await supa
     .from("tasks")
     .insert({
-      user_id: jaiye.id,
+      user_id: kid.id,
       date,
       title,
       description: description ?? null,

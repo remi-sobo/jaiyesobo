@@ -82,9 +82,16 @@ export async function getWeeklyBrief(weekStartDate: string): Promise<string> {
   return data?.body_markdown ?? "";
 }
 
-export async function getDadNoteBody(date: string): Promise<string> {
+export async function getDadNoteBody(userId: string, date: string): Promise<string> {
+  // Migration 016 made dad_notes unique on (date, user_id). Always scope by
+  // both — without user_id this could return another kid's note.
   const supa = createServiceClient();
-  const { data, error } = await supa.from("dad_notes").select("body").eq("date", date).maybeSingle();
+  const { data, error } = await supa
+    .from("dad_notes")
+    .select("body")
+    .eq("user_id", userId)
+    .eq("date", date)
+    .maybeSingle();
   if (error) throw error;
   return data?.body ?? "";
 }

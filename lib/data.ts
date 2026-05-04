@@ -29,12 +29,15 @@ export function todayIso(): string {
 }
 
 export async function getJaiye() {
+  // Now that there's more than one kid, filter by display_name explicitly.
+  // Pre-Phase 3 this used `.eq("role", "kid").limit(1)`, which would
+  // non-deterministically return either kid once Kemi exists.
   const supa = createServiceClient();
   const { data, error } = await supa
     .from("users")
     .select("id, display_name, role")
     .eq("role", "kid")
-    .limit(1)
+    .eq("display_name", "Jaiye")
     .maybeSingle();
   if (error) throw error;
   return data;

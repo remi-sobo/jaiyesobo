@@ -2,14 +2,26 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import KidSwitcher from "./kid-switcher";
+import type { Kid } from "@/lib/admin-context";
 
 type Props = {
   uploadsCount: number;
   pendingQuestions: number;
   newFeedback: number;
+  kids: Kid[];
+  activeKidId: string;
+  activeKidName: string;
 };
 
-export default function Sidebar({ uploadsCount, pendingQuestions, newFeedback }: Props) {
+export default function Sidebar({
+  uploadsCount,
+  pendingQuestions,
+  newFeedback,
+  kids,
+  activeKidId,
+  activeKidName,
+}: Props) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -21,15 +33,22 @@ export default function Sidebar({ uploadsCount, pendingQuestions, newFeedback }:
     router.refresh();
   }
 
+  // Brand accent reflects active kid (red for Jaiye, pink for Kemi).
+  const brandAccent = activeKidName.toLowerCase() === "kemi" ? "#C83C78" : "var(--color-red)";
+
   return (
     <aside className="w-60 shrink-0 bg-[var(--color-warm-surface)] border-r border-[var(--color-line)] px-5 py-8 flex flex-col gap-10 sticky top-0 h-screen">
       <div className="pb-6 border-b border-[var(--color-line)]">
         <div className="font-[family-name:var(--font-fraunces)] font-black text-xl tracking-tight">
-          Jaiye<span className="italic font-normal text-[var(--color-red)]">.</span>
+          {activeKidName}
+          <span className="italic font-normal" style={{ color: brandAccent }}>.</span>
         </div>
-        <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.25em] text-[var(--color-warm-mute)] mt-1">
+        <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.25em] text-[var(--color-warm-mute)] mt-1 mb-3">
           Admin
         </div>
+        {kids.length > 1 && (
+          <KidSwitcher kids={kids} activeKidId={activeKidId} />
+        )}
       </div>
 
       <NavGroup label="This week">

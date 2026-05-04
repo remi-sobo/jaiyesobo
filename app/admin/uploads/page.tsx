@@ -1,5 +1,6 @@
 import { requireAdmin } from "@/lib/session";
-import { ensureJaiye, getPendingUploads, getLessonCompletions } from "@/lib/admin-data";
+import { getPendingUploads, getLessonCompletions } from "@/lib/admin-data";
+import { getActiveKid } from "@/lib/admin-context";
 import ReviewButton from "@/components/admin/review-button";
 import LessonReceipt from "@/components/admin/lesson-receipt";
 
@@ -7,10 +8,10 @@ export const dynamic = "force-dynamic";
 
 export default async function UploadsPage() {
   await requireAdmin();
-  const jaiye = await ensureJaiye();
+  const kid = await getActiveKid();
   const [uploads, lessons] = await Promise.all([
-    getPendingUploads(jaiye.id, 30),
-    getLessonCompletions(jaiye.id, 60),
+    getPendingUploads(kid.id, 30),
+    getLessonCompletions(kid.id, 60),
   ]);
 
   return (
@@ -47,7 +48,7 @@ export default async function UploadsPage() {
         )}
 
       {uploads.length === 0 && lessons.length === 0 ? (
-        <p className="text-[var(--color-warm-mute)]">Nothing yet. When Jaiye submits a photo or finishes a lesson, it shows here.</p>
+        <p className="text-[var(--color-warm-mute)]">Nothing yet. When {kid.display_name} submits a photo or finishes a lesson, it shows here.</p>
       ) : uploads.length === 0 ? null : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {uploads.map((u) => (

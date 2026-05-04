@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/session";
-import { ensureJaiye } from "@/lib/admin-data";
+import { getActiveKid } from "@/lib/admin-context";
 import { getAllAnchorsForUser, createAnchor } from "@/lib/anchors";
 
 export const dynamic = "force-dynamic";
@@ -8,8 +8,8 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const s = await getAdminSession();
   if (!s) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const jaiye = await ensureJaiye();
-  const anchors = await getAllAnchorsForUser(jaiye.id);
+  const kid = await getActiveKid();
+  const anchors = await getAllAnchorsForUser(kid.id);
   return NextResponse.json({ anchors });
 }
 
@@ -46,10 +46,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "date_must_be_null_for_recurring" }, { status: 400 });
   }
 
-  const jaiye = await ensureJaiye();
+  const kid = await getActiveKid();
   try {
     const anchor = await createAnchor({
-      user_id: jaiye.id,
+      user_id: kid.id,
       date: typeof date === "string" ? date : null,
       start_time,
       end_time,
