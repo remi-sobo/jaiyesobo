@@ -151,11 +151,11 @@ export default function TimelineColumn({ anchors, tasks, showNowIndicator, onEdi
         const task = ev.data;
         const done = !!task.completion;
         const subjectHex = SUBJECTS[subjectKeyFor(task.subject, task.type)].hex;
-        const href = task.completion_type === "lesson"
-          ? `/me/lesson/${task.id}`
-          : task.completion_type === "reflection"
-          ? `/me/reflect/${task.id}`
-          : `/me/upload/${task.id}`;
+        // Always land on the task detail page first — the kid sees what
+        // it's about and chooses the right next step (or just checks it
+        // off, for `check` tasks). The detail page deep-links onward to
+        // upload/reflect/lesson where those flows are richer.
+        const href = `/me/task/${task.id}`;
 
         return (
           <div
@@ -166,7 +166,7 @@ export default function TimelineColumn({ anchors, tasks, showNowIndicator, onEdi
             style={{ top, height, left, right, borderLeftColor: subjectHex, borderLeftWidth: 3 }}
           >
             <Link
-              href={done ? "#" : href}
+              href={href}
               className="flex-1 min-w-0 flex items-center gap-3 px-4 hover:bg-[var(--color-warm-surface-3)] transition-colors"
             >
               <div className="min-w-0 flex-1">
