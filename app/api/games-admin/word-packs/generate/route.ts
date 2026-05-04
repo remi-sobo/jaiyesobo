@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { anthropic } from "@ai-sdk/anthropic";
-import { generateText } from "ai";
+import { generateObject } from "ai";
 import { z } from "zod";
 import { getAdminSession } from "@/lib/session";
 import { createServiceClient } from "@/lib/supabase/server";
@@ -22,16 +22,7 @@ Generate a pack with iconic, recognizable words tied to the theme. Each word:
 
 Mix of: player last names, nicknames, arenas, championships, signature moves, era markers, coaches, mottos.
 
-You MUST respond with ONLY a JSON object. No prose before or after, no markdown fences.
-
-Schema:
-{
-  "title": (3-5 word headline for the pack),
-  "subtitle": (one-line tagline, ≤80 chars),
-  "words": [
-    { "word": "DAMIAN", "hint": "All-time franchise leading scorer" }
-  ]
-}`;
+Title should be 3–5 words. Subtitle is a one-line tagline ≤80 chars.`;
 
 const PackSchema = z.object({
   title: z.string().min(1).max(80),
@@ -105,19 +96,17 @@ DIFFICULTY: ${difficulty}
 TARGET WORD COUNT: ${targetCount}
 MAX WORD LENGTH: ${gridSize} characters (the grid is ${gridSize}×${gridSize})
 
-Generate ${targetCount} iconic words. Return JSON only.`;
+Generate ${targetCount} iconic words.`;
 
   let parsed: z.infer<typeof PackSchema>;
   try {
-    const { text } = await generateText({
+    const { object } = await generateObject({
       model: anthropic("claude-sonnet-4-6"),
+      schema: PackSchema,
       system: SYSTEM_PROMPT,
       prompt: userPrompt,
-      maxOutputTokens: 1500,
     });
-    const jsonText = extractJson(text);
-    if (!jsonText) throw new Error(`no_json: ${text.slice(0, 200)}`);
-    parsed = PackSchema.parse(JSON.parse(jsonText));
+    parsed = object;
   } catch (err) {
     console.error(
       JSON.stringify({
@@ -216,21 +205,3 @@ async function ensureUniqueThemeSlug(
   return `${base}-${Date.now()}`;
 }
 
-function extractJson(text: string): string | null {
-  const trimmed = text.trim();
-  if (trimmed.startsWith("{")) return trimmed;
-  const fence = /```(?:json)?\s*([\s\S]*?)```/i.exec(trimmed);
-  if (fence) return fence[1].trim();
-  const start = trimmed.indexOf("{");
-  if (start < 0) return null;
-  let depth = 0;
-  for (let i = start; i < trimmed.length; i++) {
-    const ch = trimmed[i];
-    if (ch === "{") depth++;
-    else if (ch === "}") {
-      depth--;
-      if (depth === 0) return trimmed.slice(start, i + 1);
-    }
-  }
-  return null;
-}
