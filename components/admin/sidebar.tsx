@@ -83,6 +83,10 @@ export default function Sidebar({
         />
       </NavGroup>
 
+      <NavGroup label="System">
+        <NavItem href="/admin/setup" active={is("/admin/setup")} label="Setup" />
+      </NavGroup>
+
       {/* v2 sections (Month, Archive, Photos, Templates, Settings) removed for v1 launch. Restore from git history when ready to build. */}
 
       <div className="mt-auto pt-6 border-t border-[var(--color-line)] flex items-center justify-between font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-warm-mute)]">
