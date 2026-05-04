@@ -13,7 +13,177 @@ export async function GET(_req: Request, { params }: Ctx) {
   if (play?.game_slug === "trivia") {
     return triviaOgImage(play);
   }
+  if (play?.game_slug === "word-search") {
+    return wordSearchOgImage(play);
+  }
   return topFiveOgImage(play);
+}
+
+function wordSearchOgImage(play: Awaited<ReturnType<typeof getPlayByToken>>) {
+  const payload = (play?.payload ?? {}) as { title?: string; difficulty?: string };
+  const result = (play?.result ?? null) as
+    | {
+        time_ms?: number;
+        perfect?: boolean;
+        words_found_count?: number;
+        total_words?: number;
+        roast?: string;
+      }
+    | null;
+  const title = payload.title ?? "Word Search";
+  const difficulty = (payload.difficulty ?? "medium").toUpperCase();
+  const ms = Math.max(0, Math.floor((result?.time_ms ?? 0) / 1000));
+  const m = Math.floor(ms / 60);
+  const s = ms % 60;
+  const timeText = `${m}:${s.toString().padStart(2, "0")}`;
+  const perfect = !!result?.perfect;
+  const found = result?.words_found_count ?? 0;
+  const total = result?.total_words ?? 0;
+  const roast = result?.roast ?? "Play yours at jaiyesobo.com/games/word-search";
+
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          background: "#0a0a0a",
+          color: "#F5F1EA",
+          display: "flex",
+          padding: "64px",
+          position: "relative",
+          fontFamily: "system-ui, sans-serif",
+        }}
+      >
+        <TopBar />
+        <Streak />
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, position: "relative" }}>
+          <div
+            style={{
+              fontSize: 22,
+              letterSpacing: 8,
+              textTransform: "uppercase",
+              color: "#8a8a8a",
+              marginBottom: 16,
+            }}
+          >
+            jaiyesobo.com / games · Word Search
+          </div>
+          <div
+            style={{
+              fontSize: 76,
+              fontWeight: 900,
+              lineHeight: 1,
+              letterSpacing: "-0.03em",
+              color: "#F5F1EA",
+              marginBottom: 12,
+              maxWidth: 1000,
+            }}
+          >
+            {title}
+          </div>
+          <div
+            style={{
+              display: "flex",
+              fontSize: 18,
+              letterSpacing: 6,
+              textTransform: "uppercase",
+              color: "#3ECFB2",
+              border: "1px solid #3ECFB2",
+              padding: "6px 14px",
+              borderRadius: 4,
+              marginBottom: 32,
+              alignSelf: "flex-start",
+            }}
+          >
+            {difficulty}
+          </div>
+
+          <div style={{ display: "flex", flex: 1, alignItems: "center", gap: 80 }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 22,
+                  letterSpacing: 6,
+                  textTransform: "uppercase",
+                  color: "#8a8a8a",
+                  marginBottom: 4,
+                }}
+              >
+                Time
+              </div>
+              <div
+                style={{
+                  fontSize: 220,
+                  fontWeight: 900,
+                  lineHeight: 1,
+                  color: perfect ? "#F5C842" : "#F5F1EA",
+                  letterSpacing: "-0.05em",
+                  display: "flex",
+                }}
+              >
+                {timeText}
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 24,
+                flex: 1,
+              }}
+            >
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <div
+                  style={{
+                    fontSize: 22,
+                    letterSpacing: 6,
+                    textTransform: "uppercase",
+                    color: "#8a8a8a",
+                  }}
+                >
+                  Words
+                </div>
+                <div
+                  style={{
+                    fontSize: 80,
+                    fontWeight: 900,
+                    lineHeight: 1,
+                    color: perfect ? "#3ECFB2" : "#F5F1EA",
+                    letterSpacing: "-0.03em",
+                    display: "flex",
+                    alignItems: "baseline",
+                  }}
+                >
+                  {found}
+                  <span style={{ color: "#8a8a8a", fontSize: 50 }}>/{total}</span>
+                </div>
+              </div>
+              <div
+                style={{
+                  fontSize: 30,
+                  fontStyle: "italic",
+                  color: "#F5F1EA",
+                  lineHeight: 1.2,
+                }}
+              >
+                “{roast}”
+              </div>
+            </div>
+          </div>
+
+          <Footer cta="Play yours at jaiyesobo.com/games/word-search" />
+        </div>
+      </div>
+    ),
+    imageOpts()
+  );
 }
 
 function topFiveOgImage(play: Awaited<ReturnType<typeof getPlayByToken>>) {

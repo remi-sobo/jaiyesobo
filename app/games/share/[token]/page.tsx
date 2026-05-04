@@ -11,8 +11,32 @@ import type { Breakdown } from "@/components/games/trivia/trivia-result";
 import type { TriviaDifficultyKey } from "@/lib/games/trivia-config";
 import type { DraftPlayPayload, DraftJudgement } from "@/lib/draft-game";
 import type { GoatRosterPlayPayload, GoatRosterVerdict } from "@/lib/goat-roster";
+import WordSearchShareView from "@/components/games/word-search/word-search-share-view";
+import type { WordSearchDifficulty } from "@/lib/games/word-search";
 
 type Props = { params: Promise<{ token: string }> };
+
+type WordSearchPayload = {
+  pack_id: string;
+  theme_slug: string;
+  title: string;
+  subtitle?: string;
+  difficulty: WordSearchDifficulty;
+  grid_size: number;
+  team_slug?: string | null;
+  words: string[];
+  words_found?: string[];
+};
+
+type WordSearchResult = {
+  time_ms: number;
+  words_found_count: number;
+  total_words: number;
+  perfect: boolean;
+  roast: string;
+  title?: string;
+  difficulty?: WordSearchDifficulty;
+};
 
 type TriviaResult = {
   score: number;
@@ -92,6 +116,36 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         card: "summary_large_image",
         title: winnerText,
         description: verdict?.verdict ?? "Play yours at jaiyesobo.com/games/draft",
+      },
+    };
+  }
+
+  if (play.game_slug === "word-search") {
+    const payload = play.payload as WordSearchPayload | null;
+    const result = play.result as WordSearchResult | null;
+    const packTitle = payload?.title ?? "Word Search";
+    let titleLine: string;
+    if (result?.perfect) {
+      titleLine = `Solved ${packTitle} · Word Search · Jaiye's Games`;
+    } else if (result) {
+      titleLine = `${result.words_found_count}/${result.total_words} on ${packTitle} · Word Search`;
+    } else {
+      titleLine = `${packTitle} · Word Search · Jaiye's Games`;
+    }
+    return {
+      title: titleLine,
+      description: result?.roast ?? "Themed NBA word search. Drag, find, beat the clock.",
+      openGraph: {
+        title: titleLine,
+        description: result?.roast ?? "Play yours at jaiyesobo.com/games/word-search",
+        images: [{ url: ogUrl, width: 1200, height: 630 }],
+        type: "website",
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: titleLine,
+        description: result?.roast ?? "Play yours at jaiyesobo.com/games/word-search",
+        images: [ogUrl],
       },
     };
   }
@@ -240,6 +294,57 @@ export default async function SharePage({ params }: Props) {
             className="inline-block bg-[var(--color-red)] text-[var(--color-bone)] font-[family-name:var(--font-jetbrains)] text-xs uppercase tracking-[0.2em] px-7 py-4 rounded-sm hover:bg-[var(--color-red-bright)] transition-colors"
           >
             Draft your own →
+          </Link>
+        </div>
+      </GameShell>
+    );
+  }
+
+  if (play.game_slug === "word-search") {
+    const payload = play.payload as WordSearchPayload | null;
+    const result = play.result as WordSearchResult | null;
+    if (!payload) {
+      return (
+        <GameShell>
+          <main className="max-w-[640px] mx-auto px-6 py-20 text-center">
+            <h1 className="font-[family-name:var(--font-fraunces)] font-semibold text-2xl mb-3">
+              That puzzle is corrupted.
+            </h1>
+            <Link href="/games/word-search" className="text-[var(--color-red)] underline">
+              Try another pack
+            </Link>
+          </main>
+        </GameShell>
+      );
+    }
+    return (
+      <GameShell liveLabel="Shared puzzle">
+        {!result ? (
+          <main className="max-w-[640px] mx-auto px-6 py-20 text-center">
+            <h1 className="font-[family-name:var(--font-fraunces)] font-semibold text-2xl mb-3">
+              This puzzle is still in progress.
+            </h1>
+            <p className="text-[var(--color-mute)]">Refresh in a moment.</p>
+          </main>
+        ) : (
+          <WordSearchShareView
+            title={payload.title}
+            subtitle={payload.subtitle ?? ""}
+            themeSlug={payload.theme_slug}
+            difficulty={payload.difficulty}
+            timeMs={result.time_ms}
+            perfect={result.perfect}
+            wordsFoundCount={result.words_found_count}
+            totalWords={result.total_words}
+            roast={result.roast}
+          />
+        )}
+        <div className="max-w-[760px] mx-auto px-6 pb-24 pt-2 text-center">
+          <Link
+            href={`/games/word-search/${payload.theme_slug}`}
+            className="inline-block bg-[var(--color-red)] text-[var(--color-bone)] font-[family-name:var(--font-jetbrains)] text-xs uppercase tracking-[0.2em] px-7 py-4 rounded-sm hover:bg-[var(--color-red-bright)] transition-colors"
+          >
+            Try this pack →
           </Link>
         </div>
       </GameShell>
