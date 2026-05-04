@@ -1,7 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import type { Kid } from "@/lib/admin-context";
 
 type Props = {
@@ -13,23 +12,32 @@ type Props = {
  * Pill-row switcher rendered at the top of every admin page.
  * Active pill in the kid's accent color (red for Jaiye, kemi-pink for Kemi).
  *
- * Switching POSTs to /api/admin/active-kid which sets the cookie, then
- * router.refresh() reloads server data with the new active-kid context.
+ * Switching POSTs to /api/admin/active-kid (sets the active_kid_id cookie)
+ * then hard-reloads. Hard reload (not router.refresh) is intentional: it
+ * guarantees the new Set-Cookie has been committed before any server
+ * component re-renders, eliminating the race where ~half the time the
+ * layout re-fetches against the old cookie.
  */
 export default function KidSwitcher({ kids, activeKidId }: Props) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const [pending, setPending] = useState(false);
 
-  function selectKid(kidId: string) {
-    if (kidId === activeKidId) return;
-    startTransition(async () => {
-      await fetch("/api/admin/active-kid", {
+  async function selectKid(kidId: string) {
+    if (kidId === activeKidId || pending) return;
+    setPending(true);
+    try {
+      const res = await fetch("/api/admin/active-kid", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ kid_id: kidId }),
       });
-      router.refresh();
-    });
+      if (!res.ok) {
+        setPending(false);
+        return;
+      }
+      window.location.reload();
+    } catch {
+      setPending(false);
+    }
   }
 
   return (
