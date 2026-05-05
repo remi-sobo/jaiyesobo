@@ -50,7 +50,7 @@ export default async function TodayPage({ searchParams }: Props) {
     allAnchors,
   ] = await Promise.all([
     getTasksForDay(jaiye.id, date),
-    getDadNoteForDay(date),
+    getDadNoteForDay(jaiye.id, date),
     getPendingQuestionCount(jaiye.id),
     calculateStreak(jaiye.id),
     isDatePublished(date),

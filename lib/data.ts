@@ -67,11 +67,15 @@ export async function getTasksForDay(userId: string, date: string): Promise<Task
   });
 }
 
-export async function getDadNoteForDay(date: string): Promise<DadNote | null> {
+export async function getDadNoteForDay(userId: string, date: string): Promise<DadNote | null> {
+  // Migration 016 made dad_notes unique on (date, user_id). Without user_id
+  // this returns every kid's note for the day and .maybeSingle() throws
+  // PGRST116 once there's more than one kid.
   const supa = createServiceClient();
   const { data, error } = await supa
     .from("dad_notes")
     .select("id, date, body")
+    .eq("user_id", userId)
     .eq("date", date)
     .maybeSingle();
   if (error) throw error;
