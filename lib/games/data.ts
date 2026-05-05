@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import { getGamesAudience, type KidSlug } from "@/lib/games/audience";
 
 export type Game = {
   slug: string;
@@ -34,6 +35,27 @@ export async function getAllGames(): Promise<Game[]> {
   const { data, error } = await supa.from("games").select("*").order("created_at");
   if (error) throw error;
   return (data ?? []) as Game[];
+}
+
+/**
+ * Games that should appear on the given kid's /games hub. Reads the
+ * `app_config['games_audience']` blob to determine which slugs are scoped
+ * to that kid, then resolves them against the games table.
+ *
+ * Fallback when the config is missing entirely: for `jaiye` we surface
+ * every non-internal game (preserves the pre-multi-kid behaviour); for
+ * `kemi` we return [] (curated experience, opt-in only).
+ */
+export async function getGamesForKid(kid: KidSlug): Promise<Game[]> {
+  const [all, audience] = await Promise.all([getAllGames(), getGamesAudience()]);
+  if (!audience) {
+    if (kid === "jaiye") {
+      return all.filter((g) => g.status === "live" || g.status === "beta");
+    }
+    return [];
+  }
+  const allowed = new Set(audience[kid] ?? []);
+  return all.filter((g) => allowed.has(g.slug));
 }
 
 export async function getGame(slug: string): Promise<Game | null> {
