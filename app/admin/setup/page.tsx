@@ -1,13 +1,20 @@
 import { requireAdmin } from "@/lib/session";
 import { getAllKids } from "@/lib/admin-context";
+import { getAllGames } from "@/lib/games/data";
+import { getGamesAudience } from "@/lib/games/audience";
 import SeedKemiPanel from "@/components/admin/seed-kemi-panel";
 import SeedDraftWheelPanel from "@/components/admin/seed-draft-wheel-panel";
+import GameAudiencePanel from "@/components/admin/game-audience-panel";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminSetupPage() {
   await requireAdmin();
-  const kids = await getAllKids();
+  const [kids, games, audience] = await Promise.all([
+    getAllKids(),
+    getAllGames(),
+    getGamesAudience(),
+  ]);
   const kemiExists = kids.some((k) => k.display_name.toLowerCase() === "kemi");
 
   return (
@@ -34,6 +41,8 @@ export default async function AdminSetupPage() {
       </div>
 
       <SeedDraftWheelPanel />
+
+      <GameAudiencePanel games={games} initialAudience={audience} />
     </main>
   );
 }

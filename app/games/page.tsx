@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import GameShell from "@/components/games/game-shell";
 import GameCard from "@/components/games/game-card";
-import { getAllGames } from "@/lib/games/data";
+import { getGamesForKid } from "@/lib/games/data";
 
 export const metadata: Metadata = {
   title: "Jaiye's Games — NBA games curated by an 8-year-old",
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function GamesHubPage() {
-  const games = await getAllGames();
+  const games = await getGamesForKid("jaiye");
   // Sort: live first, then beta, then archived
   const ordered = [...games].sort((a, b) => statusRank(a.status) - statusRank(b.status));
 
