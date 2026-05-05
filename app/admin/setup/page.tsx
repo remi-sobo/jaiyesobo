@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/session";
 import { getAllKids } from "@/lib/admin-context";
 import SeedKemiPanel from "@/components/admin/seed-kemi-panel";
+import SeedDraftWheelPanel from "@/components/admin/seed-draft-wheel-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,8 @@ export default async function AdminSetupPage() {
           ? "✓ Kemi user exists — re-running step 1 will skip; steps 2 and 3 are still re-runnable."
           : "Kemi user not yet created — run step 1 first."}
       </div>
+
+      <SeedDraftWheelPanel />
     </main>
   );
 }

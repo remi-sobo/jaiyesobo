@@ -1,0 +1,156 @@
+[
+  {
+    "name": "Wes Unseld",
+    "search_aliases": ["Unseld", "Wes"],
+    "primary_position": "C",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1968-1981",
+      "peak_label": "1969 MVP and ROY, 1978 Finals MVP — franchise's all-time anchor",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Elvin Hayes",
+    "search_aliases": ["Big E", "Elvin"],
+    "primary_position": "F",
+    "secondary_positions": ["C"],
+    "team_stint": {
+      "years": "1972-1981",
+      "peak_label": "1978 NBA champion, HOF — 50-point nights at the Capital Centre",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Earl Monroe",
+    "search_aliases": ["Earl the Pearl", "Earl", "Black Jesus"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1967-1971",
+      "peak_label": "1968 ROY, the original showman of the Bullets",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Gus Johnson",
+    "search_aliases": ["Gus", "Honeycomb"],
+    "primary_position": "F",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1963-1972",
+      "peak_label": "5x All-Star, broke backboards before it was a thing",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Walt Bellamy",
+    "search_aliases": ["Bellamy", "Bells"],
+    "primary_position": "C",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1961-1965",
+      "peak_label": "1962 ROY, 31.6 ppg as a rookie — original franchise scorer",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Bob Dandridge",
+    "search_aliases": ["Bobby D", "Dandridge"],
+    "primary_position": "F",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1977-1981",
+      "peak_label": "1978 NBA champion — clutch wing of the title team",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Phil Chenier",
+    "search_aliases": ["Chenier", "Phil"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1971-1979",
+      "peak_label": "3x All-Star with the Bullets, smooth scoring guard",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Gilbert Arenas",
+    "search_aliases": ["Agent Zero", "Gil", "Arenas", "Hibachi"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2003-2010",
+      "peak_label": "3x All-Star, 60-point nights, midnight Capital One drama",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Caron Butler",
+    "search_aliases": ["Tuff Juice", "Caron", "Butler"],
+    "primary_position": "F",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2005-2010",
+      "peak_label": "2x All-Star alongside Arenas — two-way wing of the contenders",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Antawn Jamison",
+    "search_aliases": ["Jamison", "Antawn"],
+    "primary_position": "F",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2004-2010",
+      "peak_label": "2x All-Star — silky 20-and-10 forward, all-time franchise scorer",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "John Wall",
+    "search_aliases": ["Wall", "Wall-Star"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2010-2020",
+      "peak_label": "5x All-Star, 2017 All-NBA — fastest end-to-end Wizard ever",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Bradley Beal",
+    "search_aliases": ["Beal", "Real Deal Beal", "Brad"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2012-2023",
+      "peak_label": "3x All-Star, top-3 NBA scorer in 2021 — the Wall-era backcourt mate",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Juwan Howard",
+    "search_aliases": ["Juwan", "Howard"],
+    "primary_position": "F",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1994-2001",
+      "peak_label": "1996 All-Star, the Fab-Five forward who anchored the late-90s Bullets",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Bernard King",
+    "search_aliases": ["Bernard", "King"],
+    "primary_position": "F",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1987-1991",
+      "peak_label": "1991 All-Star, midrange master in his Washington comeback chapter",
+      "is_iconic": true
+    }
+  }
+]

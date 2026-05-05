@@ -1,0 +1,156 @@
+[
+  {
+    "name": "Kevin Garnett",
+    "search_aliases": ["KG", "The Big Ticket", "Garnett"],
+    "primary_position": "F",
+    "secondary_positions": ["C"],
+    "team_stint": {
+      "years": "1995-2007, 2015-2016",
+      "peak_label": "2004 MVP, 10x All-Star as a Wolf — franchise's all-time icon",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Karl-Anthony Towns",
+    "search_aliases": ["KAT", "Towns"],
+    "primary_position": "C",
+    "secondary_positions": ["F"],
+    "team_stint": {
+      "years": "2015-2024",
+      "peak_label": "4x All-Star, 2016 ROY — modern face of the franchise",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Anthony Edwards",
+    "search_aliases": ["Ant", "Ant-Man", "Edwards"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2020-present",
+      "peak_label": "2x All-Star, All-NBA — current franchise centerpiece",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Jimmy Butler",
+    "search_aliases": ["Jimmy", "Buckets", "Butler"],
+    "primary_position": "F",
+    "secondary_positions": ["G"],
+    "team_stint": {
+      "years": "2017-2018",
+      "peak_label": "All-Star wing who pushed Minnesota to its first playoffs since 2004",
+      "is_iconic": false
+    }
+  },
+  {
+    "name": "Andrew Wiggins",
+    "search_aliases": ["Wiggins", "Maple Jordan"],
+    "primary_position": "F",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2014-2020",
+      "peak_label": "2015 ROY — top scoring wing of the post-KG rebuild",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Ricky Rubio",
+    "search_aliases": ["Ricky", "Rubio"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2011-2017",
+      "peak_label": "Pass-first floor general, fan-favorite Wolves point guard",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Kevin Love",
+    "search_aliases": ["K-Love", "Love"],
+    "primary_position": "F",
+    "secondary_positions": ["C"],
+    "team_stint": {
+      "years": "2008-2014",
+      "peak_label": "3x All-Star, 31-and-31 outlet-pass king of the Rubio era",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Wally Szczerbiak",
+    "search_aliases": ["Wally World", "Szczerbiak"],
+    "primary_position": "F",
+    "secondary_positions": ["G"],
+    "team_stint": {
+      "years": "1999-2006",
+      "peak_label": "2002 All-Star — jump-shot deluxe of the KG playoff Wolves",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Sam Cassell",
+    "search_aliases": ["Sam I Am", "Cassell"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2003-2005",
+      "peak_label": "2004 All-Star — point guard of the 58-win WCF Wolves",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Latrell Sprewell",
+    "search_aliases": ["Spree", "Sprewell"],
+    "primary_position": "G",
+    "secondary_positions": ["F"],
+    "team_stint": {
+      "years": "2003-2005",
+      "peak_label": "Wing scorer of the 2004 WCF Wolves alongside KG",
+      "is_iconic": false
+    }
+  },
+  {
+    "name": "Stephon Marbury",
+    "search_aliases": ["Steph", "Starbury", "Marbury"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1996-1999",
+      "peak_label": "Original KG running mate — high-volume point guard",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Tom Gugliotta",
+    "search_aliases": ["Googs", "Gugliotta"],
+    "primary_position": "F",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1995-1998",
+      "peak_label": "1997 All-Star — first Timberwolves All-Star alongside young KG",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Rudy Gobert",
+    "search_aliases": ["Rudy", "Gobert", "Stifle Tower"],
+    "primary_position": "C",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2022-present",
+      "peak_label": "DPOY-caliber rim protector of the WCF-era Edwards Wolves",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "D'Angelo Russell",
+    "search_aliases": ["DLo", "Russell"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2020-2023",
+      "peak_label": "All-Star caliber backcourt mate to KAT and Edwards",
+      "is_iconic": false
+    }
+  }
+]
