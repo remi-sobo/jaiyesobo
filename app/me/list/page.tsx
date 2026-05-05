@@ -49,7 +49,7 @@ export default async function ListViewPage() {
   const [rawTasks, dadNote, pending, streakResult, published, answered, feedbackReply] =
     await Promise.all([
       getTasksForDay(jaiye.id, date),
-      getDadNoteForDay(date),
+      getDadNoteForDay(jaiye.id, date),
       getPendingQuestionCount(jaiye.id),
       calculateStreak(jaiye.id),
       isDatePublished(date),
