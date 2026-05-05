@@ -1,0 +1,156 @@
+[
+  {
+    "name": "Bob McAdoo",
+    "search_aliases": ["McAdoo", "Mac", "Bob"],
+    "primary_position": "F",
+    "secondary_positions": ["C"],
+    "team_stint": {
+      "years": "1972-1976",
+      "peak_label": "1975 MVP, 3x scoring champ — Buffalo Braves' all-time icon",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Danny Manning",
+    "search_aliases": ["Manning", "Danny"],
+    "primary_position": "F",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1988-1994",
+      "peak_label": "2x All-Star — 1988 #1 pick, post-up forward of the early-90s Clippers",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Ron Harper",
+    "search_aliases": ["Harp", "Harper"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1989-1994",
+      "peak_label": "20-ppg slashing guard of the early-90s playoff Clippers",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Loy Vaught",
+    "search_aliases": ["Loy", "Vaught"],
+    "primary_position": "F",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1990-1998",
+      "peak_label": "Double-double machine — top rebounder of the 90s Clippers",
+      "is_iconic": false
+    }
+  },
+  {
+    "name": "Lamar Odom",
+    "search_aliases": ["LO", "Lamar"],
+    "primary_position": "F",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1999-2003",
+      "peak_label": "Rookie All-Star team — point-forward prototype as a Clipper",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Elton Brand",
+    "search_aliases": ["Brand", "Elton"],
+    "primary_position": "F",
+    "secondary_positions": ["C"],
+    "team_stint": {
+      "years": "2001-2008",
+      "peak_label": "2x All-Star, 20-and-10 — face of the 2006 playoff run",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Corey Maggette",
+    "search_aliases": ["Maggette", "Corey"],
+    "primary_position": "F",
+    "secondary_positions": ["G"],
+    "team_stint": {
+      "years": "2000-2008",
+      "peak_label": "Free-throw merchant scoring wing of the 2000s Clippers",
+      "is_iconic": false
+    }
+  },
+  {
+    "name": "Chris Kaman",
+    "search_aliases": ["Kaman", "The Caveman"],
+    "primary_position": "C",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2003-2011",
+      "peak_label": "2010 All-Star — top scoring big man between the Brand and Lob City eras",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Blake Griffin",
+    "search_aliases": ["Blake", "Griffin"],
+    "primary_position": "F",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2009-2018",
+      "peak_label": "5x All-Star, 2011 ROY — Lob City headliner above the rim",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Chris Paul",
+    "search_aliases": ["CP3", "Point God", "CP"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2011-2017",
+      "peak_label": "5x All-Star and All-NBA as a Clipper — Lob City's conductor",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "DeAndre Jordan",
+    "search_aliases": ["DJ", "Jordan", "DeAndre"],
+    "primary_position": "C",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2008-2018",
+      "peak_label": "All-Star, 2x rebounding champ — Lob City's lob target",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Kawhi Leonard",
+    "search_aliases": ["Kawhi", "The Klaw", "Fun Guy"],
+    "primary_position": "F",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2019-present",
+      "peak_label": "2x All-NBA wing — the franchise's biggest-name signing in history",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Tobias Harris",
+    "search_aliases": ["Tobi", "Harris"],
+    "primary_position": "F",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2017-2019",
+      "peak_label": "Top-3 scorer of the bridge years before the Kawhi/PG arrival",
+      "is_iconic": false
+    }
+  },
+  {
+    "name": "Norman Powell",
+    "search_aliases": ["Stormin Norman", "Powell"],
+    "primary_position": "G",
+    "secondary_positions": ["F"],
+    "team_stint": {
+      "years": "2021-2025",
+      "peak_label": "20-ppg microwave scorer off the Kawhi-era bench",
+      "is_iconic": false
+    }
+  }
+]

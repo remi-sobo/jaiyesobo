@@ -1,0 +1,156 @@
+[
+  {
+    "name": "Chris Paul",
+    "search_aliases": ["CP3", "Point God", "CP"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2005-2011",
+      "peak_label": "2006 ROY, 4x All-Star with the franchise — the Point God's first home",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Anthony Davis",
+    "search_aliases": ["AD", "The Brow", "A.D."],
+    "primary_position": "F",
+    "secondary_positions": ["C"],
+    "team_stint": {
+      "years": "2012-2019",
+      "peak_label": "6x All-Star, 4x All-NBA, the franchise's modern superstar",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "David West",
+    "search_aliases": ["West"],
+    "primary_position": "F",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2003-2011",
+      "peak_label": "2x All-Star, the rugged frontcourt anchor next to CP3",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Tyson Chandler",
+    "search_aliases": ["Tyson", "Chandler"],
+    "primary_position": "C",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2006-2009",
+      "peak_label": "Lob-target rim runner of the CP3-era playoff teams",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Jrue Holiday",
+    "search_aliases": ["Jrue", "Holiday"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2013-2020",
+      "peak_label": "2018 All-NBA Defense, two-way point guard of the AD years",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Zion Williamson",
+    "search_aliases": ["Zion", "Z"],
+    "primary_position": "F",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2019-present",
+      "peak_label": "2019 #1 pick, All-Star — the most explosive force in franchise history",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Brandon Ingram",
+    "search_aliases": ["Ingram", "B.I.", "BI"],
+    "primary_position": "F",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2019-present",
+      "peak_label": "2020 Most Improved, 2020 All-Star — silky scorer alongside Zion",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "CJ McCollum",
+    "search_aliases": ["CJ", "McCollum"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2022-present",
+      "peak_label": "Veteran scoring guard who steadied the Zion-era backcourt",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Ryan Anderson",
+    "search_aliases": ["Ry-Anno", "Anderson"],
+    "primary_position": "F",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2012-2016",
+      "peak_label": "Stretch-four sniper, top NOLA 3-point volume of his era",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Trevor Ariza",
+    "search_aliases": ["Ariza"],
+    "primary_position": "F",
+    "secondary_positions": ["G"],
+    "team_stint": {
+      "years": "2014-2018",
+      "peak_label": "3-and-D wing of the AD playoff teams",
+      "is_iconic": false
+    }
+  },
+  {
+    "name": "Lonzo Ball",
+    "search_aliases": ["Lonzo", "Zo", "Ball"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2019-2021",
+      "peak_label": "Pass-first floor general of the early Zion years",
+      "is_iconic": false
+    }
+  },
+  {
+    "name": "Eric Gordon",
+    "search_aliases": ["EG", "Gordon"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2011-2016",
+      "peak_label": "Volume scoring guard the franchise built around post-CP3",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Tyreke Evans",
+    "search_aliases": ["Tyreke", "Reke"],
+    "primary_position": "G",
+    "secondary_positions": ["F"],
+    "team_stint": {
+      "years": "2013-2017",
+      "peak_label": "Slashing combo guard, secondary playmaker next to AD",
+      "is_iconic": false
+    }
+  },
+  {
+    "name": "Jamal Mashburn",
+    "search_aliases": ["Mash", "Monster Mash"],
+    "primary_position": "F",
+    "secondary_positions": ["G"],
+    "team_stint": {
+      "years": "2002-2005",
+      "peak_label": "2003 All-Star — top scorer of the franchise's first NOLA season",
+      "is_iconic": true
+    }
+  }
+]

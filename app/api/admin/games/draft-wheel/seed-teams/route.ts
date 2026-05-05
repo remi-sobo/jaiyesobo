@@ -1,0 +1,131 @@
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/session";
+import { createServiceClient } from "@/lib/supabase/server";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+type Team = {
+  slug: string;
+  name: string;
+  city: string;
+  abbreviation: string;
+  primary_color: string;
+  founded: string;
+};
+
+// Mirrors scripts/seed-draft-teams.ts — all 30 NBA franchises.
+const TEAMS: Team[] = [
+  { slug: "lakers", name: "Lakers", city: "Los Angeles", abbreviation: "LAL", primary_color: "#552583", founded: "1947" },
+  { slug: "celtics", name: "Celtics", city: "Boston", abbreviation: "BOS", primary_color: "#007A33", founded: "1946" },
+  { slug: "bulls", name: "Bulls", city: "Chicago", abbreviation: "CHI", primary_color: "#CE1141", founded: "1966" },
+  { slug: "warriors", name: "Warriors", city: "Golden State", abbreviation: "GSW", primary_color: "#1D428A", founded: "1946" },
+  { slug: "spurs", name: "Spurs", city: "San Antonio", abbreviation: "SAS", primary_color: "#C4CED4", founded: "1967" },
+  { slug: "heat", name: "Heat", city: "Miami", abbreviation: "MIA", primary_color: "#98002E", founded: "1988" },
+  { slug: "knicks", name: "Knicks", city: "New York", abbreviation: "NYK", primary_color: "#006BB6", founded: "1946" },
+  { slug: "pistons", name: "Pistons", city: "Detroit", abbreviation: "DET", primary_color: "#C8102E", founded: "1941" },
+  { slug: "sixers", name: "76ers", city: "Philadelphia", abbreviation: "PHI", primary_color: "#006BB6", founded: "1946" },
+  { slug: "rockets", name: "Rockets", city: "Houston", abbreviation: "HOU", primary_color: "#CE1141", founded: "1967" },
+  { slug: "mavericks", name: "Mavericks", city: "Dallas", abbreviation: "DAL", primary_color: "#00538C", founded: "1980" },
+  { slug: "thunder", name: "Thunder", city: "Oklahoma City", abbreviation: "OKC", primary_color: "#007AC1", founded: "1967" },
+  { slug: "nuggets", name: "Nuggets", city: "Denver", abbreviation: "DEN", primary_color: "#0E2240", founded: "1967" },
+  { slug: "suns", name: "Suns", city: "Phoenix", abbreviation: "PHX", primary_color: "#E56020", founded: "1968" },
+  { slug: "bucks", name: "Bucks", city: "Milwaukee", abbreviation: "MIL", primary_color: "#00471B", founded: "1968" },
+  { slug: "hawks", name: "Hawks", city: "Atlanta", abbreviation: "ATL", primary_color: "#E03A3E", founded: "1946" },
+  { slug: "blazers", name: "Trail Blazers", city: "Portland", abbreviation: "POR", primary_color: "#E03A3E", founded: "1970" },
+  { slug: "jazz", name: "Jazz", city: "Utah", abbreviation: "UTA", primary_color: "#002B5C", founded: "1974" },
+  { slug: "cavaliers", name: "Cavaliers", city: "Cleveland", abbreviation: "CLE", primary_color: "#860038", founded: "1970" },
+  { slug: "raptors", name: "Raptors", city: "Toronto", abbreviation: "TOR", primary_color: "#CE1141", founded: "1995" },
+  { slug: "nets", name: "Nets", city: "Brooklyn", abbreviation: "BKN", primary_color: "#000000", founded: "1967" },
+  { slug: "grizzlies", name: "Grizzlies", city: "Memphis", abbreviation: "MEM", primary_color: "#5D76A9", founded: "1995" },
+  { slug: "magic", name: "Magic", city: "Orlando", abbreviation: "ORL", primary_color: "#0077C0", founded: "1989" },
+  { slug: "hornets", name: "Hornets", city: "Charlotte", abbreviation: "CHA", primary_color: "#1D1160", founded: "1988" },
+  { slug: "pelicans", name: "Pelicans", city: "New Orleans", abbreviation: "NOP", primary_color: "#0C2340", founded: "2002" },
+  { slug: "pacers", name: "Pacers", city: "Indiana", abbreviation: "IND", primary_color: "#002D62", founded: "1967" },
+  { slug: "wizards", name: "Wizards", city: "Washington", abbreviation: "WAS", primary_color: "#002B5C", founded: "1961" },
+  { slug: "kings", name: "Kings", city: "Sacramento", abbreviation: "SAC", primary_color: "#5A2D81", founded: "1923" },
+  { slug: "timberwolves", name: "Timberwolves", city: "Minnesota", abbreviation: "MIN", primary_color: "#236192", founded: "1989" },
+  { slug: "clippers", name: "Clippers", city: "Los Angeles", abbreviation: "LAC", primary_color: "#C8102E", founded: "1970" },
+];
+
+/**
+ * POST /api/admin/games/draft-wheel/seed-teams
+ *
+ * Mirrors scripts/seed-draft-teams.ts at runtime:
+ *   1. Flip every existing draft_team row to status='live' + verification_status='verified'.
+ *   2. Insert any team from the master 30-team list that isn't yet present.
+ *
+ * Idempotent. Safe to run more than once.
+ */
+export async function POST() {
+  await requireAdmin();
+
+  const supa = createServiceClient();
+  const { data: preflight, error: preErr } = await supa
+    .from("game_content")
+    .select("draft_team_slug, status, verification_status")
+    .eq("game_slug", "draft")
+    .eq("content_type", "draft_team");
+  if (preErr) {
+    return NextResponse.json({ error: "preflight_failed", detail: preErr.message }, { status: 500 });
+  }
+
+  const stale = (preflight ?? []).filter(
+    (r) =>
+      (r as { status: string }).status !== "live" ||
+      (r as { verification_status: string }).verification_status !== "verified"
+  );
+  let promoted = 0;
+  for (const r of stale) {
+    const slug = (r as { draft_team_slug: string }).draft_team_slug;
+    const { error } = await supa
+      .from("game_content")
+      .update({ status: "live", verification_status: "verified" })
+      .eq("game_slug", "draft")
+      .eq("content_type", "draft_team")
+      .eq("draft_team_slug", slug);
+    if (!error) promoted++;
+  }
+
+  const have = new Set(
+    (preflight ?? []).map((r) => (r as { draft_team_slug: string }).draft_team_slug)
+  );
+  let added = 0;
+  let skipped = 0;
+  const insertErrors: string[] = [];
+  for (const team of TEAMS) {
+    if (have.has(team.slug)) {
+      skipped++;
+      continue;
+    }
+    const { error } = await supa.from("game_content").insert({
+      game_slug: "draft",
+      content_type: "draft_team",
+      draft_team_slug: team.slug,
+      payload: {
+        name: team.name,
+        city: team.city,
+        abbreviation: team.abbreviation,
+        primary_color: team.primary_color,
+        founded: team.founded,
+      },
+      status: "live",
+      verification_status: "verified",
+      created_by_curator: false,
+    });
+    if (error) {
+      insertErrors.push(`${team.slug}: ${error.message}`);
+      continue;
+    }
+    added++;
+  }
+
+  return NextResponse.json({
+    ok: insertErrors.length === 0,
+    promoted,
+    added,
+    skipped,
+    total_in_master: TEAMS.length,
+    errors: insertErrors,
+  });
+}

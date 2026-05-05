@@ -1,0 +1,167 @@
+[
+  {
+    "name": "Reggie Miller",
+    "search_aliases": ["Reggie", "Killer Miller"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1987-2005",
+      "peak_label": "5x All-Star, 8 points in 9 seconds, the franchise's all-time icon",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Jermaine O'Neal",
+    "search_aliases": ["Jermaine", "JO"],
+    "primary_position": "F",
+    "secondary_positions": ["C"],
+    "team_stint": {
+      "years": "2000-2008",
+      "peak_label": "6x All-Star, the franchise face after Reggie",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Rik Smits",
+    "search_aliases": ["Smits", "Dunking Dutchman"],
+    "primary_position": "C",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1988-2000",
+      "peak_label": "1998 All-Star, lifelong Pacer center next to Reggie",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Mark Jackson",
+    "search_aliases": ["Mark", "Jackson"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1994-2000",
+      "peak_label": "Set up Reggie for a decade — Pacers' run-and-iso conductor",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Detlef Schrempf",
+    "search_aliases": ["Schrempf", "Detlef"],
+    "primary_position": "F",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1989-1993",
+      "peak_label": "2x 6th Man of the Year as a Pacer, All-Star caliber forward",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Antonio Davis",
+    "search_aliases": ["Antonio", "A.D."],
+    "primary_position": "F",
+    "secondary_positions": ["C"],
+    "team_stint": {
+      "years": "1993-1999",
+      "peak_label": "Twin-tower interior with Dale Davis on the playoff Pacers",
+      "is_iconic": false
+    }
+  },
+  {
+    "name": "Dale Davis",
+    "search_aliases": ["Dale", "DD"],
+    "primary_position": "F",
+    "secondary_positions": ["C"],
+    "team_stint": {
+      "years": "1991-2000",
+      "peak_label": "2000 All-Star, defensive bedrock of the late-90s Pacers",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Paul George",
+    "search_aliases": ["PG", "PG13", "Paul"],
+    "primary_position": "F",
+    "secondary_positions": ["G"],
+    "team_stint": {
+      "years": "2010-2017",
+      "peak_label": "4x All-Star, All-NBA wing — the post-Reggie franchise star",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Ron Artest",
+    "search_aliases": ["Artest", "Metta World Peace", "Metta", "Ron-Ron"],
+    "primary_position": "F",
+    "secondary_positions": ["G"],
+    "team_stint": {
+      "years": "2002-2006",
+      "peak_label": "2004 DPOY, the lockdown wing of the Pacers' last 60-win team",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Roy Hibbert",
+    "search_aliases": ["Roy", "Hibbert"],
+    "primary_position": "C",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2008-2015",
+      "peak_label": "2x All-Star, verticality king of the PG-era contenders",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Danny Granger",
+    "search_aliases": ["Granger", "Danny"],
+    "primary_position": "F",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2005-2014",
+      "peak_label": "2009 Most Improved, All-Star, top scorer of the bridge years",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Tyrese Haliburton",
+    "search_aliases": ["Hali", "Haliburton", "Tyrese"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2022-present",
+      "peak_label": "2x All-Star, All-NBA — the modern Pacers' floor general",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Domantas Sabonis",
+    "search_aliases": ["Sabonis", "Domas"],
+    "primary_position": "F",
+    "secondary_positions": ["C"],
+    "team_stint": {
+      "years": "2017-2022",
+      "peak_label": "2x All-Star as a Pacer — point-center hub of the rebuild",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "George McGinnis",
+    "search_aliases": ["McGinnis", "George"],
+    "primary_position": "F",
+    "secondary_positions": ["C"],
+    "team_stint": {
+      "years": "1971-1975, 1980-1982",
+      "peak_label": "ABA MVP 1975, 2x ABA champ — original Pacers HOFer",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Mel Daniels",
+    "search_aliases": ["Daniels", "Mel"],
+    "primary_position": "C",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1968-1974",
+      "peak_label": "2x ABA MVP, 3x ABA champ — original Pacers center",
+      "is_iconic": true
+    }
+  }
+]

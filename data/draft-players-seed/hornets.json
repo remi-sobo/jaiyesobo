@@ -1,0 +1,156 @@
+[
+  {
+    "name": "Larry Johnson",
+    "search_aliases": ["LJ", "Grandmama", "L.J."],
+    "primary_position": "F",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1991-1996",
+      "peak_label": "1991 #1 pick, 1992 ROY, 2x All-Star, the original Hornet face",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Alonzo Mourning",
+    "search_aliases": ["Zo", "'Zo", "Mourning"],
+    "primary_position": "C",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1992-1995",
+      "peak_label": "Block-party Zo, All-Star, the original Charlotte rim wrecker",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Glen Rice",
+    "search_aliases": ["Rice", "G-Rice"],
+    "primary_position": "F",
+    "secondary_positions": ["G"],
+    "team_stint": {
+      "years": "1995-1998",
+      "peak_label": "1996 All-Star Game MVP, top scorer of the original Hornets",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Muggsy Bogues",
+    "search_aliases": ["Muggsy", "Mugsy", "Tyrone Bogues"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1988-1997",
+      "peak_label": "5'3\" floor general, fan-favorite Hornet for a decade",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Dell Curry",
+    "search_aliases": ["Dell", "Curry Sr.", "Steph's dad"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1988-1998",
+      "peak_label": "1994 6th Man of the Year, all-time Charlotte 3-point king",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Anthony Mason",
+    "search_aliases": ["Mason", "Mase"],
+    "primary_position": "F",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1996-2000",
+      "peak_label": "Charlotte's bruising point-forward, All-Star with the late-90s Hornets",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Baron Davis",
+    "search_aliases": ["B-Diddy", "Baron"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1999-2002",
+      "peak_label": "Charlotte's All-Star point guard before the franchise's NOLA move",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Eddie Jones",
+    "search_aliases": ["EJ"],
+    "primary_position": "G",
+    "secondary_positions": ["F"],
+    "team_stint": {
+      "years": "2000-2003",
+      "peak_label": "All-Star wing during the late Charlotte / early NOLA bridge",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Emeka Okafor",
+    "search_aliases": ["Okafor", "Emeka"],
+    "primary_position": "C",
+    "secondary_positions": ["F"],
+    "team_stint": {
+      "years": "2004-2009",
+      "peak_label": "2005 Rookie of the Year, the cornerstone of the Bobcats era",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Gerald Wallace",
+    "search_aliases": ["Crash", "G-Wallace"],
+    "primary_position": "F",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2004-2011",
+      "peak_label": "2010 All-Star, the highlight-machine wing of the Bobcats",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Kemba Walker",
+    "search_aliases": ["Kemba", "Cardiac Kemba"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2011-2019",
+      "peak_label": "3x All-Star, all-time franchise scoring leader, Charlotte's heart",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Al Jefferson",
+    "search_aliases": ["Big Al", "Jefferson"],
+    "primary_position": "C",
+    "secondary_positions": ["F"],
+    "team_stint": {
+      "years": "2013-2016",
+      "peak_label": "2014 All-NBA, the post-up anchor that pulled Charlotte back to the playoffs",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "LaMelo Ball",
+    "search_aliases": ["Melo", "LaMelo"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2020-present",
+      "peak_label": "2021 Rookie of the Year, 2022 All-Star, current franchise face",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Bobby Phills",
+    "search_aliases": ["Phills"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1997-2000",
+      "peak_label": "Beloved Hornets guard whose #13 the franchise retired",
+      "is_iconic": true
+    }
+  }
+]

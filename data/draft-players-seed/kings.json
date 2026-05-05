@@ -1,0 +1,156 @@
+[
+  {
+    "name": "Oscar Robertson",
+    "search_aliases": ["Big O", "Oscar", "The Big O"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1960-1970",
+      "peak_label": "1964 MVP, 12x All-Star — original triple-double king as a Royal",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Jerry Lucas",
+    "search_aliases": ["Lucas", "Jerry"],
+    "primary_position": "F",
+    "secondary_positions": ["C"],
+    "team_stint": {
+      "years": "1963-1969",
+      "peak_label": "5x All-Star, 1964 ROY — twin pillar with Oscar in Cincinnati",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Tiny Archibald",
+    "search_aliases": ["Tiny", "Nate Archibald", "Nate the Great"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1970-1976",
+      "peak_label": "Only player to lead NBA in scoring AND assists in same season (1973)",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Sam Lacey",
+    "search_aliases": ["Lacey", "Sam"],
+    "primary_position": "C",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1970-1981",
+      "peak_label": "1975 All-Star, all-time franchise rebound leader",
+      "is_iconic": false
+    }
+  },
+  {
+    "name": "Mitch Richmond",
+    "search_aliases": ["Mitch", "Richmond", "Rock"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1991-1998",
+      "peak_label": "6x All-Star as a King, 1995 All-Star Game MVP",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Chris Webber",
+    "search_aliases": ["C-Webb", "Webber", "Chris"],
+    "primary_position": "F",
+    "secondary_positions": ["C"],
+    "team_stint": {
+      "years": "1998-2005",
+      "peak_label": "4x All-Star, All-NBA — face of the 2002 60-win Kings",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Vlade Divac",
+    "search_aliases": ["Vlade", "Divac"],
+    "primary_position": "C",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1998-2004",
+      "peak_label": "All-Star center, passing-from-the-elbow hub of the 60-win Kings",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Mike Bibby",
+    "search_aliases": ["Bibby", "Mike"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2001-2008",
+      "peak_label": "Clutch closer of the 2002 WCF run, all-time Kings scoring leader",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Peja Stojakovic",
+    "search_aliases": ["Peja", "Predrag"],
+    "primary_position": "F",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1998-2006",
+      "peak_label": "3x All-Star, 2x 3-Point Contest champ — sniper of the 60-win era",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Doug Christie",
+    "search_aliases": ["Doug", "Christie"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2000-2005",
+      "peak_label": "All-NBA Defense — lockdown wing of the early-2000s Kings",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Bobby Jackson",
+    "search_aliases": ["Bobby", "B-Jax"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2000-2007",
+      "peak_label": "2003 6th Man of the Year — instant-offense spark off the bench",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "Jason Williams",
+    "search_aliases": ["White Chocolate", "J-Will", "Jason"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "1998-2001",
+      "peak_label": "Behind-the-elbow magician — original Kings highlight king",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "DeMarcus Cousins",
+    "search_aliases": ["Boogie", "Cousins", "DMC"],
+    "primary_position": "C",
+    "secondary_positions": ["F"],
+    "team_stint": {
+      "years": "2010-2017",
+      "peak_label": "3x All-Star — best post scorer the franchise had since Webber",
+      "is_iconic": true
+    }
+  },
+  {
+    "name": "De'Aaron Fox",
+    "search_aliases": ["Fox", "Swipa", "De'Aaron"],
+    "primary_position": "G",
+    "secondary_positions": [],
+    "team_stint": {
+      "years": "2017-present",
+      "peak_label": "2023 All-Star, first Clutch Player of the Year — modern Kings face",
+      "is_iconic": true
+    }
+  }
+]
