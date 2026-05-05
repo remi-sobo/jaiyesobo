@@ -13,6 +13,11 @@ import type { DraftPlayPayload, DraftJudgement } from "@/lib/draft-game";
 import type { GoatRosterPlayPayload, GoatRosterVerdict } from "@/lib/goat-roster";
 import WordSearchShareView from "@/components/games/word-search/word-search-share-view";
 import type { WordSearchDifficulty } from "@/lib/games/word-search";
+import DraftWheelFinalVerdict from "@/components/games/draft-wheel/final-verdict";
+import type {
+  DraftWheelPlayPayload,
+  DraftWheelVerdict,
+} from "@/lib/games/draft-wheel";
 
 type Props = { params: Promise<{ token: string }> };
 
@@ -116,6 +121,35 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         card: "summary_large_image",
         title: winnerText,
         description: verdict?.verdict ?? "Play yours at jaiyesobo.com/games/draft",
+      },
+    };
+  }
+
+  if (play.game_slug === "draft-wheel") {
+    const payload = play.payload as DraftWheelPlayPayload | null;
+    const verdict = play.result as DraftWheelVerdict | null;
+    const a = payload?.player_names?.a ?? "Player 1";
+    const b = payload?.player_names?.b ?? "Player 2";
+    const winnerText =
+      verdict?.winner === "a"
+        ? `${a} won the Draft Wheel vs ${b}`
+        : verdict?.winner === "b"
+        ? `${b} won the Draft Wheel vs ${a}`
+        : verdict?.winner === "tie"
+        ? `${a} and ${b} tied the Draft Wheel`
+        : `${a} vs ${b} · Draft Wheel`;
+    return {
+      title: `${winnerText} · Jaiye's Games`,
+      description: verdict?.verdict ?? "Spin the team, pick the spot, AI calls it.",
+      openGraph: {
+        title: winnerText,
+        description: verdict?.verdict ?? "Play yours at jaiyesobo.com/games/draft-wheel",
+        type: "website",
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: winnerText,
+        description: verdict?.verdict ?? "Play yours at jaiyesobo.com/games/draft-wheel",
       },
     };
   }
@@ -294,6 +328,47 @@ export default async function SharePage({ params }: Props) {
             className="inline-block bg-[var(--color-red)] text-[var(--color-bone)] font-[family-name:var(--font-jetbrains)] text-xs uppercase tracking-[0.2em] px-7 py-4 rounded-sm hover:bg-[var(--color-red-bright)] transition-colors"
           >
             Draft your own →
+          </Link>
+        </div>
+      </GameShell>
+    );
+  }
+
+  if (play.game_slug === "draft-wheel") {
+    const payload = play.payload as DraftWheelPlayPayload | null;
+    const verdict = play.result as DraftWheelVerdict | null;
+    if (!payload) {
+      return (
+        <GameShell>
+          <main className="max-w-[640px] mx-auto px-6 py-20 text-center">
+            <h1 className="font-[family-name:var(--font-fraunces)] font-semibold text-2xl mb-3">
+              That matchup is corrupted.
+            </h1>
+            <Link href="/games/draft-wheel" className="text-[var(--color-red)] underline">
+              Spin a new one
+            </Link>
+          </main>
+        </GameShell>
+      );
+    }
+    return (
+      <GameShell liveLabel="Shared Draft Wheel">
+        {!verdict ? (
+          <main className="max-w-[640px] mx-auto px-6 py-20 text-center">
+            <h1 className="font-[family-name:var(--font-fraunces)] font-semibold text-2xl mb-3">
+              This matchup is still being judged.
+            </h1>
+            <p className="text-[var(--color-mute)]">Refresh in a moment.</p>
+          </main>
+        ) : (
+          <DraftWheelFinalVerdict payload={payload} verdict={verdict} />
+        )}
+        <div className="max-w-[760px] mx-auto px-6 pb-24 pt-2 text-center">
+          <Link
+            href="/games/draft-wheel"
+            className="inline-block bg-[var(--color-red)] text-[var(--color-bone)] font-[family-name:var(--font-jetbrains)] text-xs uppercase tracking-[0.2em] px-7 py-4 rounded-sm hover:bg-[var(--color-red-bright)] transition-colors"
+          >
+            Spin your own →
           </Link>
         </div>
       </GameShell>

@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { getPlayByToken } from "@/lib/games/data";
+import type { DraftWheelPlayPayload, DraftWheelVerdict } from "@/lib/games/draft-wheel";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,7 +17,162 @@ export async function GET(_req: Request, { params }: Ctx) {
   if (play?.game_slug === "word-search") {
     return wordSearchOgImage(play);
   }
+  if (play?.game_slug === "draft-wheel") {
+    return draftWheelOgImage(play);
+  }
   return topFiveOgImage(play);
+}
+
+function draftWheelOgImage(play: Awaited<ReturnType<typeof getPlayByToken>>) {
+  const payload = (play?.payload ?? null) as DraftWheelPlayPayload | null;
+  const verdict = (play?.result ?? null) as DraftWheelVerdict | null;
+  const a = payload?.player_names?.a ?? "Player 1";
+  const b = payload?.player_names?.b ?? "Player 2";
+  const winner =
+    verdict?.winner === "a" ? a : verdict?.winner === "b" ? b : null;
+  const verdictText = verdict?.verdict ?? "Spin the team. Pick the spot. AI calls it.";
+  const series = verdict?.series_score ? `Best-of-7 · ${verdict.series_score}` : null;
+  // Up to 5 team logos that came up. Show as monogram squares with team color.
+  const teams = (payload?.rounds ?? [])
+    .flatMap((r) => [r.a, r.b])
+    .filter((t): t is NonNullable<typeof t> => !!t)
+    .slice(0, 10);
+
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          background: "#0a0a0a",
+          color: "#F5F1EA",
+          display: "flex",
+          padding: "64px",
+          position: "relative",
+          fontFamily: "system-ui, sans-serif",
+        }}
+      >
+        <TopBar />
+        <Streak />
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, position: "relative" }}>
+          <div
+            style={{
+              fontSize: 22,
+              letterSpacing: 8,
+              textTransform: "uppercase",
+              color: "#8a8a8a",
+              marginBottom: 16,
+            }}
+          >
+            jaiyesobo.com / games · Draft Wheel
+          </div>
+          <div
+            style={{
+              fontSize: 80,
+              fontWeight: 900,
+              lineHeight: 1,
+              letterSpacing: "-0.03em",
+              color: "#F5F1EA",
+              marginBottom: 16,
+              display: "flex",
+              flexWrap: "wrap",
+              maxWidth: 1080,
+            }}
+          >
+            {winner ? (
+              <>
+                {winner}
+                <span style={{ color: "#E63946", fontStyle: "italic", fontWeight: 400 }}>
+                  &nbsp;won.
+                </span>
+              </>
+            ) : verdict?.winner === "tie" ? (
+              <>
+                It&apos;s a&nbsp;
+                <span style={{ color: "#F5C842", fontStyle: "italic", fontWeight: 400 }}>
+                  tie.
+                </span>
+              </>
+            ) : (
+              <>
+                {a}
+                <span style={{ color: "#8a8a8a" }}>&nbsp;vs&nbsp;</span>
+                {b}
+              </>
+            )}
+          </div>
+
+          {series && (
+            <div
+              style={{
+                display: "flex",
+                fontSize: 18,
+                letterSpacing: 6,
+                textTransform: "uppercase",
+                color: "#F5C842",
+                border: "1px solid #F5C842",
+                padding: "6px 14px",
+                borderRadius: 4,
+                marginBottom: 24,
+                alignSelf: "flex-start",
+              }}
+            >
+              {series}
+            </div>
+          )}
+
+          <div
+            style={{
+              fontSize: 30,
+              fontStyle: "italic",
+              color: "#F5F1EA",
+              lineHeight: 1.25,
+              marginBottom: 28,
+              maxWidth: 1080,
+            }}
+          >
+            “{verdictText}”
+          </div>
+
+          {teams.length > 0 && (
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 10,
+                marginBottom: 16,
+              }}
+            >
+              {teams.map((t, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 64,
+                    height: 64,
+                    fontSize: 22,
+                    fontWeight: 900,
+                    letterSpacing: 1,
+                    color: "#F5F1EA",
+                    background: t.team.primary_color || "#222",
+                    borderRadius: 6,
+                    opacity: t.rerolled ? 0.55 : 1,
+                  }}
+                >
+                  {t.team.abbreviation}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <Footer cta="Play yours at jaiyesobo.com/games/draft-wheel" />
+        </div>
+      </div>
+    ),
+    imageOpts()
+  );
 }
 
 function wordSearchOgImage(play: Awaited<ReturnType<typeof getPlayByToken>>) {

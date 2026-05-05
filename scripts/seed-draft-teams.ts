@@ -24,8 +24,9 @@ type Team = {
   founded: string;
 };
 
-// 23 franchises (13 launch + 10 expansion). Idempotent — running this script
-// re-skips rows that already exist by draft_team_slug.
+// All 30 NBA franchises. Idempotent — running this script:
+//   1. Updates EVERY existing draft_team row to status='live' + verification_status='verified'
+//   2. Inserts any team from the master list that isn't yet present
 const TEAMS: Team[] = [
   { slug: "lakers", name: "Lakers", city: "Los Angeles", abbreviation: "LAL", primary_color: "#552583", founded: "1947" },
   { slug: "celtics", name: "Celtics", city: "Boston", abbreviation: "BOS", primary_color: "#007A33", founded: "1946" },
@@ -51,6 +52,14 @@ const TEAMS: Team[] = [
   { slug: "nets", name: "Nets", city: "Brooklyn", abbreviation: "BKN", primary_color: "#000000", founded: "1967" },
   { slug: "grizzlies", name: "Grizzlies", city: "Memphis", abbreviation: "MEM", primary_color: "#5D76A9", founded: "1995" },
   { slug: "magic", name: "Magic", city: "Orlando", abbreviation: "ORL", primary_color: "#0077C0", founded: "1989" },
+  // Round 3 — the rest of the league. NBA = 30 franchises total.
+  { slug: "hornets", name: "Hornets", city: "Charlotte", abbreviation: "CHA", primary_color: "#1D1160", founded: "1988" },
+  { slug: "pelicans", name: "Pelicans", city: "New Orleans", abbreviation: "NOP", primary_color: "#0C2340", founded: "2002" },
+  { slug: "pacers", name: "Pacers", city: "Indiana", abbreviation: "IND", primary_color: "#002D62", founded: "1967" },
+  { slug: "wizards", name: "Wizards", city: "Washington", abbreviation: "WAS", primary_color: "#002B5C", founded: "1961" },
+  { slug: "kings", name: "Kings", city: "Sacramento", abbreviation: "SAC", primary_color: "#5A2D81", founded: "1923" },
+  { slug: "timberwolves", name: "Timberwolves", city: "Minnesota", abbreviation: "MIN", primary_color: "#236192", founded: "1989" },
+  { slug: "clippers", name: "Clippers", city: "Los Angeles", abbreviation: "LAC", primary_color: "#C8102E", founded: "1970" },
 ];
 
 function requireEnv(name: string): string {
@@ -72,13 +81,46 @@ function loadDotEnv() {
 }
 
 async function main() {
-  // Pre-fetch existing slugs so we can skip duplicates.
-  const { data: existing } = await supa
+  // 1. Flip every existing draft_team row to live + verified. Cheap blanket
+  //    update — safe because every franchise we want listed should be live.
+  //    (Player rows are unaffected; this only touches content_type='draft_team'.)
+  const { data: preflight, error: preErr } = await supa
     .from("game_content")
-    .select("draft_team_slug")
+    .select("draft_team_slug, status, verification_status")
     .eq("game_slug", "draft")
     .eq("content_type", "draft_team");
-  const have = new Set((existing ?? []).map((r) => (r as { draft_team_slug: string }).draft_team_slug));
+  if (preErr) throw preErr;
+
+  const stale = (preflight ?? []).filter(
+    (r) =>
+      (r as { status: string }).status !== "live" ||
+      (r as { verification_status: string }).verification_status !== "verified"
+  );
+
+  if (stale.length > 0) {
+    console.log(`Flipping ${stale.length} draft_team row(s) to live+verified…`);
+    for (const r of stale) {
+      const slug = (r as { draft_team_slug: string }).draft_team_slug;
+      const { error } = await supa
+        .from("game_content")
+        .update({ status: "live", verification_status: "verified" })
+        .eq("game_slug", "draft")
+        .eq("content_type", "draft_team")
+        .eq("draft_team_slug", slug);
+      if (error) {
+        console.error(`  ✗ ${slug} flip:`, error.message);
+      } else {
+        console.log(`  ↳ ${slug} → live/verified`);
+      }
+    }
+  } else {
+    console.log("All existing teams are already live + verified.");
+  }
+
+  // 2. Insert any team from the master list that isn't yet present.
+  const have = new Set(
+    (preflight ?? []).map((r) => (r as { draft_team_slug: string }).draft_team_slug)
+  );
 
   let added = 0;
   let skipped = 0;
