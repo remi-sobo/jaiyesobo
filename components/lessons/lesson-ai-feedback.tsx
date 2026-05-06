@@ -8,7 +8,7 @@ export type AIFeedback = {
 
 type Props =
   | { state: "loading" }
-  | { state: "error"; message?: string; onRetry?: () => void }
+  | { state: "error"; message?: string; onRetry?: () => void; onSkip?: () => void }
   | { state: "ready"; feedback: AIFeedback };
 
 export default function LessonAIFeedback(props: Props) {
@@ -34,15 +34,26 @@ export default function LessonAIFeedback(props: Props) {
         <p className="font-[family-name:var(--font-fraunces)] italic text-[var(--color-warm-bone)] leading-snug mb-4">
           {props.message ?? "Show Dad — he can give you feedback."}
         </p>
-        {props.onRetry && (
-          <button
-            type="button"
-            onClick={props.onRetry}
-            className="font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.15em] px-4 py-2.5 rounded-sm border border-[var(--color-line-strong)] text-[var(--color-bone)] hover:bg-[var(--color-warm-surface-2)] transition-colors"
-          >
-            Try AI again
-          </button>
-        )}
+        <div className="flex flex-wrap gap-3">
+          {props.onRetry && (
+            <button
+              type="button"
+              onClick={props.onRetry}
+              className="font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.15em] px-4 py-2.5 rounded-sm border border-[var(--color-line-strong)] text-[var(--color-bone)] hover:bg-[var(--color-warm-surface-2)] transition-colors"
+            >
+              Try AI again
+            </button>
+          )}
+          {props.onSkip && (
+            <button
+              type="button"
+              onClick={props.onSkip}
+              className="font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.15em] px-4 py-2.5 rounded-sm bg-[var(--color-red)] text-[var(--color-bone)] hover:bg-[var(--color-red-soft)] transition-colors"
+            >
+              Skip — write v2 anyway
+            </button>
+          )}
+        </div>
       </div>
     );
   }

@@ -70,8 +70,13 @@ ${articleV1.trim()}
 Read both and respond with the structured feedback.`;
 
   try {
+    // claude-sonnet-4-5: matches the proven-healthy model used by
+    // /api/games/top-five/judge. The previous identifier (4-6) was failing
+    // structured-output generation for this route — see runtime logs
+    // 2026-05-06 17:13–17:15 — and stranded Jaiye on the feedback screen
+    // because the v2 form only renders when feedback succeeds.
     const { object } = await generateObject({
-      model: anthropic("claude-sonnet-4-6"),
+      model: anthropic("claude-sonnet-4-5"),
       schema: FeedbackSchema,
       system: SYSTEM_PROMPT,
       prompt: userPrompt,

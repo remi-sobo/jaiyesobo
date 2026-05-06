@@ -462,7 +462,23 @@ function Body({
           {feedbackLoading ? (
             <LessonAIFeedback state="loading" />
           ) : feedbackError ? (
-            <LessonAIFeedback state="error" message={feedbackError} onRetry={fetchFeedback} />
+            <LessonAIFeedback
+              state="error"
+              message={feedbackError}
+              onRetry={fetchFeedback}
+              onSkip={() => {
+                // Escape hatch: AI failed and Jaiye was stranded because the v2
+                // screen only renders when `feedback` is truthy. Stand-in
+                // feedback unblocks him; Dad still reads v1 + v2 in the
+                // admin queue.
+                setFeedback({
+                  nailed: ["You did the work — that's what matters."],
+                  missing: ["Dad will read v1 and tell you what to sharpen."],
+                  try_this: "Re-read your v1 and pick one thing you can make sharper in v2.",
+                });
+                setFeedbackError(null);
+              }}
+            />
           ) : feedback ? (
             <div className="max-w-[760px]">
               <LessonAIFeedback state="ready" feedback={feedback} />
