@@ -20,7 +20,7 @@ export type TimeAnchor = {
 
 export const DEFAULT_DAY_START = "07:00";
 export const DEFAULT_DAY_END = "18:00";
-export const SLOT_INTERVAL_MINUTES = 30;
+export const SLOT_INTERVAL_MINUTES = 15;
 export const DEFAULT_TASK_MINUTES = 30;
 
 export function generateTimeSlots(start = DEFAULT_DAY_START, end = DEFAULT_DAY_END): TimeSlot[] {
@@ -187,7 +187,7 @@ export function findAvailableSlots(
 
 /**
  * Given a chosen start time and floor, return valid END times — the floor end
- * plus every 30-min step up until the next conflict (or end of day).
+ * plus every slot-interval step up until the next conflict (or end of day).
  * The smallest valid end is `start + floor`. The first conflict caps the rest.
  */
 export function findAvailableEndTimes(
@@ -209,7 +209,7 @@ export function findAvailableEndTimes(
     if (eStart >= startMin && eStart < nextConflictStart) nextConflictStart = eStart;
   }
 
-  // Valid ends: minEndMin, minEndMin + 30, ..., up to nextConflictStart, all snapped to 30-min slots.
+  // Valid ends: minEndMin, minEndMin + step, ..., up to nextConflictStart, snapped to slot interval.
   const out: string[] = [];
   for (let m = minEndMin; m <= Math.min(nextConflictStart, dayEndMin); m += SLOT_INTERVAL_MINUTES) {
     out.push(fromMinutes(m));

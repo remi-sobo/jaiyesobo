@@ -162,7 +162,7 @@ export default function UploadFlow({ task, streak }: Props) {
         setInlineError("Your session timed out. Refresh the page and try again.");
         setErrorKind("auth");
       } else if (res.status === 502 || res.status === 503) {
-        setInlineError("Dad's Drive is down right now. Wait a minute and tap Try again.");
+        setInlineError("Photo storage is having trouble. Wait a minute and tap Try again.");
         setErrorKind("drive");
       } else if (res.status === 413) {
         setInlineError("That picture's still too big after shrinking. Pick a different photo.");

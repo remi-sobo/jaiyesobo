@@ -58,7 +58,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "below_floor", floor }, { status: 400 });
   }
   if ((toMinutes(newEnd) - toMinutes(newStart)) % SLOT_INTERVAL_MINUTES !== 0) {
-    return NextResponse.json({ error: "must_be_30_min_aligned" }, { status: 400 });
+    return NextResponse.json({ error: "must_be_slot_aligned", slot_minutes: SLOT_INTERVAL_MINUTES }, { status: 400 });
   }
 
   // Conflict checks

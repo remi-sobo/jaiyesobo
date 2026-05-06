@@ -1,6 +1,7 @@
 import EpaHistoryLesson from "@/lessons/epa-history";
 import SportsJournalistLab from "@/lessons/sports-journalist-lab";
 import GamesCuratorOnboarding from "@/lessons/games-curator-onboarding";
+import GrammarNouns from "@/lessons/grammar-nouns";
 
 export type LessonMeta = {
   component: React.ComponentType<{ taskId: string }>;
@@ -26,6 +27,16 @@ export const LESSONS: Record<string, LessonMeta> = {
     component: GamesCuratorOnboarding,
     title: "Games Platform — Curator Onboarding",
     subject: "other",
+    estimatedMinutes: 30,
+  },
+  // ── MCT-style English grammar series (NBA edition) ─────────────────
+  // Each lesson is a self-contained file in /lessons. To add the next
+  // one (e.g. grammar-verbs), copy grammar-nouns.tsx, change the slug
+  // and content, register it here, and run scripts/grammar-assign.ts.
+  "grammar-nouns": {
+    component: GrammarNouns,
+    title: "Nouns: The Names of Everything on the Court",
+    subject: "english",
     estimatedMinutes: 30,
   },
 };

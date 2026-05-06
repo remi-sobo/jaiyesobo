@@ -17,7 +17,7 @@ import {
 } from "@/lib/schedule";
 import { SUBJECTS, subjectKeyFor } from "@/lib/subjects";
 
-const SLOT_HEIGHT_PX = 56;
+const SLOT_HEIGHT_PX = 28;
 
 type Props = {
   anchors: TimeAnchor[];

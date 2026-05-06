@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getKidSession } from "@/lib/session";
 import { createServiceClient } from "@/lib/supabase/server";
-import { uploadPhoto, folderNameForSubject } from "@/lib/google/drive";
+import { uploadPhoto, folderNameForSubject, hasDriveConnection } from "@/lib/google/drive";
+import { uploadPhotoToSupabase } from "@/lib/supabase/storage";
 import { slugify, extForMime } from "@/lib/slugify";
 
 export const runtime = "nodejs";
@@ -98,31 +99,73 @@ export async function POST(req: Request) {
 
   const driveIds: string[] = [];
   const thumbnails: string[] = [];
+  const storagePaths: string[] = [];
+
+  // Skip the Drive attempt entirely if there's no token — saves a roundtrip
+  // and avoids a guaranteed throw. Supabase Storage becomes primary.
+  let driveAvailable = false;
+  try {
+    driveAvailable = await hasDriveConnection();
+  } catch (err) {
+    log("warn", "drive_connection_check_failed", { err: String(err) });
+  }
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
     const ext = extForMime(file.type);
     const counter = files.length > 1 ? `_${String(i + 1).padStart(3, "0")}` : "";
     const filename = `${today}_${slug}${counter}.${ext}`;
-    try {
-      const { id, thumbnail } = await uploadPhoto(file, subjectFolder, filename);
-      driveIds.push(id);
-      if (thumbnail) thumbnails.push(thumbnail);
-    } catch (err) {
-      log("error", "drive_upload_failed", {
-        taskId,
-        filename,
-        fileSize: file.size,
-        err: String(err),
-      });
-      return NextResponse.json({ error: "drive_upload_failed" }, { status: 502 });
+
+    let driveId = "";
+    let driveThumb = "";
+    let storagePath = "";
+    let storageUrl = "";
+
+    if (driveAvailable) {
+      try {
+        const res = await uploadPhoto(file, subjectFolder, filename);
+        driveId = res.id;
+        driveThumb = res.thumbnail ?? "";
+      } catch (err) {
+        log("warn", "drive_upload_failed_falling_back", {
+          taskId,
+          filename,
+          fileSize: file.size,
+          err: String(err),
+        });
+        driveAvailable = false;
+      }
     }
+
+    // Always save to Supabase when Drive didn't take it. This is the "never
+    // malfunction" guarantee — as long as Supabase Storage works, the upload
+    // succeeds for the kid.
+    if (!driveId) {
+      try {
+        const res = await uploadPhotoToSupabase(file, subjectFolder, filename);
+        storagePath = res.path;
+        storageUrl = res.publicUrl;
+      } catch (err) {
+        log("error", "supabase_storage_upload_failed", {
+          taskId,
+          filename,
+          fileSize: file.size,
+          err: String(err),
+        });
+        return NextResponse.json({ error: "upload_failed" }, { status: 502 });
+      }
+    }
+
+    driveIds.push(driveId);
+    thumbnails.push(driveThumb || storageUrl);
+    storagePaths.push(storagePath);
   }
 
   const { error: cErr } = await supa.from("completions").insert({
     task_id: taskId,
     photo_drive_ids: driveIds,
     photo_thumbnails: thumbnails,
+    photo_storage_paths: storagePaths,
     reflection,
   });
   if (cErr) {
@@ -130,6 +173,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "db_insert_failed" }, { status: 500 });
   }
 
-  log("info", "upload_success", { taskId, count: driveIds.length });
-  return NextResponse.json({ ok: true, count: driveIds.length });
+  const driveCount = driveIds.filter((x) => x).length;
+  const storageCount = storagePaths.filter((x) => x).length;
+  log("info", "upload_success", { taskId, drive: driveCount, supabase: storageCount });
+  return NextResponse.json({ ok: true, count: files.length, drive: driveCount, supabase: storageCount });
 }

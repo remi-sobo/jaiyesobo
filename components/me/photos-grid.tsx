@@ -83,7 +83,7 @@ export default function PhotosGrid({ photos }: Props) {
                   const idxInFiltered = filtered.findIndex((f) => f === p);
                   return (
                     <button
-                      key={`${p.completion_id}-${p.drive_id}`}
+                      key={`${p.completion_id}-${p.drive_id || p.storage_path || idxInFiltered}`}
                       onClick={() => setLightboxIndex(idxInFiltered)}
                       className="relative aspect-square bg-[var(--color-warm-surface)] border border-[var(--color-line)] rounded overflow-hidden group transition-transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-[var(--color-red)]"
                       style={{

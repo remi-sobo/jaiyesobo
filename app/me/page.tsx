@@ -11,6 +11,7 @@ import { isDatePublished, getUnseenAnswer, getUnseenFeedbackReply } from "@/lib/
 import { getAllAnchorsForUser } from "@/lib/anchors";
 import { expandAnchorsForDate } from "@/lib/schedule";
 import { addDays, isoDate } from "@/lib/week";
+import { rollOverPendingTasks } from "@/lib/rollover";
 import TodayHeader from "@/components/me/today-header";
 import SummaryCard from "@/components/me/summary-card";
 import DadsNote from "@/components/me/dads-note";
@@ -38,6 +39,18 @@ export default async function TodayPage({ searchParams }: Props) {
   const isToday = date === todayStr;
 
   const dateObj = new Date(`${date}T00:00:00`);
+
+  // Bump any unfinished "rollover" assignments forward to today before we read
+  // tasks. Cheap when there's nothing to bump; idempotent if it runs twice.
+  // Only runs when the kid is viewing today — we don't rewrite history when
+  // they navigate to past days.
+  if (isToday) {
+    try {
+      await rollOverPendingTasks(jaiye.id, todayStr);
+    } catch (err) {
+      console.error(JSON.stringify({ scope: "me.page", msg: "rollover_failed", err: String(err) }));
+    }
+  }
 
   const [
     rawTasks,
