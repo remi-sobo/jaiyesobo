@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import { getPlayByToken } from "@/lib/games/data";
 import type { DraftWheelPlayPayload, DraftWheelVerdict } from "@/lib/games/draft-wheel";
+import type { CutPlayResult, CutPlayPayload } from "@/lib/games/the-cut";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,7 +21,236 @@ export async function GET(_req: Request, { params }: Ctx) {
   if (play?.game_slug === "draft-wheel") {
     return draftWheelOgImage(play);
   }
+  if (play?.game_slug === "the-cut") {
+    return theCutOgImage(play);
+  }
   return topFiveOgImage(play);
+}
+
+function theCutOgImage(play: Awaited<ReturnType<typeof getPlayByToken>>) {
+  const payload = (play?.payload ?? null) as CutPlayPayload | null;
+  const result = (play?.result ?? null) as CutPlayResult | null;
+
+  const setTitle = result?.set_title ?? payload?.set_title ?? "The Cut";
+  const criterion = result?.criterion_summary ?? payload?.criterion_summary ?? "";
+  const score = result?.score ?? null;
+  const total = result?.total_keeps ?? 4;
+  const perfect = score === total;
+
+  const correctSet = new Set(result?.correct_keeps ?? []);
+  const wrongSet = new Set(result?.wrong_keeps ?? []);
+  const missedSet = new Set(result?.missed_keeps ?? []);
+  const items = result?.all_items_with_facts ?? [];
+
+  function statusOf(name: string): "correct_keep" | "wrong_keep" | "missed_keep" | "correct_cut" {
+    if (correctSet.has(name)) return "correct_keep";
+    if (wrongSet.has(name)) return "wrong_keep";
+    if (missedSet.has(name)) return "missed_keep";
+    return "correct_cut";
+  }
+
+  function indicatorFor(s: ReturnType<typeof statusOf>) {
+    if (s === "correct_keep") return { icon: "✓", color: "#3ECFB2" };
+    if (s === "wrong_keep") return { icon: "✗", color: "#E63946" };
+    if (s === "missed_keep") return { icon: "?", color: "#F5C842" };
+    return { icon: "·", color: "#666" };
+  }
+
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          background: "#0a0a0a",
+          color: "#F5F1EA",
+          display: "flex",
+          padding: "56px 64px",
+          position: "relative",
+          fontFamily: "system-ui, sans-serif",
+        }}
+      >
+        <TopBar />
+        <Streak />
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, position: "relative" }}>
+          <div
+            style={{
+              fontSize: 20,
+              letterSpacing: 7,
+              textTransform: "uppercase",
+              color: "#8a8a8a",
+              marginBottom: 10,
+            }}
+          >
+            jaiyesobo.com / games · The Cut
+          </div>
+          <div
+            style={{
+              fontSize: 56,
+              fontWeight: 900,
+              lineHeight: 1.0,
+              letterSpacing: "-0.03em",
+              color: "#F5F1EA",
+              marginBottom: 6,
+              maxWidth: 900,
+            }}
+          >
+            {setTitle}
+          </div>
+          {criterion && (
+            <div
+              style={{
+                fontSize: 22,
+                fontStyle: "italic",
+                color: "#F5C842",
+                marginBottom: 18,
+                maxWidth: 900,
+              }}
+            >
+              {criterion}
+            </div>
+          )}
+
+          <div style={{ display: "flex", flex: 1, gap: 40, alignItems: "stretch" }}>
+            {/* Score block */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "flex-start",
+                minWidth: 240,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 18,
+                  letterSpacing: 6,
+                  textTransform: "uppercase",
+                  color: "#8a8a8a",
+                  marginBottom: 6,
+                }}
+              >
+                Score
+              </div>
+              <div
+                style={{
+                  fontSize: 180,
+                  fontWeight: 900,
+                  lineHeight: 1,
+                  color:
+                    score === null
+                      ? "#F5F1EA"
+                      : perfect
+                      ? "#3ECFB2"
+                      : score >= 2
+                      ? "#F5C842"
+                      : "#E63946",
+                  letterSpacing: "-0.05em",
+                  display: "flex",
+                  alignItems: "baseline",
+                }}
+              >
+                {score ?? "—"}
+                <span style={{ color: "#8a8a8a", fontSize: 80 }}>/{total}</span>
+              </div>
+              {perfect && (
+                <div
+                  style={{
+                    fontSize: 20,
+                    letterSpacing: 4,
+                    textTransform: "uppercase",
+                    color: "#3ECFB2",
+                    marginTop: 4,
+                  }}
+                >
+                  ✓ Perfect
+                </div>
+              )}
+            </div>
+
+            {/* 4×2 grid of names */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr 1fr 1fr",
+                gridTemplateRows: "1fr 1fr",
+                gap: 12,
+                flex: 1,
+              }}
+            >
+              {items.slice(0, 8).map((it) => {
+                const s = statusOf(it.name);
+                const ind = indicatorFor(s);
+                return (
+                  <div
+                    key={it.name}
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      border: `2px solid ${ind.color}`,
+                      borderRadius: 4,
+                      padding: "10px 12px",
+                      background: s === "correct_cut" ? "transparent" : `${ind.color}14`,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        color: ind.color,
+                        fontSize: 22,
+                        fontWeight: 900,
+                      }}
+                    >
+                      <span style={{ fontSize: 12, letterSpacing: 3, textTransform: "uppercase" }}>
+                        {s === "correct_keep"
+                          ? "Keep"
+                          : s === "wrong_keep"
+                          ? "Wrong"
+                          : s === "missed_keep"
+                          ? "Missed"
+                          : "Cut"}
+                      </span>
+                      <span>{ind.icon}</span>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        color: "#F5F1EA",
+                        fontSize: 22,
+                        fontWeight: 700,
+                        letterSpacing: "-0.01em",
+                        lineHeight: 1.05,
+                      }}
+                    >
+                      {it.name}
+                    </div>
+                  </div>
+                );
+              })}
+              {items.length === 0 &&
+                Array.from({ length: 8 }).map((_, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: "flex",
+                      border: "2px dashed #2a2a2a",
+                      borderRadius: 4,
+                    }}
+                  />
+                ))}
+            </div>
+          </div>
+
+          <Footer cta="jaiyesobo.com/games/the-cut" />
+        </div>
+      </div>
+    ),
+    imageOpts()
+  );
 }
 
 function draftWheelOgImage(play: Awaited<ReturnType<typeof getPlayByToken>>) {

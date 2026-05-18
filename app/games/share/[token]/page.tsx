@@ -18,6 +18,8 @@ import type {
   DraftWheelPlayPayload,
   DraftWheelVerdict,
 } from "@/lib/games/draft-wheel";
+import TheCutShareView from "@/components/games/the-cut/the-cut-share-view";
+import type { CutPlayResult } from "@/lib/games/the-cut";
 
 type Props = { params: Promise<{ token: string }> };
 
@@ -202,6 +204,31 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         card: "summary_large_image",
         title,
         description: verdict?.take ?? "Play yours at jaiyesobo.com/games/goat-roster",
+      },
+    };
+  }
+
+  if (play.game_slug === "the-cut") {
+    const result = play.result as CutPlayResult | null;
+    const setTitle = result?.set_title ?? "The Cut";
+    const titleLine = result
+      ? `${result.score}/${result.total_keeps} on ${setTitle} · The Cut · Jaiye's Games`
+      : `${setTitle} · The Cut · Jaiye's Games`;
+    const desc = result?.verdict_line ?? "Keep four. Cut four. Don't blink.";
+    return {
+      title: titleLine,
+      description: desc,
+      openGraph: {
+        title: titleLine,
+        description: desc,
+        images: [{ url: ogUrl, width: 1200, height: 630 }],
+        type: "website",
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: titleLine,
+        description: desc,
+        images: [ogUrl],
       },
     };
   }
@@ -461,6 +488,35 @@ export default async function SharePage({ params }: Props) {
             className="inline-block bg-[var(--color-red)] text-[var(--color-bone)] font-[family-name:var(--font-jetbrains)] text-xs uppercase tracking-[0.2em] px-7 py-4 rounded-sm hover:bg-[var(--color-red-bright)] transition-colors"
           >
             Build yours →
+          </Link>
+        </div>
+      </GameShell>
+    );
+  }
+
+  if (play.game_slug === "the-cut") {
+    const result = play.result as CutPlayResult | null;
+    if (!result) {
+      return (
+        <GameShell>
+          <main className="max-w-[640px] mx-auto px-6 py-20 text-center">
+            <h1 className="font-[family-name:var(--font-fraunces)] font-semibold text-2xl mb-3">
+              This cut is still in progress.
+            </h1>
+            <p className="text-[var(--color-mute)]">Refresh in a moment.</p>
+          </main>
+        </GameShell>
+      );
+    }
+    return (
+      <GameShell liveLabel="Shared cut">
+        <TheCutShareView result={result} />
+        <div className="max-w-[760px] mx-auto px-6 pb-24 pt-2 text-center">
+          <Link
+            href="/games/the-cut"
+            className="inline-block bg-[var(--color-red)] text-[var(--color-bone)] font-[family-name:var(--font-jetbrains)] text-xs uppercase tracking-[0.2em] px-7 py-4 rounded-sm hover:bg-[var(--color-red-bright)] transition-colors"
+          >
+            Try this cut →
           </Link>
         </div>
       </GameShell>

@@ -3,6 +3,7 @@ import Link from "next/link";
 import GameShell from "@/components/games/game-shell";
 import GameCard from "@/components/games/game-card";
 import { getGamesForKid } from "@/lib/games/data";
+import { getLiveCutSets } from "@/lib/games/the-cut-data";
 
 export const metadata: Metadata = {
   title: "Jaiye's Games — NBA games curated by an 8-year-old",
@@ -17,10 +18,20 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
+const THE_CUT_MIN_LIVE_SETS = 5;
+
 export default async function GamesHubPage() {
-  const games = await getGamesForKid("jaiye");
-  // Sort: live first, then beta, then archived
-  const ordered = [...games].sort((a, b) => statusRank(a.status) - statusRank(b.status));
+  const [games, liveCutSets] = await Promise.all([
+    getGamesForKid("jaiye"),
+    getLiveCutSets(),
+  ]);
+  // Gate The Cut: appears as 'beta' until enough verified sets exist.
+  const adjusted = games.map((g) =>
+    g.slug === "the-cut" && liveCutSets.length < THE_CUT_MIN_LIVE_SETS
+      ? { ...g, status: "beta" as const }
+      : g
+  );
+  const ordered = [...adjusted].sort((a, b) => statusRank(a.status) - statusRank(b.status));
 
   return (
     <GameShell liveLabel="Daily prompts · New verdicts every day">
