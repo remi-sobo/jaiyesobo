@@ -36,6 +36,9 @@ export default async function GamesAdminLayout({ children }: { children: React.R
           <Link href="/games-admin/word-packs" className="hover:text-[var(--color-bone)] transition-colors">
             Word packs
           </Link>
+          <Link href="/games-admin/cut-sets" className="hover:text-[var(--color-bone)] transition-colors">
+            Cut sets
+          </Link>
           <Link href="/admin" className="hover:text-[var(--color-bone)] transition-colors">
             ← Homeschool admin
           </Link>
