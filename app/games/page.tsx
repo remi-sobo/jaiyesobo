@@ -4,6 +4,7 @@ import GameShell from "@/components/games/game-shell";
 import GameCard from "@/components/games/game-card";
 import { getGamesForKid } from "@/lib/games/data";
 import { getLiveCutSets } from "@/lib/games/the-cut-data";
+import { getLiveBlindRankTopics } from "@/lib/games/blind-rank-data";
 
 export const metadata: Metadata = {
   title: "Jaiye's Games — NBA games curated by an 8-year-old",
@@ -19,18 +20,28 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 const THE_CUT_MIN_LIVE_SETS = 5;
+const BLIND_RANK_MIN_LIVE_TOPICS = 10;
 
 export default async function GamesHubPage() {
-  const [games, liveCutSets] = await Promise.all([
+  const [games, liveCutSets, liveBlindRankTopics] = await Promise.all([
     getGamesForKid("jaiye"),
     getLiveCutSets(),
+    getLiveBlindRankTopics(),
   ]);
-  // Gate The Cut: appears as 'beta' until enough verified sets exist.
-  const adjusted = games.map((g) =>
-    g.slug === "the-cut" && liveCutSets.length < THE_CUT_MIN_LIVE_SETS
-      ? { ...g, status: "beta" as const }
-      : g
-  );
+  // Gate content-dependent games: appear as 'beta' until enough verified
+  // content exists for a real play experience.
+  const adjusted = games.map((g) => {
+    if (g.slug === "the-cut" && liveCutSets.length < THE_CUT_MIN_LIVE_SETS) {
+      return { ...g, status: "beta" as const };
+    }
+    if (
+      g.slug === "blind-rank" &&
+      liveBlindRankTopics.length < BLIND_RANK_MIN_LIVE_TOPICS
+    ) {
+      return { ...g, status: "beta" as const };
+    }
+    return g;
+  });
   const ordered = [...adjusted].sort((a, b) => statusRank(a.status) - statusRank(b.status));
 
   return (

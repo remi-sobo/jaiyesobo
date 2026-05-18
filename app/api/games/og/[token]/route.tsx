@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import { getPlayByToken } from "@/lib/games/data";
 import type { DraftWheelPlayPayload, DraftWheelVerdict } from "@/lib/games/draft-wheel";
 import type { CutPlayResult, CutPlayPayload } from "@/lib/games/the-cut";
+import type { BlindRankResult } from "@/lib/games/blind-rank";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -24,7 +25,258 @@ export async function GET(_req: Request, { params }: Ctx) {
   if (play?.game_slug === "the-cut") {
     return theCutOgImage(play);
   }
+  if (play?.game_slug === "blind-rank") {
+    return blindRankOgImage(play);
+  }
   return topFiveOgImage(play);
+}
+
+function blindRankOgImage(play: Awaited<ReturnType<typeof getPlayByToken>>) {
+  const result = (play?.result ?? null) as BlindRankResult | null;
+  const topicTitle = result?.topic_title ?? "Blind Rank";
+  const total = result?.total_slots ?? 5;
+  const score = result?.score ?? null;
+  const perfect = score === total;
+  const verdict = result?.verdict_line ?? "One at a time. No take-backs.";
+
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          background: "#0a0a0a",
+          color: "#F5F1EA",
+          display: "flex",
+          padding: "56px 64px",
+          position: "relative",
+          fontFamily: "system-ui, sans-serif",
+        }}
+      >
+        <TopBar />
+        <Streak />
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, position: "relative" }}>
+          <div
+            style={{
+              fontSize: 20,
+              letterSpacing: 7,
+              textTransform: "uppercase",
+              color: "#8a8a8a",
+              marginBottom: 10,
+            }}
+          >
+            jaiyesobo.com / games · Blind Rank
+          </div>
+          <div
+            style={{
+              fontSize: 60,
+              fontWeight: 900,
+              lineHeight: 1.0,
+              letterSpacing: "-0.03em",
+              color: "#F5F1EA",
+              marginBottom: 18,
+              maxWidth: 1000,
+            }}
+          >
+            {topicTitle}
+          </div>
+
+          <div style={{ display: "flex", flex: 1, gap: 36, alignItems: "stretch" }}>
+            {/* Score block */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "flex-start",
+                minWidth: 220,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 18,
+                  letterSpacing: 6,
+                  textTransform: "uppercase",
+                  color: "#8a8a8a",
+                  marginBottom: 4,
+                }}
+              >
+                Score
+              </div>
+              <div
+                style={{
+                  fontSize: 200,
+                  fontWeight: 900,
+                  lineHeight: 1,
+                  color:
+                    score === null
+                      ? "#F5F1EA"
+                      : perfect
+                      ? "#3ECFB2"
+                      : score >= 3
+                      ? "#F5C842"
+                      : score === 0
+                      ? "#E63946"
+                      : "#F5F1EA",
+                  letterSpacing: "-0.05em",
+                  display: "flex",
+                  alignItems: "baseline",
+                }}
+              >
+                {score ?? "—"}
+                <span style={{ color: "#8a8a8a", fontSize: 80 }}>/{total}</span>
+              </div>
+              {perfect && (
+                <div
+                  style={{
+                    fontSize: 20,
+                    letterSpacing: 4,
+                    textTransform: "uppercase",
+                    color: "#3ECFB2",
+                    marginTop: 4,
+                  }}
+                >
+                  ✓ Perfect
+                </div>
+              )}
+            </div>
+
+            {/* Side-by-side lists */}
+            <div style={{ display: "flex", flex: 1, gap: 24 }}>
+              <Column
+                label="You"
+                rows={
+                  result?.slot_results.map((sr) => ({
+                    slot: sr.slot,
+                    name: sr.player_name,
+                    correct: sr.correct,
+                  })) ?? []
+                }
+              />
+              <Column
+                label="Truth"
+                rows={
+                  result?.slot_results.map((sr) => ({
+                    slot: sr.slot,
+                    name: sr.ai_name,
+                    correct: sr.correct,
+                  })) ?? []
+                }
+                truth
+              />
+            </div>
+          </div>
+
+          {result && (
+            <div
+              style={{
+                display: "flex",
+                fontSize: 22,
+                fontStyle: "italic",
+                color: "#F5F1EA",
+                marginTop: 18,
+                maxWidth: 1000,
+              }}
+            >
+              &ldquo;{verdict}&rdquo;
+            </div>
+          )}
+
+          <Footer cta="jaiyesobo.com/games/blind-rank" />
+        </div>
+      </div>
+    ),
+    imageOpts()
+  );
+}
+
+function Column({
+  label,
+  rows,
+  truth,
+}: {
+  label: string;
+  rows: { slot: number; name: string; correct: boolean }[];
+  truth?: boolean;
+}) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+      <div
+        style={{
+          fontSize: 14,
+          letterSpacing: 4,
+          textTransform: "uppercase",
+          color: "#8a8a8a",
+          marginBottom: 6,
+        }}
+      >
+        {label}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {rows.length > 0
+          ? rows.map((r) => {
+              const accent = truth
+                ? "#F5C842"
+                : r.correct
+                ? "#3ECFB2"
+                : "#E63946";
+              return (
+                <div
+                  key={r.slot}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "8px 10px",
+                    borderRadius: 4,
+                    border: `2px solid ${accent}`,
+                    background: `${accent}14`,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 28,
+                      height: 28,
+                      borderRadius: 14,
+                      background: accent,
+                      color: truth ? "#0a0a0a" : r.correct ? "#0a0a0a" : "#F5F1EA",
+                      fontSize: 16,
+                      fontWeight: 900,
+                    }}
+                  >
+                    {r.slot}
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      fontSize: 22,
+                      fontWeight: 700,
+                      color: "#F5F1EA",
+                      lineHeight: 1.1,
+                    }}
+                  >
+                    {r.name}
+                  </div>
+                </div>
+              );
+            })
+          : Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  border: "2px dashed #2a2a2a",
+                  borderRadius: 4,
+                  height: 44,
+                }}
+              />
+            ))}
+      </div>
+    </div>
+  );
 }
 
 function theCutOgImage(play: Awaited<ReturnType<typeof getPlayByToken>>) {
