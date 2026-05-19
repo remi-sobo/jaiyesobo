@@ -3,10 +3,16 @@
 import { useCallback, useState } from "react";
 import DifficultyPicker from "./difficulty-picker";
 import CriterionBanner from "./criterion-banner";
-import CutBoard from "./cut-board";
+import SequentialBoard from "./sequential-board";
 import VerdictReveal from "./verdict-reveal";
 import TheCutResult from "./the-cut-result";
-import { REQUIRED_KEEPS, type CutGameMode, type CutPlayResult } from "@/lib/games/the-cut";
+import {
+  REQUIRED_KEEPS,
+  REQUIRED_CUTS,
+  TOTAL_ITEMS,
+  type CutGameMode,
+  type CutPlayResult,
+} from "@/lib/games/the-cut";
 
 type Phase = "pick" | "loading" | "playing" | "revealing" | "result" | "error";
 
@@ -25,8 +31,13 @@ export default function TheCutGame() {
   const [phase, setPhase] = useState<Phase>("pick");
   const [error, setError] = useState<string | null>(null);
   const [start, setStart] = useState<StartResponse | null>(null);
-  const [selected, setSelected] = useState<string[]>([]);
-  const [locking, setLocking] = useState(false);
+  /** 0..TOTAL_ITEMS-1 — which item the player is deciding on. */
+  const [currentIndex, setCurrentIndex] = useState(0);
+  /** Names the player has chosen to keep, in decision order. */
+  const [keptNames, setKeptNames] = useState<string[]>([]);
+  /** Names the player has chosen to cut, in decision order. */
+  const [cutNamesState, setCutNamesState] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<CutPlayResult | null>(null);
   const [shareToken, setShareToken] = useState<string | null>(null);
 
@@ -39,14 +50,19 @@ export default function TheCutGame() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ mode }),
       });
-      const data = (await res.json()) as StartResponse & { error?: string; message?: string };
+      const data = (await res.json()) as StartResponse & {
+        error?: string;
+        message?: string;
+      };
       if (!res.ok || !data.play_id) {
         setError(data.message ?? data.error ?? "Couldn't start a round.");
         setPhase("error");
         return;
       }
       setStart(data);
-      setSelected([]);
+      setCurrentIndex(0);
+      setKeptNames([]);
+      setCutNamesState([]);
       setResult(null);
       setShareToken(data.share_token);
       setPhase("playing");
@@ -56,46 +72,76 @@ export default function TheCutGame() {
     }
   }, []);
 
-  const toggleSelect = useCallback((name: string) => {
-    setSelected((prev) => {
-      if (prev.includes(name)) return prev.filter((n) => n !== name);
-      // Deselect-oldest behaviour when already at 4.
-      if (prev.length >= REQUIRED_KEEPS) return [...prev.slice(1), name];
-      return [...prev, name];
-    });
-  }, []);
+  const finishWithKeeps = useCallback(
+    async (finalKeeps: string[]) => {
+      if (!start || finalKeeps.length !== REQUIRED_KEEPS) return;
+      setBusy(true);
+      try {
+        const res = await fetch("/api/games/the-cut/lock", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ play_id: start.play_id, kept_names: finalKeeps }),
+        });
+        const data = (await res.json()) as CutPlayResult & {
+          error?: string;
+          share_token?: string;
+        };
+        if (!res.ok) {
+          setError(data.error ?? "Couldn't lock your cut.");
+          setBusy(false);
+          return;
+        }
+        setResult(data);
+        if (data.share_token) setShareToken(data.share_token);
+        setPhase("revealing");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Network error.");
+      } finally {
+        setBusy(false);
+      }
+    },
+    [start]
+  );
 
-  const lockIt = useCallback(async () => {
-    if (!start || selected.length !== REQUIRED_KEEPS || locking) return;
-    setLocking(true);
-    try {
-      const res = await fetch("/api/games/the-cut/lock", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ play_id: start.play_id, kept_names: selected }),
-      });
-      const data = (await res.json()) as CutPlayResult & {
-        error?: string;
-        share_token?: string;
-      };
-      if (!res.ok) {
-        setError(data.error ?? "Couldn't lock your cut.");
-        setLocking(false);
+  const decide = useCallback(
+    (decision: "keep" | "cut") => {
+      if (!start || busy) return;
+      const currentName = start.items[currentIndex]?.name;
+      if (!currentName) return;
+      // Enforce slot caps (the buttons should already be disabled, but be safe).
+      if (decision === "keep" && keptNames.length >= REQUIRED_KEEPS) return;
+      if (decision === "cut" && cutNamesState.length >= REQUIRED_CUTS) return;
+
+      const nextKeeps =
+        decision === "keep" ? [...keptNames, currentName] : keptNames;
+      const nextCuts =
+        decision === "cut" ? [...cutNamesState, currentName] : cutNamesState;
+      setKeptNames(nextKeeps);
+      setCutNamesState(nextCuts);
+
+      const nextIndex = currentIndex + 1;
+      if (nextIndex >= TOTAL_ITEMS) {
+        // All decided — kept slots should be full by construction.
+        // Defensive: if somehow short, auto-fill remaining items as keeps so
+        // the lock call succeeds.
+        if (nextKeeps.length === REQUIRED_KEEPS) {
+          finishWithKeeps(nextKeeps);
+        } else {
+          setError("Decision count mismatch — please reload.");
+          setPhase("error");
+        }
         return;
       }
-      setResult(data);
-      if (data.share_token) setShareToken(data.share_token);
-      setPhase("revealing");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Network error.");
-    } finally {
-      setLocking(false);
-    }
-  }, [start, selected, locking]);
+      setCurrentIndex(nextIndex);
+    },
+    [start, currentIndex, keptNames, cutNamesState, busy, finishWithKeeps]
+  );
 
   const playAgain = useCallback(() => {
     setStart(null);
-    setSelected([]);
+    setCurrentIndex(0);
+    setKeptNames([]);
+    setCutNamesState([]);
     setResult(null);
     setShareToken(null);
     setError(null);
@@ -141,12 +187,13 @@ export default function TheCutGame() {
           prompt={start.prompt}
           setTitle={start.set_title}
         />
-        <CutBoard
-          items={start.items}
-          selected={selected}
-          onToggle={toggleSelect}
-          onLock={lockIt}
-          busy={locking}
+        <SequentialBoard
+          allNames={start.items.map((i) => i.name)}
+          currentIndex={currentIndex}
+          keptSoFar={keptNames}
+          cutSoFar={cutNamesState}
+          onDecide={decide}
+          busy={busy}
         />
       </>
     );
@@ -157,7 +204,7 @@ export default function TheCutGame() {
       <VerdictReveal
         boardOrder={start.items.map((i) => i.name)}
         result={result}
-        keptNames={selected}
+        keptNames={keptNames}
         showCriterionTop={start.mode === "hard"}
         onFinished={() => setPhase("result")}
       />
