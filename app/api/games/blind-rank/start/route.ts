@@ -69,6 +69,7 @@ export async function POST(req: Request) {
     topic_subtitle: topic.payload.subtitle,
     category: topic.payload.category,
     difficulty: topic.payload.difficulty,
+    kind: topic.payload.kind,
     items: playItems,
     placements: {},
   };
@@ -99,6 +100,7 @@ export async function POST(req: Request) {
     share_token: data.share_token,
     topic_title: topic.payload.title,
     topic_subtitle: topic.payload.subtitle,
+    kind: topic.payload.kind,
     items: playItems.map((i) => ({ item_index: i.item_index, name: i.name })),
   });
 }

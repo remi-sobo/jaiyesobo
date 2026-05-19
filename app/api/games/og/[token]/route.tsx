@@ -33,11 +33,37 @@ export async function GET(_req: Request, { params }: Ctx) {
 
 function blindRankOgImage(play: Awaited<ReturnType<typeof getPlayByToken>>) {
   const result = (play?.result ?? null) as BlindRankResult | null;
+  const isOpinion = result?.kind === "opinion";
   const topicTitle = result?.topic_title ?? "Blind Rank";
-  const total = result?.total_slots ?? 5;
-  const score = result?.score ?? null;
-  const perfect = score === total;
+  const total = isOpinion ? 100 : result?.total_slots ?? 5;
+  const score = isOpinion
+    ? result?.take_score ?? null
+    : result?.kind === "factual"
+    ? result.score
+    : null;
+  const perfect = isOpinion ? (score ?? 0) >= 90 : score === total;
   const verdict = result?.verdict_line ?? "One at a time. No take-backs.";
+  const scoreLabel = isOpinion ? "Take score" : "Score";
+
+  // For opinion plays we show the AI's reactions as "Mike" rather than the
+  // canonical ordering — keeps the brand consistent with the on-site reveal.
+  const opinionRows =
+    result?.kind === "opinion"
+      ? result.slot_reactions.map((sr) => ({
+          slot: sr.slot,
+          you: sr.player_name,
+          them: sr.ai_name,
+        }))
+      : null;
+  const factualRows =
+    result?.kind === "factual"
+      ? result.slot_results.map((sr) => ({
+          slot: sr.slot,
+          you: sr.player_name,
+          them: sr.ai_name,
+          correct: sr.correct,
+        }))
+      : null;
 
   return new ImageResponse(
     (
@@ -101,32 +127,25 @@ function blindRankOgImage(play: Awaited<ReturnType<typeof getPlayByToken>>) {
                   marginBottom: 4,
                 }}
               >
-                Score
+                {scoreLabel}
               </div>
               <div
                 style={{
-                  fontSize: 200,
+                  fontSize: isOpinion ? 170 : 200,
                   fontWeight: 900,
                   lineHeight: 1,
-                  color:
-                    score === null
-                      ? "#F5F1EA"
-                      : perfect
-                      ? "#3ECFB2"
-                      : score >= 3
-                      ? "#F5C842"
-                      : score === 0
-                      ? "#E63946"
-                      : "#F5F1EA",
+                  color: scoreColor(score, isOpinion, perfect),
                   letterSpacing: "-0.05em",
                   display: "flex",
                   alignItems: "baseline",
                 }}
               >
                 {score ?? "—"}
-                <span style={{ color: "#8a8a8a", fontSize: 80 }}>/{total}</span>
+                <span style={{ color: "#8a8a8a", fontSize: isOpinion ? 60 : 80 }}>
+                  /{total}
+                </span>
               </div>
-              {perfect && (
+              {perfect && !isOpinion && (
                 <div
                   style={{
                     fontSize: 20,
@@ -139,6 +158,19 @@ function blindRankOgImage(play: Awaited<ReturnType<typeof getPlayByToken>>) {
                   ✓ Perfect
                 </div>
               )}
+              {isOpinion && (
+                <div
+                  style={{
+                    fontSize: 18,
+                    letterSpacing: 4,
+                    textTransform: "uppercase",
+                    color: "#F5C842",
+                    marginTop: 4,
+                  }}
+                >
+                  Mike judged it
+                </div>
+              )}
             </div>
 
             {/* Side-by-side lists */}
@@ -146,23 +178,41 @@ function blindRankOgImage(play: Awaited<ReturnType<typeof getPlayByToken>>) {
               <Column
                 label="You"
                 rows={
-                  result?.slot_results.map((sr) => ({
-                    slot: sr.slot,
-                    name: sr.player_name,
-                    correct: sr.correct,
-                  })) ?? []
+                  opinionRows
+                    ? opinionRows.map((r) => ({
+                        slot: r.slot,
+                        name: r.you,
+                        correct: true,
+                      }))
+                    : factualRows
+                    ? factualRows.map((r) => ({
+                        slot: r.slot,
+                        name: r.you,
+                        correct: r.correct,
+                      }))
+                    : []
                 }
+                opinion={isOpinion}
               />
               <Column
-                label="Truth"
+                label={isOpinion ? "Mike" : "Truth"}
                 rows={
-                  result?.slot_results.map((sr) => ({
-                    slot: sr.slot,
-                    name: sr.ai_name,
-                    correct: sr.correct,
-                  })) ?? []
+                  opinionRows
+                    ? opinionRows.map((r) => ({
+                        slot: r.slot,
+                        name: r.them,
+                        correct: true,
+                      }))
+                    : factualRows
+                    ? factualRows.map((r) => ({
+                        slot: r.slot,
+                        name: r.them,
+                        correct: r.correct,
+                      }))
+                    : []
                 }
                 truth
+                opinion={isOpinion}
               />
             </div>
           </div>
@@ -190,14 +240,30 @@ function blindRankOgImage(play: Awaited<ReturnType<typeof getPlayByToken>>) {
   );
 }
 
+function scoreColor(score: number | null, isOpinion: boolean, perfect: boolean): string {
+  if (score === null) return "#F5F1EA";
+  if (isOpinion) {
+    if (score >= 80) return "#3ECFB2";
+    if (score >= 55) return "#F5C842";
+    if (score >= 30) return "#F5F1EA";
+    return "#E63946";
+  }
+  if (perfect) return "#3ECFB2";
+  if (score >= 3) return "#F5C842";
+  if (score === 0) return "#E63946";
+  return "#F5F1EA";
+}
+
 function Column({
   label,
   rows,
   truth,
+  opinion,
 }: {
   label: string;
   rows: { slot: number; name: string; correct: boolean }[];
   truth?: boolean;
+  opinion?: boolean;
 }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
@@ -215,7 +281,9 @@ function Column({
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         {rows.length > 0
           ? rows.map((r) => {
-              const accent = truth
+              const accent = opinion
+                ? "#F5C842"
+                : truth
                 ? "#F5C842"
                 : r.correct
                 ? "#3ECFB2"

@@ -22,10 +22,12 @@ import { CSS } from "@dnd-kit/utilities";
 import type { BlindRankTopicRow } from "@/lib/games/blind-rank-data";
 import {
   BLIND_RANK_DIFFICULTIES,
+  BLIND_RANK_KINDS,
   POOL_MAX,
   POOL_MIN,
   type BlindRankDifficulty,
   type BlindRankItem,
+  type BlindRankKind,
 } from "@/lib/games/blind-rank";
 
 type Props = { topic: BlindRankTopicRow };
@@ -40,6 +42,7 @@ export default function VerifyBlindRankEditor({ topic }: Props) {
   const [difficulty, setDifficulty] = useState<BlindRankDifficulty>(
     topic.payload.difficulty
   );
+  const [kind, setKind] = useState<BlindRankKind>(topic.payload.kind ?? "factual");
   // Sort by rank for the initial editor view so drag-reorder maps cleanly.
   const initialRows: Row[] = useMemo(
     () =>
@@ -110,6 +113,7 @@ export default function VerifyBlindRankEditor({ topic }: Props) {
       subtitle: subtitle.trim(),
       category: category.trim() || "general",
       difficulty,
+      kind,
       pool_size: items.length,
       items,
     };
@@ -223,6 +227,20 @@ export default function VerifyBlindRankEditor({ topic }: Props) {
             {BLIND_RANK_DIFFICULTIES.map((d) => (
               <option key={d} value={d}>
                 {d}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-2">
+          <Span>Kind</Span>
+          <select
+            value={kind}
+            onChange={(e) => setKind(e.target.value as BlindRankKind)}
+            className={inputCls}
+          >
+            {BLIND_RANK_KINDS.map((k) => (
+              <option key={k} value={k}>
+                {k} {k === "factual" ? "(strict scoring)" : "(AI judges the take)"}
               </option>
             ))}
           </select>

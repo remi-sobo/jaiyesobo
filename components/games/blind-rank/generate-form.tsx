@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { BlindRankDifficulty } from "@/lib/games/blind-rank";
+import type { BlindRankDifficulty, BlindRankKind } from "@/lib/games/blind-rank";
 
 const SUGGESTED_CATEGORIES = [
   "all-time-players",
@@ -18,6 +18,7 @@ export default function GenerateBlindRankForm() {
   const [criteria, setCriteria] = useState("");
   const [difficulty, setDifficulty] = useState<BlindRankDifficulty>("medium");
   const [category, setCategory] = useState("all-time-players");
+  const [kind, setKind] = useState<BlindRankKind>("factual");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,6 +37,7 @@ export default function GenerateBlindRankForm() {
           criteria: criteria.trim(),
           difficulty,
           category,
+          kind,
         }),
       });
       const data = (await res.json()) as { id?: string; error?: string; detail?: string };
@@ -56,6 +58,26 @@ export default function GenerateBlindRankForm() {
       onSubmit={submit}
       className="bg-[var(--color-warm-surface)] border border-[var(--color-line)] rounded p-6 flex flex-col gap-5"
     >
+      <fieldset>
+        <legend className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-warm-mute)] mb-2">
+          Topic kind
+        </legend>
+        <div className="grid grid-cols-2 gap-2">
+          <KindButton
+            active={kind === "factual"}
+            onClick={() => setKind("factual")}
+            title="Factual"
+            sub="Strict positional · 5-of-5 scoring"
+          />
+          <KindButton
+            active={kind === "opinion"}
+            onClick={() => setKind("opinion")}
+            title="Opinion"
+            sub="AI judges the take · 0-100 score"
+          />
+        </div>
+      </fieldset>
+
       <label className="flex flex-col gap-2">
         <span className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-warm-mute)]">
           Topic
@@ -64,7 +86,11 @@ export default function GenerateBlindRankForm() {
           type="text"
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
-          placeholder="e.g. All-Time Scorers"
+          placeholder={
+            kind === "opinion"
+              ? "e.g. Best Crossovers Ever"
+              : "e.g. All-Time Scorers"
+          }
           className="bg-[var(--color-warm-surface-2)] border border-[var(--color-line)] rounded px-3 py-2.5 text-[var(--color-bone)] focus:outline-none focus:border-[var(--color-red)]"
         />
       </label>
@@ -133,5 +159,37 @@ export default function GenerateBlindRankForm() {
         {busy ? "Generating…" : "Draft a top 10"}
       </button>
     </form>
+  );
+}
+
+function KindButton({
+  active,
+  onClick,
+  title,
+  sub,
+}: {
+  active: boolean;
+  onClick: () => void;
+  title: string;
+  sub: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`text-left rounded p-3 border transition-colors ${
+        active
+          ? "border-[var(--color-red)] bg-[var(--color-warm-surface-2)]"
+          : "border-[var(--color-line)] bg-[var(--color-warm-surface-2)] hover:border-[var(--color-line-strong)]"
+      }`}
+      style={active ? { borderLeft: "3px solid var(--color-red)" } : undefined}
+    >
+      <div className="font-[family-name:var(--font-fraunces)] font-semibold text-base text-[var(--color-bone)]">
+        {title}
+      </div>
+      <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-warm-mute)] mt-1">
+        {sub}
+      </div>
+    </button>
   );
 }

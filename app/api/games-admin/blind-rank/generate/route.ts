@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/session";
 import { createServiceClient } from "@/lib/supabase/server";
 import { generateBlindRankTopic } from "@/lib/games/blind-rank-generate";
-import { isBlindRankDifficulty } from "@/lib/games/blind-rank";
+import { isBlindRankDifficulty, isBlindRankKind } from "@/lib/games/blind-rank";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -13,6 +13,7 @@ type Body = {
   criteria?: string;
   difficulty?: string;
   category?: string;
+  kind?: string;
 };
 
 export async function POST(req: Request) {
@@ -37,12 +38,14 @@ export async function POST(req: Request) {
     typeof body.category === "string" && body.category.trim().length > 0
       ? body.category.trim()
       : "general";
+  const kind = isBlindRankKind(body.kind) ? body.kind : "factual";
 
   const generated = await generateBlindRankTopic({
     topic,
     criteria,
     difficulty,
     category,
+    kind,
   });
   if (!generated.ok) {
     console.error(

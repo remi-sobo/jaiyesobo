@@ -3,8 +3,14 @@
  *
  * A solo ranking puzzle: player picks a topic, gets 5 items revealed one at a
  * time in shuffled order, and must commit each to a slot 1..5 with no
- * take-backs. Strict positional scoring against the canonical ordering of
- * those 5 items.
+ * take-backs.
+ *
+ * Topics have a "kind":
+ *  - "factual"  → strict positional scoring against the canonical ordering
+ *                 (career points, ring count, etc.).
+ *  - "opinion"  → AI judges the player's ranking with a 0-100 take score
+ *                 and a Mike Breen voice. The AI's own ranking exists but
+ *                 it's THE AI's take, not "the answer."
  *
  * Topics live on game_content with content_type='blind_rank_topic'. Plays
  * live on the standard plays table with game_slug='blind-rank'.
@@ -12,6 +18,9 @@
 
 export const BLIND_RANK_DIFFICULTIES = ["easy", "medium", "hard"] as const;
 export type BlindRankDifficulty = (typeof BLIND_RANK_DIFFICULTIES)[number];
+
+export const BLIND_RANK_KINDS = ["factual", "opinion"] as const;
+export type BlindRankKind = (typeof BLIND_RANK_KINDS)[number];
 
 export const POOL_MIN = 8;
 export const POOL_MAX = 12;
@@ -29,6 +38,7 @@ export type BlindRankTopicPayload = {
   subtitle: string;
   category: string;
   difficulty: BlindRankDifficulty;
+  kind: BlindRankKind;
   pool_size: number;
   items: BlindRankItem[];
 };
@@ -49,6 +59,7 @@ export type BlindRankPlayPayload = {
   topic_subtitle: string;
   category: string;
   difficulty: BlindRankDifficulty;
+  kind: BlindRankKind;
   /** The 5 items chosen for this play, in REVEAL order. */
   items: BlindRankPlayItem[];
   /** Map of slot number (1..5) → item_index of the locked placement. */
@@ -63,7 +74,8 @@ export type BlindRankSlotResult = {
   correct: boolean;
 };
 
-export type BlindRankResult = {
+export type BlindRankFactualResult = {
+  kind: "factual";
   score: number;
   total_slots: number;
   slot_results: BlindRankSlotResult[];
@@ -83,9 +95,52 @@ export type BlindRankResult = {
   topic_subtitle: string;
 };
 
+/** AI's reaction to one slot in an opinion-mode play. */
+export type BlindRankOpinionSlot = {
+  slot: number;
+  player_name: string;
+  ai_name: string;
+  /** Mike Breen-voice reaction: defending the player's pick, roasting it,
+   *  or agreeing. One short sentence. */
+  ai_take: string;
+};
+
+export type BlindRankOpinionResult = {
+  kind: "opinion";
+  /** 0-100 — AI's overall grade of the player's take. */
+  take_score: number;
+  total_slots: number;
+  /** Per-slot Mike Breen reactions. */
+  slot_reactions: BlindRankOpinionSlot[];
+  player_ranking: { slot: number; name: string }[];
+  /** The AI's OWN preferred ordering of the 5 pulled items. Shown side-by-side
+   *  but framed as "the AI's take", not "the answer". */
+  ai_ranking: { slot: number; name: string }[];
+  all_facts: {
+    name: string;
+    fact: string;
+    ai_slot: number;
+    player_slot: number;
+  }[];
+  /** Overall AI take on the player's ranking, 1-2 sentences in Mike Breen voice. */
+  overall_take: string;
+  /** One-line verdict line for the result hero. */
+  verdict_line: string;
+  topic_title: string;
+  topic_subtitle: string;
+};
+
+export type BlindRankResult = BlindRankFactualResult | BlindRankOpinionResult;
+
 export function isBlindRankDifficulty(v: unknown): v is BlindRankDifficulty {
   return (
     typeof v === "string" && (BLIND_RANK_DIFFICULTIES as readonly string[]).includes(v)
+  );
+}
+
+export function isBlindRankKind(v: unknown): v is BlindRankKind {
+  return (
+    typeof v === "string" && (BLIND_RANK_KINDS as readonly string[]).includes(v)
   );
 }
 
@@ -102,6 +157,9 @@ export function normalizeBlindRankTopicPayload(input: unknown):
   const subtitle = strOrEmpty(obj.subtitle);
   const category = strOrEmpty(obj.category) || "general";
   const difficulty = isBlindRankDifficulty(obj.difficulty) ? obj.difficulty : "medium";
+  // Default to "factual" so the 20 legacy topics (which don't carry a `kind`
+  // field) keep their existing strict-positional scoring.
+  const kind = isBlindRankKind(obj.kind) ? obj.kind : "factual";
 
   if (!title) return { ok: false, error: "title is required" };
 
@@ -173,6 +231,7 @@ export function normalizeBlindRankTopicPayload(input: unknown):
       subtitle,
       category,
       difficulty,
+      kind,
       pool_size: poolSize,
       items,
     },

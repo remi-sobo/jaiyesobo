@@ -12,6 +12,19 @@ type Props = {
 const ROW_REVEAL_MS = 550;
 
 export default function RevealVerdict({ result, onFinished }: Props) {
+  if (result.kind === "opinion") {
+    return <OpinionReveal result={result} onFinished={onFinished} />;
+  }
+  return <FactualReveal result={result} onFinished={onFinished} />;
+}
+
+function FactualReveal({
+  result,
+  onFinished,
+}: {
+  result: Extract<BlindRankResult, { kind: "factual" }>;
+  onFinished: () => void;
+}) {
   const total = result.slot_results.length;
   const [revealedRows, setRevealedRows] = useState(0);
   const [scoreDisplay, setScoreDisplay] = useState(0);
@@ -21,7 +34,6 @@ export default function RevealVerdict({ result, onFinished }: Props) {
     for (let r = 1; r <= total; r++) {
       timers.push(setTimeout(() => setRevealedRows(r), r * ROW_REVEAL_MS));
     }
-    // Roll up the score counter once all rows are out.
     const scoreStart = total * ROW_REVEAL_MS + 200;
     const finalScore = result.score;
     if (finalScore === 0) {
@@ -31,7 +43,6 @@ export default function RevealVerdict({ result, onFinished }: Props) {
         timers.push(setTimeout(() => setScoreDisplay(s), scoreStart + s * 280));
       }
     }
-    // After the score lands, give a beat then signal parent.
     const endAt = scoreStart + finalScore * 280 + 1400;
     timers.push(setTimeout(onFinished, endAt));
     return () => timers.forEach(clearTimeout);
@@ -81,7 +92,7 @@ export default function RevealVerdict({ result, onFinished }: Props) {
           Score
         </div>
         <div className="font-[family-name:var(--font-fraunces)] font-black text-[clamp(4rem,12vw,8rem)] leading-none tracking-tight">
-          <span style={{ color: scoreColor(scoreDisplay) }}>{scoreDisplay}</span>
+          <span style={{ color: factualScoreColor(scoreDisplay) }}>{scoreDisplay}</span>
           <span className="text-[var(--color-mute)] text-[0.55em]">/{total}</span>
         </div>
       </div>
@@ -89,7 +100,90 @@ export default function RevealVerdict({ result, onFinished }: Props) {
   );
 }
 
-type RowTone = "green" | "red" | "neutral";
+function OpinionReveal({
+  result,
+  onFinished,
+}: {
+  result: Extract<BlindRankResult, { kind: "opinion" }>;
+  onFinished: () => void;
+}) {
+  const total = result.slot_reactions.length;
+  const [revealedRows, setRevealedRows] = useState(0);
+  const [scoreDisplay, setScoreDisplay] = useState(0);
+
+  useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    for (let r = 1; r <= total; r++) {
+      timers.push(setTimeout(() => setRevealedRows(r), r * ROW_REVEAL_MS));
+    }
+    // Roll the 0-100 score in over ~1.2s after rows finish.
+    const scoreStart = total * ROW_REVEAL_MS + 200;
+    const final = result.take_score;
+    const steps = 20;
+    const stepMs = 60;
+    for (let s = 1; s <= steps; s++) {
+      timers.push(
+        setTimeout(() => setScoreDisplay(Math.round((final * s) / steps)), scoreStart + s * stepMs)
+      );
+    }
+    const endAt = scoreStart + steps * stepMs + 1400;
+    timers.push(setTimeout(onFinished, endAt));
+    return () => timers.forEach(clearTimeout);
+  }, [result.take_score, total, onFinished]);
+
+  return (
+    <section className="px-6 lg:px-10 pt-12 pb-12 max-w-[1100px] mx-auto">
+      <div className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.3em] text-[var(--color-games-yellow)] mb-2 text-center">
+        The take
+      </div>
+      <h2 className="font-[family-name:var(--font-fraunces)] font-semibold text-[clamp(1.3rem,2.6vw,1.9rem)] leading-tight tracking-tight text-[var(--color-bone)] mb-8 text-center">
+        {result.topic_title}
+      </h2>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-4 lg:gap-6 items-start">
+        <Column
+          label="Your take"
+          rows={result.slot_reactions.map((sr) => ({
+            slot: sr.slot,
+            name: sr.player_name,
+            tone: "yellow",
+            revealed: revealedRows >= sr.slot,
+          }))}
+          align="right"
+        />
+
+        <div className="hidden lg:flex flex-col items-center pt-12">
+          <span className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.3em] text-[var(--color-mute)]">
+            vs Mike
+          </span>
+        </div>
+
+        <Column
+          label="Mike's take"
+          rows={result.slot_reactions.map((sr) => ({
+            slot: sr.slot,
+            name: sr.ai_name,
+            tone: "neutral",
+            revealed: revealedRows >= sr.slot,
+          }))}
+          align="left"
+        />
+      </div>
+
+      <div className="text-center mt-10">
+        <div className="font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.3em] text-[var(--color-mute)] mb-2">
+          Take score
+        </div>
+        <div className="font-[family-name:var(--font-fraunces)] font-black text-[clamp(4rem,12vw,8rem)] leading-none tracking-tight">
+          <span style={{ color: opinionScoreColor(scoreDisplay) }}>{scoreDisplay}</span>
+          <span className="text-[var(--color-mute)] text-[0.55em]">/100</span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+type RowTone = "green" | "red" | "yellow" | "neutral";
 
 function Column({
   label,
@@ -126,6 +220,8 @@ function Column({
                   ? "bg-[var(--color-games-green)] text-[var(--color-black)]"
                   : r.revealed && r.tone === "red"
                   ? "bg-[var(--color-red)] text-[var(--color-bone)]"
+                  : r.revealed && r.tone === "yellow"
+                  ? "bg-[var(--color-games-yellow)] text-[var(--color-black)]"
                   : "bg-[var(--color-line)] text-[var(--color-mute)]"
               }`}
             >
@@ -154,12 +250,22 @@ function toneStyles(tone: RowTone): string {
   if (tone === "red") {
     return "border-[var(--color-red)] bg-[rgba(230,57,70,0.12)]";
   }
+  if (tone === "yellow") {
+    return "border-[var(--color-games-yellow)] bg-[rgba(245,200,66,0.10)]";
+  }
   return "border-[var(--color-line-strong)] bg-[var(--color-off-black)]";
 }
 
-function scoreColor(score: number): string {
+function factualScoreColor(score: number): string {
   if (score === 5) return "var(--color-games-green)";
   if (score >= 3) return "var(--color-games-yellow)";
   if (score === 0) return "var(--color-red)";
   return "var(--color-bone)";
+}
+
+function opinionScoreColor(score: number): string {
+  if (score >= 80) return "var(--color-games-green)";
+  if (score >= 55) return "var(--color-games-yellow)";
+  if (score >= 30) return "var(--color-bone)";
+  return "var(--color-red)";
 }
