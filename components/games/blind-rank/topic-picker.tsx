@@ -70,15 +70,22 @@ export default function TopicPicker({ topics, onStart, busy = false }: Props) {
                           : undefined
                       }
                     >
-                      <div className="flex items-center justify-between mb-3">
-                        <span
-                          className="font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.25em]"
-                          style={{
-                            color: isSelected ? "var(--color-red)" : "var(--color-mute)",
-                          }}
-                        >
-                          {t.payload.difficulty}
-                        </span>
+                      <div className="flex items-center justify-between mb-3 gap-2">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.25em]"
+                            style={{
+                              color: isSelected ? "var(--color-red)" : "var(--color-mute)",
+                            }}
+                          >
+                            {t.payload.difficulty}
+                          </span>
+                          {(t.payload.kind ?? "factual") === "opinion" && (
+                            <span className="font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.2em] text-[var(--color-games-yellow)] border border-[var(--color-games-yellow)] rounded-sm px-1.5 py-0.5">
+                              Opinion
+                            </span>
+                          )}
+                        </div>
                         {isSelected && (
                           <span className="font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.2em] text-[var(--color-red)]">
                             ✓ Selected

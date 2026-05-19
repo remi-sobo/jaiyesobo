@@ -19,72 +19,83 @@ export default function BlindRankResultView({ result, shareToken, onPlayAgain }:
       ? `${window.location.origin}/games/share/${shareToken}`
       : "";
 
+  const isOpinion = result.kind === "opinion";
+  const confettiTrigger = isOpinion
+    ? result.take_score >= 80
+    : result.score >= 4;
+
+  const heroScoreText = isOpinion
+    ? `${result.take_score}`
+    : `${result.score}`;
+  const heroScoreSuffix = isOpinion ? "/100" : `/${result.total_slots}`;
+  const heroColor = isOpinion
+    ? opinionScoreColor(result.take_score)
+    : factualScoreColor(result.score);
+
+  const shareTitle = isOpinion
+    ? `${result.take_score}/100 on ${result.topic_title} · Blind Rank`
+    : `${result.score}/${result.total_slots} on ${result.topic_title} · Blind Rank`;
+
   return (
     <section className="px-6 lg:px-10 pb-24 pt-6 max-w-[920px] mx-auto relative">
-      {result.score >= 4 && <Confetti />}
+      {confettiTrigger && <Confetti />}
 
       <div className="text-center mb-10">
         <div className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.3em] text-[var(--color-mute)] mb-2">
           {result.topic_title}
         </div>
+        {isOpinion && (
+          <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.3em] text-[var(--color-games-yellow)] mb-2">
+            Opinion topic · Mike judged it
+          </div>
+        )}
         <div className="font-[family-name:var(--font-fraunces)] font-black text-[clamp(4rem,12vw,8rem)] leading-none tracking-tight mb-4">
-          <span style={{ color: scoreColor(result.score) }}>{result.score}</span>
-          <span className="text-[var(--color-mute)] text-[0.55em]">/{result.total_slots}</span>
+          <span style={{ color: heroColor }}>{heroScoreText}</span>
+          <span className="text-[var(--color-mute)] text-[0.55em]">{heroScoreSuffix}</span>
         </div>
-        <p className="font-[family-name:var(--font-fraunces)] italic font-light text-[clamp(1.4rem,3vw,2.4rem)] leading-snug text-[var(--color-bone)] max-w-[40ch] mx-auto">
+        <p className="font-[family-name:var(--font-fraunces)] italic font-light text-[clamp(1.4rem,3vw,2.4rem)] leading-snug text-[var(--color-bone)] max-w-[42ch] mx-auto">
           &ldquo;{result.verdict_line}&rdquo;
         </p>
+        {isOpinion && result.overall_take && (
+          <p className="font-[family-name:var(--font-fraunces)] text-[clamp(1rem,1.7vw,1.2rem)] leading-snug text-[var(--color-mute)] max-w-[52ch] mx-auto mt-4">
+            {result.overall_take}
+          </p>
+        )}
       </div>
 
       <div className="bg-[var(--color-card)] border border-[var(--color-line)] rounded p-5 mb-8">
-        <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.3em] text-[var(--color-games-yellow)] mb-3">
-          Side by side
+        <div
+          className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.3em] mb-3"
+          style={{
+            color: isOpinion ? "var(--color-games-yellow)" : "var(--color-games-yellow)",
+          }}
+        >
+          {isOpinion ? "Side by side · Mike's reaction" : "Side by side"}
         </div>
         <ul className="flex flex-col gap-2">
-          {result.slot_results.map((sr) => {
-            const fact = result.all_facts.find((f) => f.name === sr.ai_name);
-            return (
-              <li
-                key={sr.slot}
-                className={`grid grid-cols-[40px_1fr_1fr] gap-3 items-start p-3 rounded border ${
-                  sr.correct
-                    ? "border-[var(--color-games-green)] bg-[rgba(62,207,178,0.08)]"
-                    : "border-[var(--color-red)] bg-[rgba(230,57,70,0.08)]"
-                }`}
-              >
-                <div
-                  className={`flex items-center justify-center w-9 h-9 rounded-full font-[family-name:var(--font-fraunces)] font-black ${
-                    sr.correct
-                      ? "bg-[var(--color-games-green)] text-[var(--color-black)]"
-                      : "bg-[var(--color-red)] text-[var(--color-bone)]"
-                  }`}
-                >
-                  {sr.slot}
-                </div>
-                <div className="min-w-0">
-                  <div className="font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.2em] text-[var(--color-mute)] mb-1">
-                    You
-                  </div>
-                  <div className="font-[family-name:var(--font-fraunces)] text-base leading-tight text-[var(--color-bone)]">
-                    {sr.player_name}
-                  </div>
-                </div>
-                <div className="min-w-0">
-                  <div className="font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.2em] text-[var(--color-mute)] mb-1">
-                    Truth
-                  </div>
-                  <div className="font-[family-name:var(--font-fraunces)] text-base leading-tight text-[var(--color-bone)]">
-                    {sr.ai_name}
-                  </div>
-                  {fact && (
-                    <div className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] leading-relaxed text-[var(--color-mute)] mt-1">
-                      {fact.fact}
-                    </div>
-                  )}
-                </div>
-              </li>
-            );
-          })}
+          {isOpinion
+            ? result.slot_reactions.map((sr) => (
+                <OpinionRow
+                  key={sr.slot}
+                  slot={sr.slot}
+                  playerName={sr.player_name}
+                  aiName={sr.ai_name}
+                  aiTake={sr.ai_take}
+                />
+              ))
+            : result.slot_results.map((sr) => {
+                const fact = result.all_facts.find((f) => f.name === sr.ai_name);
+                return (
+                  <FactualRow
+                    key={sr.slot}
+                    slot={sr.slot}
+                    correct={sr.correct}
+                    playerName={sr.player_name}
+                    aiName={sr.ai_name}
+                    fact={fact?.fact}
+                  />
+                );
+              })}
         </ul>
       </div>
 
@@ -109,18 +120,119 @@ export default function BlindRankResultView({ result, shareToken, onPlayAgain }:
         open={shareOpen}
         onClose={() => setShareOpen(false)}
         url={shareUrl}
-        title={`${result.score}/${result.total_slots} on ${result.topic_title} · Blind Rank`}
+        title={shareTitle}
         subtext={result.verdict_line}
       />
     </section>
   );
 }
 
-function scoreColor(score: number): string {
+function FactualRow({
+  slot,
+  correct,
+  playerName,
+  aiName,
+  fact,
+}: {
+  slot: number;
+  correct: boolean;
+  playerName: string;
+  aiName: string;
+  fact: string | undefined;
+}) {
+  return (
+    <li
+      className={`grid grid-cols-[40px_1fr_1fr] gap-3 items-start p-3 rounded border ${
+        correct
+          ? "border-[var(--color-games-green)] bg-[rgba(62,207,178,0.08)]"
+          : "border-[var(--color-red)] bg-[rgba(230,57,70,0.08)]"
+      }`}
+    >
+      <div
+        className={`flex items-center justify-center w-9 h-9 rounded-full font-[family-name:var(--font-fraunces)] font-black ${
+          correct
+            ? "bg-[var(--color-games-green)] text-[var(--color-black)]"
+            : "bg-[var(--color-red)] text-[var(--color-bone)]"
+        }`}
+      >
+        {slot}
+      </div>
+      <div className="min-w-0">
+        <Tiny>You</Tiny>
+        <div className="font-[family-name:var(--font-fraunces)] text-base leading-tight text-[var(--color-bone)]">
+          {playerName}
+        </div>
+      </div>
+      <div className="min-w-0">
+        <Tiny>Truth</Tiny>
+        <div className="font-[family-name:var(--font-fraunces)] text-base leading-tight text-[var(--color-bone)]">
+          {aiName}
+        </div>
+        {fact && (
+          <div className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] leading-relaxed text-[var(--color-mute)] mt-1">
+            {fact}
+          </div>
+        )}
+      </div>
+    </li>
+  );
+}
+
+function OpinionRow({
+  slot,
+  playerName,
+  aiName,
+  aiTake,
+}: {
+  slot: number;
+  playerName: string;
+  aiName: string;
+  aiTake: string;
+}) {
+  return (
+    <li className="grid grid-cols-[40px_1fr_1fr] gap-3 items-start p-3 rounded border border-[var(--color-games-yellow)] bg-[rgba(245,200,66,0.08)]">
+      <div className="flex items-center justify-center w-9 h-9 rounded-full font-[family-name:var(--font-fraunces)] font-black bg-[var(--color-games-yellow)] text-[var(--color-black)]">
+        {slot}
+      </div>
+      <div className="min-w-0">
+        <Tiny>You</Tiny>
+        <div className="font-[family-name:var(--font-fraunces)] text-base leading-tight text-[var(--color-bone)]">
+          {playerName}
+        </div>
+      </div>
+      <div className="min-w-0">
+        <Tiny>Mike</Tiny>
+        <div className="font-[family-name:var(--font-fraunces)] text-base leading-tight text-[var(--color-bone)]">
+          {aiName}
+        </div>
+        <div className="font-[family-name:var(--font-fraunces)] italic text-[0.85rem] leading-relaxed text-[var(--color-bone)] mt-1.5">
+          &ldquo;{aiTake}&rdquo;
+        </div>
+      </div>
+    </li>
+  );
+}
+
+function Tiny({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.2em] text-[var(--color-mute)] mb-1">
+      {children}
+    </div>
+  );
+}
+
+function factualScoreColor(score: number): string {
   if (score === 5) return "var(--color-games-green)";
   if (score >= 3) return "var(--color-games-yellow)";
   if (score === 0) return "var(--color-red)";
   return "var(--color-bone)";
+}
+
+function opinionScoreColor(score: number): string {
+  if (score >= 80) return "var(--color-games-green)";
+  if (score >= 55) return "var(--color-games-yellow)";
+  if (score >= 30) return "var(--color-bone)";
+  return "var(--color-red)";
 }
 
 type Piece = {

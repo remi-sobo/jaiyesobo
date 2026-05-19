@@ -213,9 +213,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (play.game_slug === "blind-rank") {
     const result = play.result as BlindRankResult | null;
     const topicTitle = result?.topic_title ?? "Blind Rank";
-    const titleLine = result
-      ? `${result.score}/${result.total_slots} on ${topicTitle} · Blind Rank · Jaiye's Games`
-      : `${topicTitle} · Blind Rank · Jaiye's Games`;
+    let titleLine: string;
+    if (result?.kind === "opinion") {
+      titleLine = `${result.take_score}/100 on ${topicTitle} · Blind Rank · Jaiye's Games`;
+    } else if (result) {
+      titleLine = `${result.score}/${result.total_slots} on ${topicTitle} · Blind Rank · Jaiye's Games`;
+    } else {
+      titleLine = `${topicTitle} · Blind Rank · Jaiye's Games`;
+    }
     const desc = result?.verdict_line ?? "One at a time. No take-backs.";
     return {
       title: titleLine,

@@ -4,11 +4,15 @@ import {
   SLOT_COUNT,
   scoreBlindRank,
   verdictForBlindRankScore,
+  type BlindRankFactualResult,
+  type BlindRankOpinionResult,
   type BlindRankPlayPayload,
   type BlindRankResult,
 } from "@/lib/games/blind-rank";
+import { judgeOpinionRanking } from "@/lib/games/blind-rank-judge";
 
 export const runtime = "nodejs";
+export const maxDuration = 30;
 export const dynamic = "force-dynamic";
 
 type Body = { play_id?: string };
@@ -36,10 +40,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "play_not_found" }, { status: 404 });
   }
 
-  // Idempotent: if already scored, return cached result.
-  if (play.result && typeof play.result === "object" && "score" in play.result) {
+  // Idempotent: if already scored, return cached result. Old factual results
+  // (pre-opinion-mode) don't carry a `kind` field — backfill it on read so
+  // the client can branch consistently.
+  if (
+    play.result &&
+    typeof play.result === "object" &&
+    ("kind" in play.result || "score" in play.result || "take_score" in play.result)
+  ) {
+    const cached = play.result as Record<string, unknown>;
     return NextResponse.json({
-      ...(play.result as Record<string, unknown>),
+      kind: cached.kind ?? "factual",
+      ...cached,
       share_token: play.share_token,
     });
   }
@@ -60,9 +72,7 @@ export async function POST(req: Request) {
     }
   }
 
-  const { score, slot_results } = scoreBlindRank(payload.items, placements);
-
-  // Build the per-item context for the reveal UI.
+  // Build shared structures used by both kinds.
   const localOrder = payload.items
     .slice()
     .sort((a, b) => a.canonical_rank - b.canonical_rank);
@@ -73,16 +83,14 @@ export async function POST(req: Request) {
   for (const [slotStr, itemIdx] of Object.entries(placements)) {
     playerSlotByIndex.set(itemIdx, Number(slotStr));
   }
-
   const allFacts = payload.items.map((it) => ({
     name: it.name,
     fact: it.fact,
     ai_slot: aiSlotByIndex.get(it.item_index) ?? 0,
     player_slot: playerSlotByIndex.get(it.item_index) ?? 0,
   }));
-
-  const playerRanking = [];
-  const aiRanking = [];
+  const playerRanking: { slot: number; name: string }[] = [];
+  const aiRanking: { slot: number; name: string }[] = [];
   for (let slot = 1; slot <= SLOT_COUNT; slot++) {
     const playerItemIdx = placements[String(slot)];
     const playerItem = payload.items.find((i) => i.item_index === playerItemIdx);
@@ -91,17 +99,63 @@ export async function POST(req: Request) {
     aiRanking.push({ slot, name: aiItem.name });
   }
 
-  const result: BlindRankResult = {
-    score,
-    total_slots: SLOT_COUNT,
-    slot_results,
-    player_ranking: playerRanking,
-    ai_ranking: aiRanking,
-    all_facts: allFacts,
-    verdict_line: verdictForBlindRankScore(score),
-    topic_title: payload.topic_title,
-    topic_subtitle: payload.topic_subtitle,
-  };
+  // Legacy plays without `kind` default to factual.
+  const kind = payload.kind ?? "factual";
+  let result: BlindRankResult;
+
+  if (kind === "opinion") {
+    const playerByName = Object.fromEntries(
+      playerRanking.map((r) => [r.slot, r.name])
+    ) as Record<number, string>;
+    const aiByName = Object.fromEntries(
+      aiRanking.map((r) => [r.slot, r.name])
+    ) as Record<number, string>;
+    const judged = await judgeOpinionRanking({
+      topicTitle: payload.topic_title,
+      topicSubtitle: payload.topic_subtitle,
+      playItems: payload.items,
+      playerRankingByName: playerByName,
+      aiRankingByName: aiByName,
+    });
+    const opinion: BlindRankOpinionResult = {
+      kind: "opinion",
+      take_score: judged.take_score,
+      total_slots: SLOT_COUNT,
+      slot_reactions: judged.slot_reactions.map((sr) => {
+        const playerName = playerByName[sr.slot] ?? "—";
+        const aiName = aiByName[sr.slot] ?? "—";
+        return {
+          slot: sr.slot,
+          player_name: playerName,
+          ai_name: aiName,
+          ai_take: sr.ai_take,
+        };
+      }),
+      player_ranking: playerRanking,
+      ai_ranking: aiRanking,
+      all_facts: allFacts,
+      overall_take: judged.overall_take,
+      verdict_line: judged.verdict_line,
+      topic_title: payload.topic_title,
+      topic_subtitle: payload.topic_subtitle,
+    };
+    result = opinion;
+  } else {
+    const { score, slot_results } = scoreBlindRank(payload.items, placements);
+    const factual: BlindRankFactualResult = {
+      kind: "factual",
+      score,
+      total_slots: SLOT_COUNT,
+      slot_results,
+      player_ranking: playerRanking,
+      ai_ranking: aiRanking,
+      all_facts: allFacts,
+      verdict_line: verdictForBlindRankScore(score),
+      topic_title: payload.topic_title,
+      topic_subtitle: payload.topic_subtitle,
+    };
+    result = factual;
+  }
 
   const newPayload: BlindRankPlayPayload = {
     ...payload,
