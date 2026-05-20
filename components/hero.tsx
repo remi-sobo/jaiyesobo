@@ -1,6 +1,7 @@
 "use client";
 import { motion, useReducedMotion } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 
 const NAME = "Jaiye";
 
@@ -19,6 +20,22 @@ export default function Hero() {
           <span>EST. EAST PALO ALTO · CA</span>
           <span className="hidden sm:block w-8 h-px bg-[var(--color-line)]" />
           <span>Vol. 01 · 2026</span>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: reduced ? 0 : 0.6, delay: reduced ? 0 : 0.35 }}
+          className="mt-5"
+        >
+          <Link
+            href="/me"
+            className="group inline-flex items-center gap-2 border border-[var(--color-line)] hover:border-[var(--color-red)] px-3.5 py-2 rounded-full font-[family-name:var(--font-jetbrains)] text-[0.65rem] sm:text-[0.7rem] uppercase tracking-[0.2em] text-[var(--color-bone)] transition-colors"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-red)] group-hover:bg-[var(--color-red-bright)] transition-colors" />
+            <span>Jaiye&rsquo;s HQ</span>
+            <span className="text-[var(--color-red)] transition-transform group-hover:translate-x-0.5">→</span>
+          </Link>
         </motion.div>
 
         <div className="py-12">

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -14,6 +14,16 @@ export const metadata: Metadata = {
     description: "Just a kid from East Palo Alto. Ballin' + Buildin'.",
     type: "website",
   },
+  applicationName: "Jaiye",
+  appleWebApp: {
+    capable: true,
+    title: "Jaiye",
+    statusBarStyle: "black-translucent",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0a0a0a",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
