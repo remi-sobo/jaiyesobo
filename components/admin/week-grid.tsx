@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   DndContext,
-  closestCenter,
+  closestCorners,
   KeyboardSensor,
   PointerSensor,
+  useDroppable,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -29,65 +30,186 @@ type Props = {
   onOpenTask: (task: Task) => void;
 };
 
+const COLUMN_PREFIX = "column:";
+
 export default function WeekGrid({ days, onOpenTask }: Props) {
-  // We use per-day sortable contexts via a single DndContext at top level
-  // but constrain dropping to same-day (we handle this in drag end).
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 mb-8">
-      {days.map((day) => (
-        <DayColumn key={day.date} day={day} onOpenTask={onOpenTask} />
-      ))}
-    </div>
-  );
-}
-
-function DayColumn({ day, onOpenTask }: { day: DayBucket; onOpenTask: (t: Task) => void }) {
   const router = useRouter();
-  const [adding, setAdding] = useState(false);
-  const [tasks, setTasks] = useState<Task[]>(day.tasks);
-
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  // Keep local state in sync when server data changes
-  if (tasks.length !== day.tasks.length || tasks.some((t, i) => t.id !== day.tasks[i]?.id)) {
-    // cheap guard: rehydrate when incoming list changed identity
-    // (React will re-run on every render; cheap comparison)
+  // Source of truth for the optimistic drag state. Rehydrated when `days`
+  // changes (e.g. after router.refresh).
+  const initial = useMemo(() => {
+    const m: Record<string, Task[]> = {};
+    for (const d of days) m[d.date] = d.tasks;
+    return m;
+  }, [days]);
+  const [byDate, setByDate] = useState<Record<string, Task[]>>(initial);
+
+  // Keep local state aligned with server data when the week reloads.
+  const initialKey = useMemo(
+    () =>
+      days
+        .map((d) => `${d.date}:${d.tasks.map((t) => t.id).join(",")}`)
+        .join("|"),
+    [days]
+  );
+  const [trackedKey, setTrackedKey] = useState(initialKey);
+  if (trackedKey !== initialKey) {
+    setTrackedKey(initialKey);
+    setByDate(initial);
+  }
+
+  function findDay(taskId: string): string | null {
+    for (const [date, list] of Object.entries(byDate)) {
+      if (list.some((t) => t.id === taskId)) return date;
+    }
+    return null;
   }
 
   async function handleDragEnd(e: DragEndEvent) {
-    if (!e.over || e.active.id === e.over.id) return;
-    const oldIndex = tasks.findIndex((t) => t.id === e.active.id);
-    const newIndex = tasks.findIndex((t) => t.id === e.over!.id);
-    if (oldIndex < 0 || newIndex < 0) return;
-    const next = arrayMove(tasks, oldIndex, newIndex);
-    setTasks(next);
+    if (!e.over) return;
+    const activeId = String(e.active.id);
+    const overId = String(e.over.id);
+    if (activeId === overId) return;
+
+    const sourceDay = findDay(activeId);
+    if (!sourceDay) return;
+
+    // Resolve destination day + index. `over.id` is either a task id (drop on
+    // another task) or `column:<date>` (drop on an empty area of a column).
+    let destDay: string | null;
+    let destIndex: number;
+    if (overId.startsWith(COLUMN_PREFIX)) {
+      destDay = overId.slice(COLUMN_PREFIX.length);
+      destIndex = (byDate[destDay] ?? []).length;
+    } else {
+      destDay = findDay(overId);
+      if (!destDay) return;
+      destIndex = (byDate[destDay] ?? []).findIndex((t) => t.id === overId);
+      if (destIndex < 0) destIndex = (byDate[destDay] ?? []).length;
+    }
+
+    const prev = byDate;
+
+    if (sourceDay === destDay) {
+      // Same-day reorder.
+      const list = byDate[sourceDay] ?? [];
+      const oldIdx = list.findIndex((t) => t.id === activeId);
+      if (oldIdx < 0 || destIndex < 0 || oldIdx === destIndex) return;
+      const next = arrayMove(list, oldIdx, destIndex);
+      setByDate({ ...byDate, [sourceDay]: next });
+      try {
+        const res = await fetch("/api/admin/tasks/reorder", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderedIds: next.map((t) => t.id) }),
+        });
+        if (!res.ok) throw new Error("reorder failed");
+        router.refresh();
+      } catch (err) {
+        console.error(err);
+        setByDate(prev);
+      }
+      return;
+    }
+
+    // Cross-day move: splice out of source, into destination, PATCH the
+    // moved task's `date`, then reorder the destination day so sort_order
+    // matches the new ordering. Also reorder the source if anything remains
+    // so its sort_order stays compact.
+    const sourceList = (byDate[sourceDay] ?? []).slice();
+    const destList = (byDate[destDay] ?? []).slice();
+    const taskIdx = sourceList.findIndex((t) => t.id === activeId);
+    if (taskIdx < 0) return;
+    const [moved] = sourceList.splice(taskIdx, 1);
+    const movedWithNewDate: Task = { ...moved, date: destDay };
+    const insertAt = Math.max(0, Math.min(destIndex, destList.length));
+    destList.splice(insertAt, 0, movedWithNewDate);
+
+    setByDate({
+      ...byDate,
+      [sourceDay]: sourceList,
+      [destDay]: destList,
+    });
+
     try {
-      await fetch("/api/admin/tasks/reorder", {
+      const patchRes = await fetch(`/api/admin/tasks/${activeId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: destDay }),
+      });
+      if (!patchRes.ok) throw new Error("patch failed");
+      const reorderDest = await fetch("/api/admin/tasks/reorder", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderedIds: next.map((t) => t.id) }),
+        body: JSON.stringify({ orderedIds: destList.map((t) => t.id) }),
       });
+      if (!reorderDest.ok) throw new Error("reorder dest failed");
+      if (sourceList.length > 0) {
+        await fetch("/api/admin/tasks/reorder", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderedIds: sourceList.map((t) => t.id) }),
+        });
+      }
       router.refresh();
     } catch (err) {
       console.error(err);
-      setTasks(day.tasks);
+      setByDate(prev);
     }
   }
 
-  const doneCount = day.tasks.filter((t) => t.completion).length;
-  const totalCount = day.tasks.length;
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 mb-8">
+        {days.map((day) => (
+          <DayColumn
+            key={day.date}
+            day={day}
+            tasks={byDate[day.date] ?? []}
+            onOpenTask={onOpenTask}
+          />
+        ))}
+      </div>
+    </DndContext>
+  );
+}
+
+function DayColumn({
+  day,
+  tasks,
+  onOpenTask,
+}: {
+  day: DayBucket;
+  tasks: Task[];
+  onOpenTask: (t: Task) => void;
+}) {
+  const [adding, setAdding] = useState(false);
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
+    id: `${COLUMN_PREFIX}${day.date}`,
+  });
+
+  const doneCount = tasks.filter((t) => t.completion).length;
+  const totalCount = tasks.length;
 
   return (
     <div
       className={`relative flex flex-col bg-[var(--color-warm-surface)] border rounded min-h-[380px] p-3 ${
-        day.isToday ? "border-[var(--color-red)]" : day.isWeekend ? "border-[var(--color-line)] opacity-70 bg-[var(--color-warm-bg)]" : "border-[var(--color-line)]"
-      }`}
+        day.isToday
+          ? "border-[var(--color-red)]"
+          : day.isWeekend
+          ? "border-[var(--color-line)] opacity-70 bg-[var(--color-warm-bg)]"
+          : "border-[var(--color-line)]"
+      } ${isOver ? "ring-1 ring-[var(--color-red)]" : ""}`}
     >
       {day.isToday && (
-        <span className="absolute top-0 left-0 right-0 h-[2px] bg-[var(--color-red)] rounded-t" aria-hidden />
+        <span
+          className="absolute top-0 left-0 right-0 h-[2px] bg-[var(--color-red)] rounded-t"
+          aria-hidden
+        />
       )}
       <div className="flex items-baseline justify-between pb-3 mb-3 border-b border-[var(--color-line)]">
         <div>
@@ -103,19 +225,39 @@ function DayColumn({ day, onOpenTask }: { day: DayBucket; onOpenTask: (t: Task) 
           </div>
         </div>
         <div className="font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.15em] text-[var(--color-warm-mute)]">
-          {totalCount === 0 ? "—" : <><span className="text-[var(--color-bone)]">{doneCount}/{totalCount}</span></>}
+          {totalCount === 0 ? (
+            "—"
+          ) : (
+            <>
+              <span className="text-[var(--color-bone)]">
+                {doneCount}/{totalCount}
+              </span>
+            </>
+          )}
         </div>
       </div>
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
-          <div className="flex flex-col gap-1.5 flex-1">
-            {tasks.map((t) => (
-              <SortableTask key={t.id} task={t} onOpen={() => onOpenTask(t)} />
-            ))}
-          </div>
-        </SortableContext>
-      </DndContext>
+      <SortableContext
+        items={tasks.map((t) => t.id)}
+        strategy={verticalListSortingStrategy}
+      >
+        <div ref={setDropRef} className="flex flex-col gap-1.5 flex-1 min-h-[60px]">
+          {tasks.map((t) => (
+            <SortableTask key={t.id} task={t} onOpen={() => onOpenTask(t)} />
+          ))}
+          {tasks.length === 0 && (
+            <div
+              className={`flex-1 rounded border border-dashed text-center font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.2em] py-6 transition-colors ${
+                isOver
+                  ? "border-[var(--color-red)] text-[var(--color-red)] bg-[rgba(230,57,70,0.06)]"
+                  : "border-[var(--color-line)] text-[var(--color-warm-mute)]"
+              }`}
+            >
+              {isOver ? "Drop here" : "Empty"}
+            </div>
+          )}
+        </div>
+      </SortableContext>
 
       {adding ? (
         <AddTaskInline date={day.date} onDone={() => setAdding(false)} />
@@ -133,7 +275,8 @@ function DayColumn({ day, onOpenTask }: { day: DayBucket; onOpenTask: (t: Task) 
 }
 
 function SortableTask({ task, onOpen }: { task: Task; onOpen: () => void }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: task.id });
   const done = !!task.completion;
   const subjectKey = subjectKeyFor(task.subject, task.type);
   const accent = subjectHex(task.subject, task.type);
@@ -164,12 +307,19 @@ function SortableTask({ task, onOpen }: { task: Task; onOpen: () => void }) {
         <div className="font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.15em] text-[var(--color-warm-mute)] mb-0.5">
           {task.subject ?? subjectKey}
         </div>
-        <div className={`text-[var(--color-bone)] ${done ? "line-through decoration-[var(--color-warm-mute)]" : ""}`}>
+        <div
+          className={`text-[var(--color-bone)] ${
+            done ? "line-through decoration-[var(--color-warm-mute)]" : ""
+          }`}
+        >
           {task.title}
         </div>
       </button>
       {done && (
-        <span className="absolute top-1.5 right-2 text-[var(--color-green)] text-xs leading-none" aria-hidden>
+        <span
+          className="absolute top-1.5 right-2 text-[var(--color-green)] text-xs leading-none"
+          aria-hidden
+        >
           ✓
         </span>
       )}
