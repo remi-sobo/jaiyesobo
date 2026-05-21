@@ -57,6 +57,7 @@ export default function TaskEditDrawer({ task, onClose }: Props) {
           reflection_prompt: form.reflection_prompt,
           estimated_minutes: form.estimated_minutes,
           scheduled_time: form.scheduled_time,
+          date: form.date,
         }),
       });
       if (!res.ok) throw new Error("save failed");
@@ -212,6 +213,18 @@ export default function TaskEditDrawer({ task, onClose }: Props) {
             </div>
             <p className="font-[family-name:var(--font-fraunces)] italic text-[0.8rem] text-[var(--color-warm-mute)] mt-1.5">
               The smallest block Jaiye can pick. He can extend on his side.
+            </p>
+          </Field>
+
+          <Field label="Day">
+            <input
+              type="date"
+              value={form.date ?? ""}
+              onChange={(e) => setForm({ ...form, date: e.target.value })}
+              className="w-full bg-[var(--color-warm-bg)] border border-[var(--color-line-strong)] rounded px-3 py-2.5 text-[var(--color-bone)] focus:outline-none focus:border-[var(--color-red)]"
+            />
+            <p className="font-[family-name:var(--font-fraunces)] italic text-[0.8rem] text-[var(--color-warm-mute)] mt-1.5">
+              Change the date to move this task to another day.
             </p>
           </Field>
 
