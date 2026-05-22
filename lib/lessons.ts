@@ -2,6 +2,7 @@ import EpaHistoryLesson from "@/lessons/epa-history";
 import SportsJournalistLab from "@/lessons/sports-journalist-lab";
 import GamesCuratorOnboarding from "@/lessons/games-curator-onboarding";
 import GrammarNouns from "@/lessons/grammar-nouns";
+import JuneteenthJaiyeLesson from "@/lessons/juneteenth-jaiye";
 
 export type LessonMeta = {
   component: React.ComponentType<{ taskId: string }>;
@@ -37,6 +38,12 @@ export const LESSONS: Record<string, LessonMeta> = {
     component: GrammarNouns,
     title: "Nouns: The Names of Everything on the Court",
     subject: "english",
+    estimatedMinutes: 30,
+  },
+  "juneteenth-jaiye": {
+    component: JuneteenthJaiyeLesson,
+    title: "Juneteenth — The Day Freedom Reached Texas",
+    subject: "history",
     estimatedMinutes: 30,
   },
 };
