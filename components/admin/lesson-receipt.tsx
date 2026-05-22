@@ -12,10 +12,16 @@ export default function LessonReceipt({ item }: Props) {
   const r = item.responses as Record<string, unknown>;
   const isSports = item.lesson_slug === "sports-journalist-lab";
   const isCurator = item.lesson_slug === "games-curator-onboarding";
+  const isJuneteenth = item.lesson_slug === "juneteenth-jaiye";
+  const isJuneteenthKemi = item.lesson_slug === "juneteenth-kemi";
   const names = isSports
     ? `${asString(r["pick.team_a"])} vs ${asString(r["pick.team_b"])}`.trim()
     : isCurator
     ? "Jaiye · Curator"
+    : isJuneteenth
+    ? `Quiz ${asString(r.quiz_score) || "—/4"}`
+    : isJuneteenthKemi
+    ? `Kemi · Quiz ${asString(r.quiz_score) || "—/4"}`
     : typeof r.names === "string"
     ? r.names
     : "";
@@ -32,7 +38,7 @@ export default function LessonReceipt({ item }: Props) {
         className="w-full flex items-start gap-4 p-5 text-left hover:bg-[var(--color-warm-surface-2)] transition-colors"
       >
         <div className="w-12 h-12 rounded bg-[var(--color-warm-surface-3)] flex items-center justify-center text-2xl shrink-0">
-          {isSports ? "🎙️" : isCurator ? "🎮" : "📚"}
+          {isSports ? "🎙️" : isCurator ? "🎮" : isJuneteenth ? "✊" : isJuneteenthKemi ? "✨" : "📚"}
         </div>
         <div className="flex-1 min-w-0">
           <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-warm-mute)] mb-1">
@@ -60,6 +66,10 @@ export default function LessonReceipt({ item }: Props) {
             <SportsRecapBody r={r} />
           ) : isCurator ? (
             <GamesCuratorBody r={r} />
+          ) : isJuneteenth ? (
+            <JuneteenthBody r={r} />
+          ) : isJuneteenthKemi ? (
+            <JuneteenthKemiBody r={r} />
           ) : (
             <EpaHistoryBody r={r} />
           )}
@@ -193,6 +203,244 @@ function ResponseBlock({ label, value, big }: { label: string; value: unknown; b
       </p>
     </div>
   );
+}
+
+const JUNETEENTH_QUIZ = [
+  {
+    key: "q1",
+    label: "Q1 — “Juneteenth” = which two words?",
+    options: [
+      "“June” and “nineteenth”",
+      "“June” and “teenager”",
+      "“Jubilee” and “month”",
+      "“June” and “freedom”",
+    ],
+    correct: 0,
+  },
+  {
+    key: "q2",
+    label: "Q2 — Year Galveston learned they were free",
+    options: ["1776", "1863", "1865", "1921"],
+    correct: 2,
+  },
+  {
+    key: "q3",
+    label: "Q3 — Why it took so long",
+    options: [
+      "No one had written it down yet",
+      "Texas was the most distant part of the Confederacy and freedom needed Union troops to enforce it",
+      "The Emancipation Proclamation hadn’t been signed",
+      "People in Texas didn’t celebrate holidays",
+    ],
+    correct: 1,
+  },
+  {
+    key: "q4",
+    label: "Q4 — What made slavery illegal everywhere",
+    options: [
+      "General Order No. 3",
+      "The first Juneteenth celebration",
+      "The 13th Amendment",
+      "The end of the Civil War",
+    ],
+    correct: 2,
+  },
+];
+
+function JuneteenthBody({ r }: { r: Record<string, unknown> }) {
+  const quiz = (r.quiz as Record<string, unknown> | undefined) ?? {};
+  const watch = (r.watch as Record<string, unknown> | undefined) ?? {};
+  const report = (r.report as Record<string, unknown> | undefined) ?? {};
+  const think = (r.think as Record<string, unknown> | undefined) ?? {};
+  const reflect = (r.reflect as Record<string, unknown> | undefined) ?? {};
+  const score = asString(r.quiz_score) || asString(quiz.score) || "—/4";
+  const q5 = asString(quiz.q5_meaning);
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Scorecard */}
+      <div className="bg-[var(--color-warm-surface-2)] border border-[var(--color-line)] border-l-[3px] border-l-[var(--color-red)] rounded p-5">
+        <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-red)] mb-2">
+          Quiz · {score}
+        </div>
+        <ol className="flex flex-col gap-2 list-none">
+          {JUNETEENTH_QUIZ.map((q) => {
+            const row = (quiz[q.key] as { picked?: number | null } | undefined) ?? {};
+            const picked = typeof row.picked === "number" ? row.picked : null;
+            const isCorrect = picked === q.correct;
+            return (
+              <li key={q.key} className="flex flex-col gap-1">
+                <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-warm-mute)]">
+                  {q.label}
+                </div>
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <span
+                    className={`font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] ${
+                      isCorrect ? "text-[var(--color-green)]" : "text-[var(--color-red-soft)]"
+                    }`}
+                  >
+                    {isCorrect ? "✓ correct" : "✗ wrong"}
+                  </span>
+                  <span className="font-[family-name:var(--font-fraunces)] italic text-[var(--color-warm-bone)] leading-snug">
+                    His pick: {picked === null ? "—" : q.options[picked] ?? "—"}
+                  </span>
+                  {!isCorrect && (
+                    <span className="font-[family-name:var(--font-fraunces)] italic text-[var(--color-warm-mute)] leading-snug">
+                      · Correct: {q.options[q.correct]}
+                    </span>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+
+      <ResponseBlock
+        label="Q5 — “Freedom delayed is not freedom denied” (his words)"
+        value={q5}
+        big
+      />
+
+      <ResponseBlock
+        label="While he watched — what surprised him"
+        value={watch.surprise}
+      />
+
+      {/* The Dispatch */}
+      <div className="bg-[var(--color-warm-surface-2)] border border-[var(--color-line)] rounded p-5 flex flex-col gap-3">
+        <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-red)]">
+          Dispatch · Galveston, June 19, 1865
+        </div>
+        <div>
+          <div className="font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.2em] text-[var(--color-warm-mute)] mb-1">
+            Headline
+          </div>
+          <p className="font-[family-name:var(--font-fraunces)] font-semibold text-[1.15rem] text-[var(--color-bone)] leading-snug">
+            {asString(report.headline) || "—"}
+          </p>
+        </div>
+        <div>
+          <div className="font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.2em] text-[var(--color-warm-mute)] mb-1">
+            Opening paragraph
+          </div>
+          <p className="font-[family-name:var(--font-fraunces)] italic text-[var(--color-warm-bone)] leading-relaxed whitespace-pre-wrap">
+            {asString(report.lede) || "—"}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        <ResponseBlock
+          label="Why families kept Juneteenth alive"
+          value={think.why_kept_alive}
+        />
+        <ResponseBlock
+          label="“Second Independence Day” — good name?"
+          value={think.second_independence}
+        />
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        <ResponseBlock label="One word for how he feels" value={reflect.word} />
+        <ResponseBlock label="One question for Dad" value={reflect.ask_dad} />
+      </div>
+    </div>
+  );
+}
+
+const JUNETEENTH_KEMI_QUIZ = [
+  { key: "q1", label: "Q1 — What does Juneteenth celebrate?", options: ["Freedom for everyone", "A birthday party", "The first day of school", "A new toy"], correct: 0 },
+  { key: "q2", label: "Q2 — What day is Juneteenth?", options: ["January 1", "July 4", "June 19", "December 25"], correct: 2 },
+  { key: "q3", label: "Q3 — “Enslaved” means…", options: ["They were on vacation", "They were not free and were treated unfairly", "They were teachers", "They were very rich"], correct: 1 },
+  { key: "q4", label: "Q4 — Red food color stands for…", options: ["Blue", "Green", "Red", "Purple"], correct: 2 },
+];
+
+function JuneteenthKemiBody({ r }: { r: Record<string, unknown> }) {
+  // Defensive: accept either a `quiz` object with `{ q1: { picked }, ... }`
+  // shape (matching Jaiye's contract) OR a flat fallback. Both are tolerated
+  // because kemisobo.com builds its own client-side mapping.
+  const quiz = (r.quiz as Record<string, unknown> | undefined) ?? {};
+  const sing = (r.sing as Record<string, unknown> | undefined) ?? {};
+  const story = (r.story as Record<string, unknown> | undefined) ?? {};
+  const create = (r.create as Record<string, unknown> | undefined) ?? {};
+  const reflect = (r.reflect as Record<string, unknown> | undefined) ?? {};
+  const score = asString(r.quiz_score) || asString(quiz.score) || "—/4";
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="bg-[var(--color-warm-surface-2)] border border-[var(--color-line)] border-l-[3px] border-l-[var(--color-red)] rounded p-5">
+        <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-red)] mb-2">
+          Quiz · {score}
+        </div>
+        <ol className="flex flex-col gap-2 list-none">
+          {JUNETEENTH_KEMI_QUIZ.map((q) => {
+            const row = (quiz[q.key] as { picked?: number | null } | undefined) ?? {};
+            const picked = typeof row.picked === "number" ? row.picked : null;
+            const isCorrect = picked === q.correct;
+            return (
+              <li key={q.key} className="flex flex-col gap-1">
+                <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-warm-mute)]">
+                  {q.label}
+                </div>
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <span
+                    className={`font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] ${
+                      isCorrect ? "text-[var(--color-green)]" : "text-[var(--color-red-soft)]"
+                    }`}
+                  >
+                    {isCorrect ? "✓ correct" : "✗ wrong"}
+                  </span>
+                  <span className="font-[family-name:var(--font-fraunces)] italic text-[var(--color-warm-bone)] leading-snug">
+                    Her pick: {picked === null ? "—" : q.options[picked] ?? "—"}
+                  </span>
+                  {!isCorrect && (
+                    <span className="font-[family-name:var(--font-fraunces)] italic text-[var(--color-warm-mute)] leading-snug">
+                      · Correct: {q.options[q.correct]}
+                    </span>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        <ResponseBlock label="Favorite part of the song" value={sing.favorite} />
+        <ResponseBlock label="How Mazie felt" value={story.feeling} />
+      </div>
+
+      <div className="bg-[var(--color-warm-surface-2)] border border-[var(--color-line)] rounded p-5 flex flex-col gap-3">
+        <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-red)]">
+          Her Freedom Color Story
+        </div>
+        <div className="flex flex-wrap items-baseline gap-2">
+          <span className="font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.2em] text-[var(--color-warm-mute)]">
+            If freedom were a color…
+          </span>
+          <span className="font-[family-name:var(--font-fraunces)] font-semibold text-[1.1rem] text-[var(--color-bone)]">
+            {asString(create.color) || "—"}
+          </span>
+        </div>
+        <ResponseBlock label="Why she picked it" value={create.why} />
+        <ResponseBlock label="About her drawing" value={create.draw} />
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        <ResponseBlock label="One thing she learned" value={reflect.learned} />
+        <ResponseBlock label="How she feels right now" value={feelingLabel(reflect.feel)} />
+      </div>
+    </div>
+  );
+}
+
+function feelingLabel(v: unknown): string {
+  const s = typeof v === "string" ? v.toLowerCase() : "";
+  if (s === "happy") return "😊 Happy";
+  if (s === "thinking") return "🤔 Thinking";
+  if (s === "proud") return "❤️ Proud";
+  return asString(v);
 }
 
 function EpaHistoryBody({ r }: { r: Record<string, unknown> }) {

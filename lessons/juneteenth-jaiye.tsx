@@ -14,7 +14,6 @@
  */
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { AnimatePresence } from "framer-motion";
 import LessonShell from "@/components/lessons/lesson-shell";
 import LessonHero from "@/components/lessons/lesson-hero";
@@ -176,7 +175,6 @@ function Body({
   setScreen: (s: Screen) => void;
   taskId: string;
 }) {
-  const router = useRouter();
   const loaded = useDraftLoaded();
   const drafts = useAllDrafts();
 
@@ -202,8 +200,6 @@ function Body({
   const reflectReady =
     (drafts["reflect.word"] ?? "").trim().length > 0 &&
     (drafts["reflect.ask"] ?? "").trim().length > 0;
-
-  const studentName = (drafts["reflect.word"] ?? "").trim() ? "Jaiye" : "Jaiye";
 
   async function submit() {
     setSubmitting(true);
@@ -251,7 +247,6 @@ function Body({
         return;
       }
       setScreen("done");
-      router.refresh();
     } catch (err) {
       console.error(err);
       setSubmitError("Submit failed. Tell Dad — he can fix it.");
@@ -274,8 +269,8 @@ function Body({
         <LessonHero
           key="hero"
           tag="History · Freedom Files · June 19"
-          title="Juneteenth"
-          titleAccent="freedom reached Texas."
+          title="Juneteenth."
+          titleAccent="The day freedom reached Texas."
           description="On June 19, 1865, freedom finally reached the very last people who were still enslaved in America — in Galveston, Texas. This is the story of why it took so long, and why we still celebrate it today."
           missionItems={["Watch two videos", "Read the essay", "Walk the timeline", "Take the quiz", "File the report"]}
           onStart={() => setScreen("watch")}
@@ -467,7 +462,7 @@ function Body({
       {screen === "done" && (
         <LessonComplete
           key="done"
-          studentNames={studentName}
+          studentNames="Jaiye"
           lessonTitle="Juneteenth — the day freedom reached Texas"
         />
       )}
