@@ -1220,7 +1220,7 @@ function Footer({ cta }: { cta?: string }) {
           color: "#8a8a8a",
         }}
       >
-        Curated by Jaiye Sobo, age 8 · A father-son project from East Palo Alto
+        Curated by Jaiye Sobo, age 9 · A father-son project from East Palo Alto
       </div>
     </div>
   );

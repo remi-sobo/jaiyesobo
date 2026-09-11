@@ -5,7 +5,7 @@ import { getLiveBlindRankTopics } from "@/lib/games/blind-rank-data";
 
 export const metadata: Metadata = {
   title: "Blind Rank · Jaiye's Games",
-  description: "One at a time. No take-backs. NBA ranking puzzles curated by Jaiye Sobo, age 8.",
+  description: "One at a time. No take-backs. NBA ranking puzzles curated by Jaiye Sobo, age 9.",
   openGraph: {
     title: "Blind Rank",
     description: "One at a time. No take-backs.",

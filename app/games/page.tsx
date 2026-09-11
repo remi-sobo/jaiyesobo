@@ -1,91 +1,126 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import GameShell from "@/components/games/game-shell";
-import GameCard from "@/components/games/game-card";
-import { getGamesForKid } from "@/lib/games/data";
-import { getLiveCutSets } from "@/lib/games/the-cut-data";
-import { getLiveBlindRankTopics } from "@/lib/games/blind-rank-data";
+import Image from "next/image";
+import Nav from "@/components/nav";
+import Footer from "@/components/footer";
+import { games, GAME_STATUS_LABEL, featuredGame } from "@/lib/content/games";
+import { Accent, HandNote, SectionLabel } from "@/components/site/type";
+import { PlayButton } from "@/components/site/buttons";
+import { pad2 } from "@/lib/content/format";
 
 export const metadata: Metadata = {
-  title: "Jaiye's Games — NBA games curated by an 8-year-old",
+  title: "Play something I made · Jaiye Sobo",
   description:
-    "NBA games curated by Jaiye Sobo, age 8. Top 5 lists judged by AI. Trivia. Draft. A father-son project from East Palo Alto.",
+    "Basketball games Jaiye came up with. He decides how they work, then he and his dad build them.",
   openGraph: {
     title: "Jaiye's Games",
-    description: "NBA games curated by Jaiye Sobo, age 8.",
+    description: "Basketball games made by Jaiye Sobo, age 9.",
     type: "website",
   },
 };
 
-export const dynamic = "force-dynamic";
-
-const THE_CUT_MIN_LIVE_SETS = 5;
-const BLIND_RANK_MIN_LIVE_TOPICS = 10;
-
-export default async function GamesHubPage() {
-  const [games, liveCutSets, liveBlindRankTopics] = await Promise.all([
-    getGamesForKid("jaiye"),
-    getLiveCutSets(),
-    getLiveBlindRankTopics(),
-  ]);
-  // Gate content-dependent games: appear as 'beta' until enough verified
-  // content exists for a real play experience.
-  const adjusted = games.map((g) => {
-    if (g.slug === "the-cut" && liveCutSets.length < THE_CUT_MIN_LIVE_SETS) {
-      return { ...g, status: "beta" as const };
-    }
-    if (
-      g.slug === "blind-rank" &&
-      liveBlindRankTopics.length < BLIND_RANK_MIN_LIVE_TOPICS
-    ) {
-      return { ...g, status: "beta" as const };
-    }
-    return g;
-  });
-  const ordered = [...adjusted].sort((a, b) => statusRank(a.status) - statusRank(b.status));
+export default function GamesPage() {
+  const featured = featuredGame();
+  const rest = games.filter((g) => g.slug !== featured.slug);
 
   return (
-    <GameShell liveLabel="Daily prompts · New verdicts every day">
-      <section className="px-6 lg:px-10 pt-28 pb-12 max-w-[1100px] mx-auto">
-        <div className="font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.3em] text-[var(--color-mute)] mb-6">
-          jaiyesobo.com / games
-        </div>
-        <h1 className="font-[family-name:var(--font-fraunces)] font-black text-[clamp(3rem,8vw,7rem)] leading-[0.9] tracking-[-0.04em] mb-8">
-          Jaiye&apos;s <span className="italic font-normal text-[var(--color-red)]">Games.</span>
-        </h1>
-        <p className="font-[family-name:var(--font-fraunces)] italic text-[clamp(1.15rem,1.8vw,1.5rem)] text-[var(--color-bone)] max-w-[48ch] leading-snug mb-14">
-          NBA games made by my son. Made for fans. Play one.
-        </p>
-      </section>
+    <>
+      <Nav />
+      <main>
+        <section className="px-5 py-[clamp(44px,6vw,88px)] min-[760px]:px-10">
+          <div className="mx-auto max-w-[1200px]">
+            <SectionLabel tone="yellow">Made by Jaiye</SectionLabel>
+            <h1 className="mt-6 font-[family-name:var(--font-fraunces)] text-[clamp(3rem,8vw,6rem)] font-black leading-[0.85] tracking-[-0.045em]">
+              Play something
+              <br />
+              <em className="font-normal italic text-[var(--color-red)]">I made.</em>
+            </h1>
+            <p className="mt-6 max-w-[48ch] text-[1rem] leading-[1.7] text-[var(--color-mute)]">
+              These are basketball games I came up with. I decide how they work and
+              what the rules are, then me and my dad build them.
+            </p>
+          </div>
+        </section>
 
-      <section className="px-6 lg:px-10 pb-16 max-w-[1100px] mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {ordered.map((g, i) => (
-            <GameCard key={g.slug} game={g} number={String(i + 1).padStart(2, "0")} />
-          ))}
-        </div>
-      </section>
+        <section className="px-5 min-[760px]:px-10">
+          <div className="mx-auto max-w-[1200px]">
+            <div className="grid gap-[clamp(24px,4vw,56px)] border border-[var(--color-line-strong)] bg-[var(--color-off-black)] p-[clamp(24px,3vw,44px)] lg:grid-cols-2 lg:items-center">
+              <div>
+                <div className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-games-yellow)]">
+                  Game {pad2(featured.number)} ·{" "}
+                  {GAME_STATUS_LABEL[featured.status]}
+                </div>
+                <h2 className="mt-5 font-[family-name:var(--font-fraunces)] text-[clamp(2.2rem,4.4vw,3.2rem)] font-black leading-[0.95] tracking-[-0.03em]">
+                  <Accent text={featured.title} accent={featured.titleAccent} />
+                </h2>
+                <p className="mt-5 max-w-[46ch] text-[1rem] leading-[1.7] text-[var(--color-mute)]">
+                  {featured.description}
+                </p>
+                {featured.href && (
+                  <div className="mt-8">
+                    <PlayButton href={featured.href} tone="yellow">
+                      Play
+                    </PlayButton>
+                  </div>
+                )}
+                {featured.credit && (
+                  <p className="mt-5 font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">
+                    {featured.credit}
+                  </p>
+                )}
+                <HandNote className="mt-6">
+                  I thought this would be easier to build.
+                </HandNote>
+              </div>
 
-      <section className="px-6 lg:px-10 pb-24 pt-4 max-w-[1100px] mx-auto flex flex-wrap gap-x-8 gap-y-3 items-center">
-        <Link
-          href="/games/draft/leaderboard"
-          className="inline-flex items-center gap-2 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.25em] text-[var(--color-games-yellow)] hover:text-[var(--color-bone)] transition-colors"
-        >
-          Draft record book <span>→</span>
-        </Link>
-        <Link
-          href="/games/about"
-          className="inline-flex items-center gap-2 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.25em] text-[var(--color-mute)] hover:text-[var(--color-red)] transition-colors"
-        >
-          About these games <span>→</span>
-        </Link>
-      </section>
-    </GameShell>
+              {featured.screenshot && (
+                <div className="relative aspect-[16/10] w-full overflow-hidden border border-[var(--color-line-strong)]">
+                  <Image
+                    src={featured.screenshot}
+                    alt="A round of Blind Rank in progress"
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 560px"
+                    className="object-cover object-left-top"
+                    priority
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section className="px-5 py-[clamp(52px,7vw,104px)] min-[760px]:px-10">
+          <div className="mx-auto max-w-[1200px]">
+            <div className="grid gap-px bg-[var(--color-line-strong)] [grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))]">
+              {rest.map((g) => (
+                <div key={g.slug} className="bg-[var(--color-black)] p-6">
+                  <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">
+                    Game {pad2(g.number)} · {GAME_STATUS_LABEL[g.status]}
+                  </div>
+                  <h3 className="mt-4 font-[family-name:var(--font-fraunces)] text-[1.5rem] font-black leading-tight tracking-[-0.02em]">
+                    {g.title}
+                  </h3>
+                  <p className="mt-3 text-[0.95rem] leading-[1.6] text-[var(--color-mute)]">
+                    {g.description}
+                  </p>
+                </div>
+              ))}
+
+              <div className="bg-[var(--color-black)] p-6">
+                <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">
+                  The rule
+                </div>
+                <h3 className="mt-4 font-[family-name:var(--font-fraunces)] text-[1.5rem] font-black leading-tight tracking-[-0.02em]">
+                  Fun in ten seconds
+                </h3>
+                <p className="mt-3 text-[0.95rem] leading-[1.6] text-[var(--color-mute)]">
+                  If it takes longer than that to figure out, we change it.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+      <Footer />
+    </>
   );
-}
-
-function statusRank(s: string): number {
-  if (s === "live") return 0;
-  if (s === "beta") return 1;
-  return 2;
 }

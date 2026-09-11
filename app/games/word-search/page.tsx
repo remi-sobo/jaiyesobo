@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description: "Themed NBA word search puzzles. Drag, find, beat the clock.",
   openGraph: {
     title: "NBA Word Search",
-    description: "Themed NBA word search puzzles by Jaiye Sobo, age 8.",
+    description: "Themed NBA word search puzzles by Jaiye Sobo, age 9.",
     type: "website",
   },
 };

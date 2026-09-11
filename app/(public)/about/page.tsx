@@ -1,71 +1,120 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Image from "next/image";
+import { existsSync } from "node:fs";
+import path from "node:path";
+import { HandNote, SectionLabel } from "@/components/site/type";
 
 export const metadata: Metadata = {
   title: "About · Jaiye Sobo",
-  description: "Just a kid from East Palo Alto.",
+  description: "I'm Jaiye. I'm nine. I play basketball and I make stuff.",
 };
+
+/**
+ * Jaiye's words, as he wrote them. Grammar and formatting get cleaned up,
+ * the voice does not.
+ */
+const prose = [
+  "I'm in fourth grade. I homeschool, so my school is my house and sometimes the gym.",
+  "I play basketball. I wear zero. I'm a guard and I'd rather make the pass than take the shot, most of the time.",
+  "I write a column about basketball and I record a podcast called On The Court with my dad. If I have a take, it goes in one of those two places.",
+  "I build stuff too. Usually I tell my dad what I want it to do and then we figure out how to make it work.",
+  "I like basketball, building things, reading, my family, and Jesus.",
+  "If you want to tell me I'm wrong about something, my dad's email is on here and he'll read it to me.",
+];
+
+const spec = [
+  { label: "Age", value: "9" },
+  { label: "Grade", value: "4th" },
+  { label: "Jersey", value: "0", accent: true },
+  { label: "City", value: "East Palo Alto" },
+  { label: "Position", value: "Guard" },
+  { label: "Volume", value: "02 · 2026" },
+];
+
+const PHOTO = "/jaiye-about.jpg";
+
+/**
+ * Drop a candid 4:5 photo at `public/jaiye-about.jpg` and it replaces the
+ * empty state below on the next build. Nothing else needs to change.
+ */
+function Portrait() {
+  const hasPhoto = existsSync(path.join(process.cwd(), "public", PHOTO));
+
+  if (!hasPhoto) {
+    return (
+      <div className="flex aspect-4/5 w-full items-center justify-center border border-dashed border-[var(--color-line-strong)] bg-[var(--color-off-black)] p-6">
+        <p className="text-center font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase leading-relaxed tracking-[0.2em] text-[var(--color-mute)]">
+          Photo goes here
+          <br />
+          public/jaiye-about.jpg
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative aspect-4/5 w-full overflow-hidden">
+      <Image
+        src={PHOTO}
+        alt="Jaiye Sobo outside in a denim jacket and basketball shorts"
+        fill
+        sizes="(max-width: 1024px) 100vw, 400px"
+        className="object-cover"
+        priority
+      />
+    </div>
+  );
+}
 
 export default function AboutPage() {
   return (
-    <main className="min-h-[100vh] pt-36 pb-24 px-6 lg:px-12 bg-[var(--color-black)] relative overflow-hidden">
-      <div className="absolute inset-y-0 left-0 w-[60%] pointer-events-none [background:radial-gradient(circle_at_0%_40%,rgba(230,57,70,0.07),transparent_55%)]" />
+    <main className="px-5 py-[clamp(44px,6vw,88px)] min-[760px]:px-10">
+      <div className="mx-auto max-w-[1200px]">
+        <SectionLabel>About</SectionLabel>
 
-      <div className="relative max-w-[820px] mx-auto">
-        <div className="flex items-center gap-3 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.3em] text-[var(--color-mute)] mb-8">
-          <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-red)]" />
-          — About —
-        </div>
-
-        <h1 className="font-[family-name:var(--font-fraunces)] font-black leading-[0.85] tracking-[-0.045em] text-[clamp(4.5rem,12vw,11rem)] mb-10">
-          Abou<span className="italic font-normal text-[var(--color-red)]">t</span>.
+        <h1 className="mt-6 font-[family-name:var(--font-fraunces)] text-[clamp(3rem,8vw,6rem)] font-black leading-[0.85] tracking-[-0.045em]">
+          I&apos;m Jaiye.
+          <br />
+          I&apos;m <em className="font-normal italic text-[var(--color-red)]">nine.</em>
         </h1>
 
-        <p className="font-[family-name:var(--font-fraunces)] italic text-[clamp(1.2rem,1.8vw,1.6rem)] text-[var(--color-bone)] leading-snug mb-10 max-w-[38ch]">
-          Just a kid from East Palo Alto.
-        </p>
-
-        <div className="flex flex-col gap-5 text-[1.05rem] leading-relaxed text-[var(--color-bone)] max-w-[62ch]">
-          <p>
-            I&apos;m <em className="italic text-[var(--color-red)] not-italic font-semibold">Jaiye</em>. I&apos;m 8.
-            I live in East Palo Alto, California.
-          </p>
-          <p>
-            I love <em className="italic text-[var(--color-red)] not-italic font-semibold">basketball</em>, building
-            things, my family, and Jesus.
-          </p>
-          <p>
-            This site is where I share what I&apos;m into and what I&apos;m working on. My dad helps me build it.
-          </p>
-        </div>
-
-        <div className="mt-16 pt-10 border-t border-[var(--color-line)] max-w-[680px]">
-          <div className="flex items-center gap-3 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.3em] text-[var(--color-mute)] mb-5">
-            <span className="w-8 h-px bg-[var(--color-red)]" />
-            Soon I&apos;ll add
+        <div className="mt-[clamp(40px,6vw,80px)] grid gap-[clamp(24px,4vw,64px)] lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)]">
+          <div className="flex flex-col gap-6">
+            {prose.map((p) => (
+              <p key={p} className="max-w-[60ch] text-[1.1rem] leading-[1.75] text-pretty">
+                {p}
+              </p>
+            ))}
+            <HandNote className="mt-2">
+              I still think I&apos;m right about the Blazers though.
+            </HandNote>
           </div>
-          <ul className="flex flex-col gap-2.5 list-none text-[var(--color-mute)]">
-            <li className="font-[family-name:var(--font-fraunces)] text-[1rem] leading-snug pl-6 relative before:content-['—'] before:absolute before:left-0">
-              More about my family
-            </li>
-            <li className="font-[family-name:var(--font-fraunces)] text-[1rem] leading-snug pl-6 relative before:content-['—'] before:absolute before:left-0">
-              Where I&apos;m from
-            </li>
-            <li className="font-[family-name:var(--font-fraunces)] text-[1rem] leading-snug pl-6 relative before:content-['—'] before:absolute before:left-0">
-              What I want to be when I&apos;m older
-            </li>
-            <li className="font-[family-name:var(--font-fraunces)] text-[1rem] leading-snug pl-6 relative before:content-['—'] before:absolute before:left-0">
-              How this site got built
-            </li>
-          </ul>
-        </div>
 
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 mt-16 font-[family-name:var(--font-jetbrains)] text-xs uppercase tracking-[0.25em] text-[var(--color-mute)] hover:text-[var(--color-bone)] transition-colors"
-        >
-          ← Back home
-        </Link>
+          <aside>
+            <Portrait />
+            <dl className="mt-px grid gap-px bg-[var(--color-line-strong)]">
+              {spec.map((s) => (
+                <div
+                  key={s.label}
+                  className="flex items-baseline justify-between gap-4 bg-[var(--color-black)] px-4 py-3"
+                >
+                  <dt className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">
+                    {s.label}
+                  </dt>
+                  <dd
+                    className={
+                      s.accent
+                        ? "font-[family-name:var(--font-fraunces)] text-[1.1rem] font-normal italic text-[var(--color-red)]"
+                        : "text-[0.95rem]"
+                    }
+                  >
+                    {s.value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </aside>
+        </div>
       </div>
     </main>
   );

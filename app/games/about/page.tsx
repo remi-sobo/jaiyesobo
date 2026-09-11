@@ -30,7 +30,7 @@ export default function AboutGamesPage() {
             Every game is hand-built, not algorithmically generated. New prompts and questions land every week. The platform grows because he keeps showing up.
           </p>
           <p className="italic text-[var(--color-mute)] text-[1rem] leading-snug border-l-2 border-[var(--color-red)] pl-5 mt-2">
-            &ldquo;Curated by Jaiye Sobo, age 8 · A father-son project from East Palo Alto.&rdquo;
+            &ldquo;Curated by Jaiye Sobo, age 9 · A father-son project from East Palo Alto.&rdquo;
           </p>
           <p>
             We made this because the personal site is a portfolio, but the games platform is a destination. Friends bring friends. Jaiye&apos;s name reaches people who&apos;ve never heard of him. That&apos;s the goal — and the fun.
