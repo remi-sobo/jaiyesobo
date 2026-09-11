@@ -47,7 +47,7 @@ export default function GameShell({ children, showFooter = true, liveLabel }: Pr
               >
                 Jaiye Sobo
               </Link>
-              , age 8 · A father-son project from East Palo Alto
+              , age 9 · A father-son project from East Palo Alto
             </div>
             <Link
               href="/"

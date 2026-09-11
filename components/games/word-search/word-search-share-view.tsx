@@ -67,7 +67,7 @@ export default function WordSearchShareView({
         <div className="font-[family-name:var(--font-fraunces)] text-xl tracking-tight">{title}</div>
         {subtitle && <div className="text-[var(--color-mute)] text-sm mt-1">{subtitle}</div>}
         <div className="font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.25em] text-[var(--color-mute)] mt-3">
-          Curated by Jaiye Sobo, age 8
+          Curated by Jaiye Sobo, age 9
         </div>
       </div>
     </div>

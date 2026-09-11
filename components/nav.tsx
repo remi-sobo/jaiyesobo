@@ -3,10 +3,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 const links = [
-  { href: "/ball", label: "Ball" },
-  { href: "/build", label: "Build" },
+  { href: "/column", label: "Column" },
   { href: "/pod", label: "Pod" },
-  { href: "/read", label: "Read" },
+  { href: "/games", label: "Games" },
   { href: "/now", label: "Now" },
   { href: "/about", label: "About" },
 ];
@@ -14,7 +13,9 @@ const links = [
 export default function Nav() {
   const [open, setOpen] = useState(false);
 
-  // Close on Esc + lock body scroll while the mobile sheet is open.
+  // Escape closes the drawer, and the page behind it doesn't scroll while
+  // it's open. The 760px breakpoint is a Tailwind query below, not a JS
+  // width listener, so there's nothing to measure here.
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -30,94 +31,74 @@ export default function Nav() {
   }, [open]);
 
   return (
-    <>
-      <nav
-        className={`fixed top-0 left-0 right-0 z-[100] px-5 sm:px-10 py-5 sm:py-6 flex justify-between items-center ${
-          open ? "" : "mix-blend-difference"
-        }`}
-      >
+    <nav className="sticky top-0 z-[100] border-b border-[var(--color-line)] bg-[rgba(10,10,10,0.94)] backdrop-blur-[10px]">
+      <div className="flex items-center justify-between px-5 py-4 min-[760px]:px-10">
         <Link
           href="/"
-          className="font-[family-name:var(--font-fraunces)] font-black text-xl tracking-tight text-[var(--color-bone)]"
           onClick={() => setOpen(false)}
+          className="font-[family-name:var(--font-fraunces)] text-xl font-black tracking-tight text-[var(--color-bone)]"
         >
           JS<span className="text-[var(--color-red)]">.</span>
         </Link>
 
-        {/* Desktop links */}
-        <ul className="hidden md:flex gap-6 lg:gap-8 list-none font-[family-name:var(--font-jetbrains)] text-xs uppercase tracking-[0.15em]">
+        {/* Desktop: one line, never two. */}
+        <ul className="hidden list-none gap-7 min-[760px]:flex lg:gap-9">
           {links.map((l) => (
             <li key={l.href}>
               <Link
                 href={l.href}
-                className="text-[var(--color-bone)] py-1 relative group"
+                className="group relative inline-block py-1 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.15em] whitespace-nowrap text-[var(--color-bone)]"
               >
                 {l.label}
-                <span className="absolute bottom-0 left-0 w-0 h-px bg-[var(--color-red)] transition-[width] duration-300 group-hover:w-full" />
+                <span className="absolute bottom-0 left-0 h-px w-0 bg-[var(--color-red)] transition-[width] duration-300 group-hover:w-full" />
               </Link>
             </li>
           ))}
         </ul>
 
-        {/* Mobile hamburger / close */}
         <button
           type="button"
           aria-label={open ? "Close menu" : "Open menu"}
           aria-expanded={open}
-          aria-controls="mobile-nav"
+          aria-controls="site-drawer"
           onClick={() => setOpen((v) => !v)}
-          className="md:hidden flex flex-col gap-[5px] p-2 -mr-2 text-[var(--color-bone)]"
+          className="-mr-3 flex h-12 w-12 items-center justify-end min-[760px]:hidden"
         >
-          <span
-            className={`block w-6 h-px bg-current transition-transform duration-300 ${
-              open ? "translate-y-[6px] rotate-45" : ""
-            }`}
-          />
-          <span
-            className={`block w-6 h-px bg-current transition-opacity duration-300 ${
-              open ? "opacity-0" : "opacity-100"
-            }`}
-          />
-          <span
-            className={`block w-6 h-px bg-current transition-transform duration-300 ${
-              open ? "-translate-y-[6px] -rotate-45" : ""
-            }`}
-          />
+          <span className="flex w-5 flex-col items-start gap-[5px]">
+            <span className="block h-px w-5 bg-[var(--color-bone)]" />
+            <span className="block h-px w-5 bg-[var(--color-bone)]" />
+            <span className="block h-px w-[13px] bg-[var(--color-red)]" />
+          </span>
         </button>
-      </nav>
-
-      {/* Mobile menu sheet */}
-      <div
-        id="mobile-nav"
-        className={`fixed inset-0 z-[90] md:hidden bg-[var(--color-black)] transition-opacity duration-300 ${
-          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-        }`}
-        aria-hidden={!open}
-      >
-        <ul className="h-full flex flex-col justify-center items-start gap-2 px-8 list-none font-[family-name:var(--font-fraunces)] font-black text-[clamp(2.5rem,10vw,4.5rem)] leading-[1.05] tracking-[-0.02em]">
-          {links.map((l, i) => (
-            <li
-              key={l.href}
-              className={`transition-[opacity,transform] duration-500 ${
-                open ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
-              }`}
-              style={{ transitionDelay: open ? `${80 + i * 40}ms` : "0ms" }}
-            >
-              <Link
-                href={l.href}
-                className="text-[var(--color-bone)] hover:text-[var(--color-red)] transition-colors"
-                onClick={() => setOpen(false)}
-              >
-                {l.label}
-                <span className="text-[var(--color-red)] italic font-normal">.</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-        <div className="absolute bottom-8 left-8 font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.3em] text-[var(--color-mute)]">
-          Jaiye Sobo · East Palo Alto
-        </div>
       </div>
-    </>
+
+      {/* Mobile drawer, inside the nav so it sits under the hairline. */}
+      {open && (
+        <div
+          id="site-drawer"
+          className="motion-safe:animate-[drawer-in_0.28s_cubic-bezier(0.2,0.8,0.2,1)_both] border-t border-[var(--color-line)] min-[760px]:hidden"
+        >
+          <ul className="list-none">
+            {links.map((l, i) => (
+              <li key={l.href} className="border-b border-[var(--color-line)]">
+                <Link
+                  href={l.href}
+                  onClick={() => setOpen(false)}
+                  className="flex min-h-14 items-center justify-between px-5 py-3 font-[family-name:var(--font-fraunces)] text-[2rem] font-black leading-none tracking-[-0.03em] text-[var(--color-bone)]"
+                >
+                  {l.label}
+                  <span className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] font-normal tracking-[0.2em] text-[var(--color-mute)]">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div className="px-5 py-5 font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.25em] text-[var(--color-mute)]">
+            Vol. 02 · 2026
+          </div>
+        </div>
+      )}
+    </nav>
   );
 }

@@ -11,6 +11,7 @@
   --color-mute: #8a8a8a;
   --color-line: rgba(245, 241, 234, 0.08);
   --color-line-strong: rgba(245, 241, 234, 0.15);
+  --color-line-hover: rgba(245, 241, 234, 0.28);
 
   /* /me warm palette — his room, not his stage */
   --color-warm-bg: #0f0e0c;
@@ -47,6 +48,7 @@
   --font-display: 'Fraunces', serif;
   --font-body: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+  --font-hand: 'Caveat', cursive;
 }
 
 @keyframes pin-shake {
@@ -57,8 +59,13 @@
   80% { transform: translateX(6px); }
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+/* This reset has to live in @layer base. Unlayered CSS outranks every
+   Tailwind @layer utilities rule, so an unlayered `* { padding: 0 }` beats
+   px-*, py-*, mt-* and friends everywhere on the site. */
+@layer base {
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+}
 
 body {
   background: var(--color-black);
@@ -77,4 +84,58 @@ body::before {
   opacity: 0.06;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   mix-blend-mode: overlay;
+}
+
+/* Vol. 02 refresh: entrances only, and nothing at all when the visitor
+   has asked their OS for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Scroll entrances. Hidden in CSS rather than by JS so that reduced-motion
+   visitors, and anyone without JS, get the content rather than a blank page.
+   `data-shown` is set by components/site/reveal.tsx. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-reveal] {
+    opacity: 0;
+    transform: translateY(16px);
+    transition:
+      opacity 0.7s cubic-bezier(0.2, 0.8, 0.2, 1),
+      transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  [data-reveal][data-shown] {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Hero entrance. Copy rises, photo settles from 1.12 to 1.08. */
+.hero-photo { transform: scale(1.08); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-copy { animation: hero-copy-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .hero-photo { animation: hero-photo-in 1.1s cubic-bezier(0.19, 1, 0.22, 1) both; }
+}
+
+@keyframes hero-copy-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes hero-photo-in {
+  from { transform: scale(1.12); }
+  to   { transform: scale(1.08); }
+}
+
+@keyframes drawer-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }

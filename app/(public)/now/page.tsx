@@ -1,47 +1,88 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import NowStrip from "@/components/now-strip";
+import { now } from "@/lib/content/now";
+import { formatDate, formatShortDate } from "@/lib/content/format";
+import { Accent, HandNote, SectionLabel } from "@/components/site/type";
 
 export const metadata: Metadata = {
-  title: "Now · Jaiye Sobo",
-  description: "What I'm into right this minute.",
+  title: "Right now · Jaiye Sobo",
+  description: "What I'm working on, watching, reading and arguing about.",
 };
 
-const UPDATED = "April 19";
+function Rows({ rows }: { rows: typeof now.onCourt }) {
+  return (
+    <div>
+      {rows.map((row) => (
+        <div
+          key={row.label}
+          className="grid grid-cols-[minmax(0,150px)_minmax(0,1fr)] gap-4 border-t border-[var(--color-line)] py-6"
+        >
+          <span className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">
+            {row.label}
+          </span>
+          <p className="font-[family-name:var(--font-fraunces)] text-[clamp(1.3rem,2.4vw,2rem)] leading-tight tracking-[-0.02em] text-pretty">
+            <Accent text={row.value} accent={row.accent} />
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function NowPage() {
   return (
-    <>
-      <section className="pt-36 pb-8 px-6 lg:px-10 bg-[var(--color-black)]">
-        <div className="max-w-[1100px] mx-auto">
-          <div className="flex items-center gap-3 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.3em] text-[var(--color-mute)] mb-4">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-red)] animate-pulse" />
-            Right now · Updated {UPDATED}
+    <main className="px-5 py-[clamp(44px,6vw,88px)] min-[760px]:px-10">
+      <div className="mx-auto max-w-[1200px]">
+        <div className="font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.25em] text-[var(--color-mute)]">
+          Updated {formatDate(now.updatedAt)}
+        </div>
+
+        <h1 className="mt-6 font-[family-name:var(--font-fraunces)] text-[clamp(3rem,8vw,6rem)] font-black leading-[0.85] tracking-[-0.045em]">
+          Right <em className="font-normal italic text-[var(--color-red)]">now.</em>
+        </h1>
+
+        <HandNote className="mt-7">
+          This changes a lot. That&apos;s kind of the point.
+        </HandNote>
+
+        <div className="mt-[clamp(40px,6vw,80px)]">
+          <SectionLabel tone="red">On the court</SectionLabel>
+          <div className="mt-6">
+            <Rows rows={now.onCourt} />
           </div>
-          <h1 className="font-[family-name:var(--font-fraunces)] font-black leading-[0.85] tracking-[-0.045em] text-[clamp(4rem,11vw,10rem)] mb-3">
-            No<span className="italic font-normal text-[var(--color-red)]">w</span>.
-          </h1>
-          <p className="font-[family-name:var(--font-fraunces)] italic text-[clamp(1.1rem,1.6vw,1.5rem)] text-[var(--color-bone)] max-w-[44ch] leading-snug">
-            A snapshot. What I&apos;m reading, watching, building, working on.
+        </div>
+
+        <div className="mt-[clamp(40px,6vw,80px)]">
+          <SectionLabel tone="red">Off the court</SectionLabel>
+          <div className="mt-6">
+            <Rows rows={now.offCourt} />
+          </div>
+        </div>
+
+        <div className="mt-[clamp(40px,6vw,80px)]">
+          <SectionLabel>Books I&apos;ve finished</SectionLabel>
+          <div className="mt-6 grid gap-px bg-[var(--color-line-strong)]">
+            {now.books.map((b) => (
+              <div
+                key={b.title}
+                className="grid gap-3 bg-[var(--color-black)] p-6 sm:grid-cols-3 sm:items-baseline"
+              >
+                <h3 className="font-[family-name:var(--font-fraunces)] text-[1.4rem] font-black leading-tight tracking-[-0.02em]">
+                  {b.title}
+                </h3>
+                <p className="text-[1rem] leading-[1.6] text-[var(--color-mute)]">
+                  {b.reaction}
+                </p>
+                <span className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-mute)] sm:text-right">
+                  {formatShortDate(b.finishedOn)}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-6 font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">
+            Next up: {now.nextBook}
           </p>
         </div>
-      </section>
-
-      <NowStrip />
-
-      <section className="px-6 lg:px-10 py-16 border-t border-[var(--color-line)]">
-        <div className="max-w-[1100px] mx-auto">
-          <p className="font-[family-name:var(--font-fraunces)] italic text-[var(--color-mute)] leading-relaxed max-w-[60ch]">
-            This page is updated every week or two. If something&apos;s here, I&apos;m actually into it right this minute.
-          </p>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 mt-8 font-[family-name:var(--font-jetbrains)] text-xs uppercase tracking-[0.25em] text-[var(--color-mute)] hover:text-[var(--color-bone)] transition-colors"
-          >
-            ← Back home
-          </Link>
-        </div>
-      </section>
-    </>
+      </div>
+    </main>
   );
 }
