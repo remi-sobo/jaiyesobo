@@ -56,7 +56,7 @@ function Portrait() {
     <div className="relative aspect-4/5 w-full overflow-hidden">
       <Image
         src={PHOTO}
-        alt="Jaiye Sobo outside in a denim jacket and basketball shorts"
+        alt="Jaiye Sobo standing in a rose garden, in a denim jacket over a basketball tee"
         fill
         sizes="(max-width: 1024px) 100vw, 400px"
         className="object-cover"
