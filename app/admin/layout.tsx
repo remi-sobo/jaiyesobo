@@ -40,7 +40,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       {lockOnly ? (
         children
       ) : (
-        <div className="flex min-h-screen">
+        <div className="flex min-h-screen flex-col md:flex-row">
           <Sidebar
             uploadsCount={uploadsCount}
             pendingQuestions={pendingQuestions}
