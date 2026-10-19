@@ -37,7 +37,16 @@ export default function Sidebar({
   const brandAccent = activeKidName.toLowerCase() === "kemi" ? "#C83C78" : "var(--color-red)";
 
   return (
-    <aside className="w-60 shrink-0 bg-[var(--color-warm-surface)] border-r border-[var(--color-line)] px-5 py-8 flex flex-col gap-10 sticky top-0 h-screen">
+    <>
+    <MobileBar
+      activeKidName={activeKidName}
+      brandAccent={brandAccent}
+      kids={kids}
+      activeKidId={activeKidId}
+      is={is}
+      onLogout={logout}
+    />
+    <aside className="hidden md:flex w-60 shrink-0 bg-[var(--color-warm-surface)] border-r border-[var(--color-line)] px-5 py-8 flex-col gap-10 sticky top-0 h-screen">
       <div className="pb-6 border-b border-[var(--color-line)]">
         <div className="font-[family-name:var(--font-fraunces)] font-black text-xl tracking-tight">
           {activeKidName}
@@ -83,6 +92,10 @@ export default function Sidebar({
         />
       </NavGroup>
 
+      <NavGroup label="Season">
+        <NavItem href="/admin/predictions" active={is("/admin/predictions")} label="NBA Predictions" />
+      </NavGroup>
+
       <NavGroup label="System">
         <NavItem href="/admin/setup" active={is("/admin/setup")} label="Setup" />
       </NavGroup>
@@ -99,6 +112,74 @@ export default function Sidebar({
         </button>
       </div>
     </aside>
+    </>
+  );
+}
+
+const MOBILE_LINKS = [
+  { href: "/admin/plan", label: "Plan" },
+  { href: "/admin/uploads", label: "Uploads" },
+  { href: "/admin/ask-dad", label: "Ask Dad" },
+  { href: "/admin/feedback", label: "Feedback" },
+  { href: "/admin/predictions", label: "Predictions" },
+  { href: "/admin/setup", label: "Setup" },
+];
+
+/** Phones and small tablets: a compact top bar instead of the 240px sidebar. */
+function MobileBar({
+  activeKidName,
+  brandAccent,
+  kids,
+  activeKidId,
+  is,
+  onLogout,
+}: {
+  activeKidName: string;
+  brandAccent: string;
+  kids: Kid[];
+  activeKidId: string;
+  is: (href: string) => boolean;
+  onLogout: () => void;
+}) {
+  return (
+    <div className="md:hidden border-b border-[var(--color-line)] bg-[var(--color-warm-surface)] px-4 pt-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="font-[family-name:var(--font-fraunces)] font-black text-lg tracking-tight">
+          {activeKidName}
+          <span className="italic font-normal" style={{ color: brandAccent }}>.</span>
+          <span className="ml-2 font-[family-name:var(--font-jetbrains)] text-[0.55rem] font-normal uppercase tracking-[0.25em] text-[var(--color-warm-mute)]">
+            Admin
+          </span>
+        </div>
+        <button
+          onClick={onLogout}
+          className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-warm-mute)] hover:text-[var(--color-red)]"
+        >
+          Log out
+        </button>
+      </div>
+      {kids.length > 1 && (
+        <div className="mt-3">
+          <KidSwitcher kids={kids} activeKidId={activeKidId} />
+        </div>
+      )}
+      <nav className="-mx-4 mt-3 flex gap-1 overflow-x-auto px-4 pb-2">
+        {MOBILE_LINKS.map((l) => {
+          const active = is(l.href);
+          return (
+            <Link
+              key={l.href}
+              href={l.href}
+              className={`shrink-0 px-3 py-2 text-[0.85rem] border-b-2 ${
+                active ? "border-[var(--color-red)] text-[var(--color-bone)]" : "border-transparent text-[var(--color-warm-mute)]"
+              }`}
+            >
+              {l.label}
+            </Link>
+          );
+        })}
+      </nav>
+    </div>
   );
 }
 
