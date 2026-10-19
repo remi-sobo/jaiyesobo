@@ -10,9 +10,13 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata(props: PageProps<"/predictions/[season]">): Promise<Metadata> {
   const { season } = await props.params;
   if (!isSeasonSlug(season)) return { title: "Not found · Jaiye Sobo" };
+  const title = `Jaiye's ${season} NBA Predictions`;
+  const description = `Standings, playoffs, the Finals and the awards for ${season}. Locked in.`;
   return {
-    title: `Jaiye's ${season} NBA Predictions`,
-    description: `Standings, playoffs, the Finals and the awards for ${season}. Locked in.`,
+    title,
+    description,
+    openGraph: { title, description, type: "website" },
+    twitter: { title, description },
   };
 }
 
