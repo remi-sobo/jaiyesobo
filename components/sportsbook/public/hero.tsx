@@ -132,3 +132,35 @@ export function PlayButton({ href, children }: { href: string; children: ReactNo
     </Link>
   );
 }
+
+/**
+ * Season kickoff banner. Only renders during Week 1, then disappears on its
+ * own; the caller decides with the week number, so there's nothing to remove.
+ */
+export function OpeningWeekBanner() {
+  return (
+    <div className="relative mb-3 overflow-hidden bg-[var(--color-red)] px-4 py-3 text-[var(--color-black)]">
+      {/* Confetti, drawn with a few dots and dashes. */}
+      <svg aria-hidden className="pointer-events-none absolute inset-0 h-full w-full opacity-30" preserveAspectRatio="none" viewBox="0 0 400 40">
+        <g fill="#0a0a0a">
+          <circle cx="12" cy="8" r="2" />
+          <rect x="40" y="26" width="6" height="2" transform="rotate(30 43 27)" />
+          <circle cx="88" cy="30" r="1.5" />
+          <rect x="130" y="6" width="6" height="2" transform="rotate(-25 133 7)" />
+          <circle cx="250" cy="10" r="2" />
+          <rect x="290" y="28" width="6" height="2" transform="rotate(40 293 29)" />
+          <circle cx="340" cy="6" r="1.5" />
+          <rect x="378" y="20" width="6" height="2" transform="rotate(-35 381 21)" />
+        </g>
+      </svg>
+      <div className="relative flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-center">
+        <span className="font-[family-name:var(--font-fraunces)] text-[clamp(1.1rem,3vw,1.5rem)] font-black uppercase tracking-[-0.01em]">
+          🎉 Opening Week
+        </span>
+        <span className="font-[family-name:var(--font-jetbrains)] text-[0.68rem] uppercase tracking-[0.2em]">
+          The 2026-27 season tips off · Week 1 is live · Welcome to the Sobo Sportsbook
+        </span>
+      </div>
+    </div>
+  );
+}
