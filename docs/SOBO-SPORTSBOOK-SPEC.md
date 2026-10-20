@@ -47,8 +47,17 @@ pick's base value. Lock must be set before that pick's game tips.
 
 **Weekly winner:** most points. Tie goes to whoever's Lock hit; still tied, it's a tie week.
 
-**Season:** standings show weeks won, total points, current streak, best week. At the end of
-the regular season the leader is the Sobo Sportsbook champion.
+**Season tracking (all season long, everyone):**
+- **Dad vs Jai record:** the headline. Head to head weeks won, like "Jai leads 7-5", plus each
+  one's total points for the season. This is the rivalry that decides the family title.
+- **Season standings for everyone:** every player (Dad, Jai and every challenger) gets
+  weeks won and total season points. A "week won" means the most points of anyone that week.
+- **Challenger trophy case:** each challenger's row shows their weeks won, total points, and
+  how many weeks they beat Dad and how many they beat Jai.
+- **Extras:** current streak, best single week, Lock of the Week hit rate.
+- **End of the regular season:** two titles. The **Family Champion** (Dad vs Jai, most weeks
+  won, total points breaks a tie) and the **Sobo Sportsbook Champion** (most total points of
+  anyone, challengers included).
 
 ## 2b. Beat the Sobos (open to anyone)
 
@@ -121,7 +130,9 @@ never decides who got a pick right.
   finish (✓ / ✗ / pending), points.
 - Big button: **Beat the Sobos**, which goes to /sportsbook/play.
 - Weekly leaderboard: Dad, Jai and every challenger.
-- Season standings: weeks won, total points, streak, a small week by week chart.
+- Dad vs Jai season record ("Jai leads 7-5") with total points.
+- Season standings for everyone: weeks won, total points, weeks beating Dad, weeks beating Jai.
+- A small week by week chart of Dad vs Jai.
 - Last week's recap.
 - Archive: /sportsbook/2026-27/week-3 for every past week.
 - Open Graph image with the current score.
@@ -169,6 +180,8 @@ the same lock rules; the public Supabase keys still can't write anything.
 - Nightly grading from real box scores, voids handled.
 - Recap written, Finalize week locks it.
 - Public /sportsbook live with this week, standings, recap and archive.
+- Season standings track weeks won and total points for Dad, Jai and every challenger, with the
+  Dad vs Jai record up top.
 - A friend can join with just a name, pick from their phone, come back later, and show up on
   the weekly and season leaderboards. Nobody can see anyone's pick before it locks.
 - `npm run build` passes, deployed, summary in #jaiye-build.
