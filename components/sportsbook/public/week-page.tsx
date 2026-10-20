@@ -5,7 +5,9 @@ import { listWeeks } from "@/lib/sportsbook/data";
 import { loadSeason, loadWeekView } from "@/lib/sportsbook/view";
 import { currentWeekNumber, weekRangeLabel, weekSlug } from "@/lib/sportsbook/weeks";
 import { FanVote } from "./fan-bits";
-import { PublicCard, SeasonStandings, WeekBoard } from "./public-week";
+import { PublicCard, SeasonStandings } from "./public-week";
+import PlayerBoard from "./player-board";
+import { scheduleLiveSync } from "@/lib/sportsbook/live";
 import { OpeningWeekBanner, PlayButton, SportsbookHero, Ticker } from "./hero";
 
 function Label({ children }: { children: React.ReactNode }) {
@@ -35,6 +37,7 @@ export function SportsbookEmpty() {
 
 /** The whole public page for one week. Used by /sportsbook and the archive. */
 export default async function WeekPage({ n, featured }: { n: number; featured: boolean }) {
+  scheduleLiveSync();
   const me = await getChallenger();
   const view = await loadWeekView(n, { viewerId: me?.id ?? null });
   if (!view) return null;
@@ -84,7 +87,7 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
             <div>
               <Label>Week {n} leaderboard</Label>
               <div className="mt-4">
-                <WeekBoard board={view.board} />
+                <PlayerBoard board={view.board} items={view.items} picks={view.picks} now={now} />
               </div>
             </div>
           </aside>

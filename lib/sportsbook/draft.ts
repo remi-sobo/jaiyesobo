@@ -51,6 +51,14 @@ export async function getSettings(): Promise<SportsbookSettings> {
 }
 
 const r1 = (n: number) => Math.round(n * 10) / 10;
+
+/** Site copy never uses em dashes, en dashes or double hyphens. */
+export function cleanCopy(s: string): string {
+  return s
+    .replace(/\s*(--|[\u2013\u2014])\s*/g, ", ")
+    .replace(/,\s*,/g, ",")
+    .trim();
+}
 /** Every line ends in .5 so nobody ties. */
 export const half = (n: number) => Math.floor(n) + 0.5;
 
@@ -180,7 +188,8 @@ Rules:
 - Feature Jaiye's favorite teams and players when they play, but not every item.
 - prompt: the question on the card, short and punchy, no more than 90 characters.
 - note: one fun line on why it's interesting, no more than 120 characters. Kid friendly, no gambling talk about money.
-- Never use em dashes or en dashes.`;
+- Never use em dashes, en dashes or double hyphens (--).
+- Write like a 9 year old sports fan would talk: short, simple words, no fancy phrases.`;
 
 const PlayerSchema = z.object({ person_id: z.number(), name: z.string(), team: z.string(), game_id: z.string().optional() });
 
@@ -249,8 +258,8 @@ const ref = (p: PlayerInfo, g: Game): PlayerRef => ({ person_id: p.person_id, na
 export function toDraftItem(ai: AiItem, ctx: SlateContext): DraftItem | null {
   const base = {
     type: ai.type as ItemType,
-    prompt: ai.prompt.trim().slice(0, 140),
-    note: ai.note?.trim().slice(0, 200) || null,
+    prompt: cleanCopy(ai.prompt).slice(0, 140),
+    note: ai.note ? cleanCopy(ai.note).slice(0, 200) || null : null,
     points: DEFAULT_POINTS[ai.type],
   };
   const team = ai.team && isTeamCode(ai.team.toUpperCase()) ? (ai.team.toUpperCase() as TeamCode) : null;
@@ -483,7 +492,7 @@ ${input.challengers} challengers played this week.`;
         system: `You write the Monday recap for the Sobo Sportsbook, a no-money NBA pick'em between Jaiye and his dad Remi, plus friends. Always call them Jaiye and Remi, never Dad. Sound like a fun sports radio host. 4 to 6 short sentences: who won the week and by how much, the best call, the worst miss, one fun stat, and a line hyping next week. Name challengers only if one of them won. Kid friendly, no money talk. Plain text, no markdown, no em dashes or en dashes.`,
         prompt,
       });
-      return text.trim().replace(/[\u2013\u2014]/g, ",");
+      return cleanCopy(text);
     } catch (e) {
       last = e;
     }

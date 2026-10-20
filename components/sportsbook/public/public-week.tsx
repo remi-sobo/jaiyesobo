@@ -1,4 +1,4 @@
-import type { Board, SeasonSummary } from "@/lib/sportsbook/data";
+import type { SeasonSummary } from "@/lib/sportsbook/data";
 import type { ReactionMap } from "@/lib/sportsbook/fans";
 import type { SbItem, SbPick, SbPlayer } from "@/lib/sportsbook/types";
 import { CardHead, CardPrompt, ResultLine, TeamDot, Who, isLocked, isWinningOption } from "../card-parts";
@@ -108,7 +108,7 @@ export function PublicCard({
               <li key={o.key} className={`flex items-center gap-2 text-[0.88rem] ${item.status === "graded" && !won ? "text-[var(--color-mute)]" : ""}`}>
                 <TeamDot option={o} />
                 <span className="min-w-0 flex-1">{o.label}</span>
-                {locked && share !== null ? (
+                {share !== null ? (
                   <span className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] text-[var(--color-mute)]">{share}%</span>
                 ) : null}
                 {won ? <span className="text-[var(--color-green)]">✓</span> : null}
@@ -127,13 +127,9 @@ export function PublicCard({
           <>
             <HousePick item={item} player={house.jaiye} pick={mine.find((p) => p.player_id === house.jaiye?.id)} tone="jaiye" reactions={reactions} allPicks={picks} locked={locked} />
             <HousePick item={item} player={house.remi} pick={mine.find((p) => p.player_id === house.remi?.id)} tone="remi" reactions={reactions} allPicks={picks} locked={locked} />
-            {locked && crowd.length ? (
+            {crowd.length ? (
               <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.15em] text-[var(--color-mute)]">
                 % = what {crowd.length} {crowd.length === 1 ? "challenger" : "challengers"} picked
-              </div>
-            ) : !locked ? (
-              <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.15em] text-[var(--color-mute)]">
-                Challenger picks stay hidden until tip-off
               </div>
             ) : null}
           </>
@@ -214,40 +210,6 @@ export function SeasonStandings({ summary }: { summary: SeasonSummary }) {
           </tbody>
         </table>
       </div>
-    </div>
-  );
-}
-
-export function WeekBoard({ board, limit = 10 }: { board: Board[]; limit?: number }) {
-  if (board.length === 0) return <p className="text-[0.9rem] text-[var(--color-mute)]">No picks yet.</p>;
-  const jaiye = board.find((b) => b.player.kind === "jaiye")?.score.points;
-  const challengers = board.filter((b) => b.player.kind === "challenger");
-  const beatJaiye = jaiye === undefined ? 0 : challengers.filter((b) => b.score.points > jaiye).length;
-  return (
-    <div>
-      {challengers.length ? (
-        <p className="mb-3 text-[0.9rem] text-[var(--color-mute)]">
-          {beatJaiye} of {challengers.length} {challengers.length === 1 ? "challenger is" : "challengers are"} beating Jaiye.
-        </p>
-      ) : null}
-      <ol>
-        {board.slice(0, limit).map((b, i) => (
-          <li key={b.player.id} className="flex items-center gap-3 border-t border-[var(--color-line)] py-2">
-            <span className="w-5 text-right font-[family-name:var(--font-jetbrains)] text-[0.75rem] text-[var(--color-mute)]">{i + 1}</span>
-            <span className={`flex-1 font-medium ${b.player.kind === "jaiye" ? "text-[var(--color-red)]" : ""}`}>
-              {b.player.display_name}
-              {b.player.kind !== "challenger" ? (
-                <span className="ml-2 font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.15em] text-[var(--color-mute)]">Sobo</span>
-              ) : null}
-            </span>
-            <span className="font-[family-name:var(--font-jetbrains)] text-[0.75rem] text-[var(--color-mute)]">
-              {b.score.correct}-{b.score.wrong}
-            </span>
-            <span className="w-10 text-right font-[family-name:var(--font-jetbrains)]">{b.score.points}</span>
-          </li>
-        ))}
-      </ol>
-      {board.length > limit ? <p className="mt-2 text-[0.8rem] text-[var(--color-mute)]">and {board.length - limit} more</p> : null}
     </div>
   );
 }
