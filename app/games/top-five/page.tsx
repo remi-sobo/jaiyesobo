@@ -5,8 +5,8 @@ import TopFiveGame from "@/components/games/top-five/top-five-game";
 import { getTodayContent } from "@/lib/games/data";
 
 export const metadata: Metadata = {
-  title: "Top 5 [Blank] — Jaiye's Games",
-  description: "Pick your top 5 NBA players in any category. AI judges your list. Curated by Jaiye Sobo.",
+  title: "Top 5 [Blank] · Jaiye's Games",
+  description: "Pick your top 5 NBA players in any category. The AI judges your list. Made by Jaiye Sobo.",
 };
 
 export const dynamic = "force-dynamic";

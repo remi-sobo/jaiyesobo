@@ -4,7 +4,7 @@ import DraftWheelGame from "@/components/games/draft-wheel/draft-wheel-game";
 import { getCurrentSession } from "@/lib/games/session";
 
 export const metadata: Metadata = {
-  title: "Draft Wheel — Jaiye's Games",
+  title: "Draft Wheel · Jaiye's Games",
   description:
     "Spin the team. Pick the best at the spot. AI calls it. 2-player same-room NBA roster builder.",
 };

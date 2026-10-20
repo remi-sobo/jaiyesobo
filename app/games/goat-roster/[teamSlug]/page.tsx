@@ -11,10 +11,10 @@ type Props = { params: Promise<{ teamSlug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { teamSlug } = await params;
   const team = await getDraftTeamBySlug(teamSlug);
-  if (!team) return { title: "Not found — Jaiye's Games" };
+  if (!team) return { title: "Not found · Jaiye's Games" };
   const label = `${team.payload.city} ${team.payload.name}`;
   return {
-    title: `Build the ${label} GOAT Roster — Jaiye's Games`,
+    title: `Build the ${label} GOAT Roster · Jaiye's Games`,
     description: `Pick 5 starters from the all-time ${label} pool. AI scores your lineup.`,
   };
 }

@@ -58,13 +58,13 @@ export default function ReviewStep({
 
   return (
     <div>
-      <StepIntro title="Look it over." accent="over.">
-        This is exactly what your page will look like. Once you publish, it&apos;s locked forever.
+      <StepIntro title="Check your picks." accent="picks.">
+        This is what everybody will see. Once you publish, no take backs. Ever.
       </StepIntro>
 
       <div className="mb-10 border border-[var(--color-line-strong)] bg-[var(--color-warm-surface)]/40 p-5">
         {ready ? (
-          <p className="text-[1rem] text-[var(--color-bone)]">Every pick is in. You&apos;re ready.</p>
+          <p className="text-[1rem] text-[var(--color-bone)]">Every pick is in. You&apos;re ready. Let&apos;s go.</p>
         ) : (
           <>
             <p className="text-[1rem] text-[var(--color-bone)]">

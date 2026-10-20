@@ -40,7 +40,7 @@ export default function GameShell({ children, showFooter = true, liveLabel }: Pr
         <footer className="border-t border-[var(--color-line)] px-6 lg:px-12 py-12 mt-20">
           <div className="max-w-[1100px] mx-auto flex flex-col md:flex-row md:justify-between md:items-center gap-4 font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.25em] text-[var(--color-mute)]">
             <div className="leading-relaxed">
-              Curated by{" "}
+              Made by{" "}
               <Link
                 href="/about"
                 className="text-[var(--color-bone)] hover:text-[var(--color-red)] transition-colors"

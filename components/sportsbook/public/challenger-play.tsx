@@ -44,7 +44,7 @@ export function JoinForm() {
             Your name or nickname
           </label>
           <input id="sb-name" className={input} value={name} maxLength={20} autoComplete="nickname" placeholder="Big Ticket" onChange={(e) => setName(e.target.value)} />
-          <p className="text-[0.8rem] text-[var(--color-mute)]">This shows on the public leaderboard. First name or nickname only, please.</p>
+          <p className="text-[0.8rem] text-[var(--color-mute)]">Everybody can see this name. Just your first name or a nickname.</p>
         </>
       ) : (
         <>
@@ -56,7 +56,7 @@ export function JoinForm() {
       )}
       {error ? <p className="text-[0.85rem] text-[var(--color-red-soft)]">{error}</p> : null}
       <button type="submit" disabled={busy} className={cta}>
-        {busy ? "One sec…" : mode === "join" ? "I'm in" : "Pick up where I left off"}
+        {busy ? "One sec…" : mode === "join" ? "I'm in" : "Let me back in"}
       </button>
       <button
         type="button"
@@ -104,7 +104,7 @@ export function PlayBoard({
   const [submitting, setSubmitting] = useState(false);
 
   async function submit() {
-    if (!window.confirm("Submit your picks? They lock for the week and you can't change them.")) return;
+    if (!window.confirm("Lock in your picks? You can't change them after this.")) return;
     setSubmitting(true);
     setError(null);
     const res = await post({ action: "submit", week });
@@ -117,7 +117,7 @@ export function PlayBoard({
     <div className="border border-[var(--color-green)] bg-[var(--color-green)]/10 p-4 text-center">
       <div className="font-[family-name:var(--font-fraunces)] text-2xl font-black text-[var(--color-green)]">✓ Your picks are in!</div>
       <p className="mt-1 text-[0.9rem] text-[var(--color-mute)]">
-        They&apos;re locked for the week. Check the leaderboard after the games to see if you beat Jaiye and Remi.
+        You&apos;re locked in. Come back after the games and see if you beat us.
       </p>
     </div>
   ) : (
@@ -131,7 +131,7 @@ export function PlayBoard({
         {submitting ? "Submitting…" : missing.length > 0 ? `${missing.length} ${missing.length === 1 ? "card" : "cards"} left to pick` : "Submit my picks"}
       </button>
       <span className="text-[0.8rem] text-[var(--color-mute)]">
-        {missing.length > 0 ? "Pick every card, then submit." : "Once you submit, your picks are locked for the week."}
+        {missing.length > 0 ? "Pick them all, then submit." : "After you submit, no changes. No take backs."}
       </span>
     </div>
   );
@@ -151,12 +151,12 @@ export function PlayBoard({
         <div>
           <div className="font-[family-name:var(--font-fraunces)] text-xl font-black">Playing as {me.display_name}</div>
           <div className="mt-1 text-[0.85rem] text-[var(--color-mute)]">
-            {submitted ? "Submitted and locked. Good luck!" : `${done} of ${items.length} picked. Pick every card, then tap Submit.`}
+            {submitted ? "You're locked in. Good luck. You're gonna need it." : `${done} of ${items.length} picked. Pick them all, then hit Submit.`}
           </div>
         </div>
         <div className={`font-[family-name:var(--font-jetbrains)] text-[0.75rem] ${newCode ? "text-[var(--color-games-yellow)]" : "text-[var(--color-mute)]"}`}>
           Your code: <span className="text-[var(--color-bone)]">{me.code}</span>
-          <div className="text-[0.65rem]">Save it to play on another device.</div>
+          <div className="text-[0.65rem]">Save it so you can play on another phone.</div>
         </div>
       </div>
       {error ? <p className="mb-4 border border-[var(--color-red)] px-3 py-2 text-[0.9rem] text-[var(--color-red-soft)]">{error}</p> : null}
@@ -180,7 +180,7 @@ export function PlayBoard({
       <button
         type="button"
         onClick={async () => {
-          if (!window.confirm("Forget this device? You can come back with your code.")) return;
+          if (!window.confirm("Leave on this phone? You can come back with your code.")) return;
           await post({ action: "leave" });
           router.refresh();
         }}

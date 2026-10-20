@@ -186,10 +186,10 @@ Rules:
 - Early in the season (players with no games yet) lean on winner, h2h, week_wins and weekly_leader, and set player lines from what you know about last season.
 - Spread items across different days of the week so there is something to watch most nights.
 - Feature Jaiye's favorite teams and players when they play, but not every item.
-- prompt: the question on the card, short and punchy, no more than 90 characters.
-- note: one fun line on why it's interesting, no more than 120 characters. Kid friendly, no gambling talk about money.
+- prompt: the question on the card, short and punchy, no more than 90 characters. Plain words, like "Lakers or Warriors?" or "Will Wemby get 12+ rebounds?"
+- note: one line from Jaiye about the pick, no more than 120 characters, like "Wemby is a cheat code on the boards." No money talk.
 - Never use em dashes, en dashes or double hyphens (--).
-- Write like a 9 year old sports fan would talk: short, simple words, no fancy phrases.`;
+- VOICE: You are writing as Jaiye, a confident 9 year old Black kid from East Palo Alto who loves hoops. Short sentences. Simple words a 4th grader uses. Swagger and confidence, playful trash talk, but never mean and never a caricature: no forced slang, at most one slang word. Sounds like a kid texting his friends, not a TV announcer or a grown up. No words like slate, matchup narrative, storyline, compelling, showdown, clash, or poised.`;
 
 const PlayerSchema = z.object({ person_id: z.number(), name: z.string(), team: z.string(), game_id: z.string().optional() });
 
@@ -489,7 +489,7 @@ ${input.challengers} challengers played this week.`;
     try {
       const { text } = await generateText({
         model: anthropic(model),
-        system: `You write the Monday recap for the Sobo Sportsbook, a no-money NBA pick'em between Jaiye and his dad Remi, plus friends. Always call them Jaiye and Remi, never Dad. Sound like a fun sports radio host. 4 to 6 short sentences: who won the week and by how much, the best call, the worst miss, one fun stat, and a line hyping next week. Name challengers only if one of them won. Kid friendly, no money talk. Plain text, no markdown, no em dashes or en dashes.`,
+        system: `You write the Monday recap for the Sobo Sportsbook, a no-money NBA pick'em between Jaiye and his dad Remi, plus friends. Write it as Jaiye, in first person ("I", "me", "my dad"). VOICE: You are writing as Jaiye, a confident 9 year old Black kid from East Palo Alto who loves hoops. Short sentences. Simple words a 4th grader uses. Swagger and confidence, playful trash talk, but never mean and never a caricature: no forced slang, at most one slang word. Sounds like a kid texting his friends, not a TV announcer or a grown up. No words like slate, matchup narrative, storyline, compelling, showdown, clash, or poised. 4 to 6 short sentences: who won the week and by how much, my best call, my worst miss, one fun stat, and a line about next week. If I lost, own it and talk a little trash about next week. Name challengers only if one of them won. No money talk. Plain text, no markdown, no em dashes, en dashes or double hyphens.`,
         prompt,
       });
       return cleanCopy(text);

@@ -5,7 +5,7 @@ import GameShell from "@/components/games/game-shell";
 export const metadata: Metadata = {
   title: "About Jaiye's Games",
   description:
-    "What jaiyesobo.com/games is, who Jaiye is, why it exists. A father-son NBA games project from East Palo Alto.",
+    "Basketball games I made with my dad. I come up with the rules, we build them together.",
 };
 
 export default function AboutGamesPage() {
@@ -16,27 +16,27 @@ export default function AboutGamesPage() {
           About these games
         </div>
         <h1 className="font-[family-name:var(--font-fraunces)] font-black text-[clamp(2.5rem,6vw,4.5rem)] leading-[0.95] tracking-[-0.03em] mb-8">
-          A real kid<span className="italic font-normal text-[var(--color-red)]">.</span> Real basketball<span className="italic font-normal text-[var(--color-red)]">.</span>
+          Real kid<span className="italic font-normal text-[var(--color-red)]">.</span> Real hoops<span className="italic font-normal text-[var(--color-red)]">.</span>
         </h1>
 
         <div className="flex flex-col gap-6 font-[family-name:var(--font-fraunces)] text-[1.1rem] leading-relaxed text-[var(--color-bone)]">
           <p>
-            Jaiye is 8 years old. He lives in East Palo Alto, California. He loves basketball, building things, his family, and Jesus.
+            I&apos;m Jaiye. I&apos;m 9 and I live in East Palo Alto, California. I love basketball, building stuff, my family, and Jesus.
           </p>
           <p>
-            This is a games platform he&apos;s curating with his dad. He picks the prompts. He writes the trivia. He builds the player pools. AI helps with judging — but Jaiye runs the game.
+            These are my games. I come up with the idea and the rules. I write the trivia and pick the players. Then me and my dad build it.
           </p>
           <p>
-            Every game is hand-built, not algorithmically generated. New prompts and questions land every week. The platform grows because he keeps showing up.
+            Some games use AI to judge your answers. But I make the rules. New questions drop every week.
           </p>
           <p className="italic text-[var(--color-mute)] text-[1rem] leading-snug border-l-2 border-[var(--color-red)] pl-5 mt-2">
-            &ldquo;Curated by Jaiye Sobo, age 9 · A father-son project from East Palo Alto.&rdquo;
+            &ldquo;Made by Jaiye Sobo, age 9. Built with my dad in East Palo Alto.&rdquo;
           </p>
           <p>
-            We made this because the personal site is a portfolio, but the games platform is a destination. Friends bring friends. Jaiye&apos;s name reaches people who&apos;ve never heard of him. That&apos;s the goal — and the fun.
+            Play them, send them to your friends, and tell me if a game is too easy. I&apos;ll make it harder.
           </p>
           <p>
-            No ads. No data harvesting. Anonymous play by default. If you want to save your streak, sign in with your email and you&apos;re in.
+            No ads. You can play without signing in. If you want to save your streak, sign in with your email.
           </p>
         </div>
 

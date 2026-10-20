@@ -127,7 +127,7 @@ export default function TheCutGame() {
         if (nextKeeps.length === REQUIRED_KEEPS) {
           finishWithKeeps(nextKeeps);
         } else {
-          setError("Decision count mismatch — please reload.");
+          setError("Something glitched. Reload the page.");
           setPhase("error");
         }
         return;

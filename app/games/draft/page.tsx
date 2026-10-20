@@ -4,7 +4,7 @@ import GameShell from "@/components/games/game-shell";
 import { getDraftTeamSummaries } from "@/lib/draft-data";
 
 export const metadata: Metadata = {
-  title: "The Draft Room — Jaiye's Games",
+  title: "The Draft Room · Jaiye's Games",
   description:
     "Pick a team. Snake draft from the franchise's all-time pool. Play vs Claude or vs a friend. AI judges.",
 };
@@ -82,7 +82,7 @@ export default async function DraftLandingPage({ searchParams }: Props) {
           ))}
           {playable.length === 0 && (
             <div className="col-span-full p-10 border border-dashed border-[var(--color-line)] rounded text-center text-[var(--color-mute)]">
-              No franchises ready yet — pools must have at least 12 verified players.
+              No teams ready yet. Check back soon.
             </div>
           )}
         </div>

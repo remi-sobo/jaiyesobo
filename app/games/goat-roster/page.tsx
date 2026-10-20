@@ -4,7 +4,7 @@ import GameShell from "@/components/games/game-shell";
 import { getDraftTeamSummaries } from "@/lib/draft-data";
 
 export const metadata: Metadata = {
-  title: "GOAT Roster — Jaiye's Games",
+  title: "GOAT Roster · Jaiye's Games",
   description: "Pick 5 starters from a franchise's all-time pool. AI scores your lineup.",
 };
 
@@ -27,9 +27,9 @@ export default async function GoatRosterLandingPage() {
           Pick 5 starters and a sixth man from a franchise&apos;s all-time pool. Build your dream lineup.
         </p>
         <p className="text-[var(--color-mute)] text-[0.95rem] max-w-[52ch] leading-relaxed mb-12">
-          One guard, one forward, one center is the classic shape — but go off
-          the rails if you want. The 6th man is your sparkplug off the bench. AI
-          scores your lineup, names your best pick, and tells you what&apos;s a stretch.
+          One guard, one forward, one center is the normal way. But you can go crazy
+          if you want. Your 6th man comes off the bench with energy. The AI grades
+          your lineup, picks your best player, and tells you what&apos;s a reach.
         </p>
       </section>
 
@@ -43,7 +43,7 @@ export default async function GoatRosterLandingPage() {
           ))}
           {playable.length === 0 && (
             <div className="col-span-full p-10 border border-dashed border-[var(--color-line)] rounded text-center text-[var(--color-mute)]">
-              No franchises ready yet — pools must have at least 5 verified players.
+              No teams ready yet. Check back soon.
             </div>
           )}
         </div>

@@ -73,8 +73,8 @@ export default function AwardsStep({ picks, update }: { picks: PredictionPicks; 
   const hotTake = picks.hot_take;
   return (
     <div>
-      <StepIntro title="Hand out the awards." accent="awards.">
-        Type a name and pick a team for each one. Finals MVP starts on your champion
+      <StepIntro title="Who wins the awards?" accent="awards?">
+        Type a name and pick a team for each one. Finals MVP starts on the team you picked to win it all
         {champ ? ` (${champ})` : ""}, but you can change it.
       </StepIntro>
       <div className="grid gap-3 @min-[900px]:grid-cols-2">
@@ -92,7 +92,7 @@ export default function AwardsStep({ picks, update }: { picks: PredictionPicks; 
           type="text"
           value={hotTake}
           maxLength={HOT_TAKE_MAX}
-          placeholder="One line. Make it spicy."
+          placeholder="One line. Make it spicy 🌶️"
           onChange={(e) => update((p) => ({ ...p, hot_take: e.target.value.slice(0, HOT_TAKE_MAX) }), "awards")}
           className={inputClass}
         />

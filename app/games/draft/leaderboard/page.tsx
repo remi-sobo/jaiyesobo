@@ -4,7 +4,7 @@ import GameShell from "@/components/games/game-shell";
 import { getLeaderboardForCurrentSession, type Match, type HeadToHead, type PlayerRecord, type TeamCount } from "@/lib/draft-leaderboard";
 
 export const metadata: Metadata = {
-  title: "Draft Leaderboard — Jaiye's Games",
+  title: "Draft Leaderboard · Jaiye's Games",
   description: "Head-to-head record book for the 2-player Draft Room.",
 };
 
@@ -57,7 +57,7 @@ function EmptyState({ hasSession }: { hasSession: boolean }) {
       </h2>
       <p className="text-[var(--color-mute)] mb-6 max-w-[44ch] mx-auto leading-relaxed">
         {hasSession
-          ? "Play a draft and add your name afterward — your record will show up here."
+          ? "Play a draft and add your name after. Your record shows up here."
           : "Once you finish your first draft and put your name on it, the leaderboard starts tracking."}
       </p>
       <div className="flex flex-col sm:flex-row gap-3 justify-center">

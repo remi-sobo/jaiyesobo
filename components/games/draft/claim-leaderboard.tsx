@@ -122,8 +122,8 @@ export default function ClaimLeaderboard({ playId, knownName }: Props) {
         )}
         {!tracked && (
           <p className="mt-3 text-[0.8rem] text-[var(--color-mute)] leading-relaxed">
-            We&apos;ll remember the name for next time. Skipping is fine — this match
-            just won&apos;t show up on the record book.
+            We&apos;ll remember your name for next time. You can skip it. This game
+            just won&apos;t go on the leaderboard.
           </p>
         )}
       </div>

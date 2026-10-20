@@ -59,7 +59,7 @@ type TriviaResult = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { token } = await params;
   const play = await getPlayByToken(token);
-  if (!play) return { title: "Not found — Jaiye's Games" };
+  if (!play) return { title: "Not found · Jaiye's Games" };
 
   const ogUrl = `/api/games/og/${token}`;
 
@@ -271,7 +271,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const ratingText = result?.rating ? `${result.rating}/10` : "play";
 
   return {
-    title: `${prompt} — ${ratingText} · Jaiye's Games`,
+    title: `${prompt} · ${ratingText} · Jaiye's Games`,
     description: result?.take ?? "Play your own at jaiyesobo.com/games",
     openGraph: {
       title: prompt,

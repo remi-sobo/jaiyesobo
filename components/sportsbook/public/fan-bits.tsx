@@ -105,7 +105,7 @@ export function FanVote({
   return (
     <div className="border border-[var(--color-line-strong)] bg-[var(--color-off-black)] p-4">
       <div className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.25em] text-[var(--color-mute)]">
-        Fan vote · who wins this week?
+        Who you got this week?
       </div>
       <div className="mt-3 grid grid-cols-2 gap-2">
         {(["jaiye", "remi"] as const).map((c) => (
@@ -133,7 +133,7 @@ export function FanVote({
         <span>{total ? `${100 - pctJ}%` : ""} Remi</span>
       </div>
       {error ? <p className="mt-2 text-[0.8rem] text-[var(--color-red-soft)]">{error}</p> : null}
-      {!open ? <p className="mt-2 text-[0.8rem] text-[var(--color-mute)]">Voting is closed.</p> : null}
+      {!open ? <p className="mt-2 text-[0.8rem] text-[var(--color-mute)]">Voting is over for this week.</p> : null}
     </div>
   );
 }

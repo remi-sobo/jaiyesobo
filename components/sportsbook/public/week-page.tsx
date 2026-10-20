@@ -28,7 +28,7 @@ export function SportsbookEmpty() {
           Jaiye vs Remi. <em className="font-normal italic text-[var(--color-red)]">Coming soon.</em>
         </h1>
         <p className="mx-auto mt-6 max-w-[48ch] text-[1.05rem] leading-relaxed text-[var(--color-mute)]">
-          A weekly NBA pick&apos;em all season long. No money, just bragging rights. The first slate drops soon.
+          Me vs my dad, picking NBA games every week. First picks drop soon. Get ready.
         </p>
       </div>
     </main>
@@ -66,7 +66,7 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
             isOpen ? (
               <div className="flex flex-col items-start gap-2">
                 <PlayButton href="/sportsbook/play">{me ? `Make your picks, ${me.display_name}` : "Think you can beat us?"}</PlayButton>
-                <span className="text-[0.8rem] text-[var(--color-mute)]">Same picks, same points. Just a name, no sign up.</span>
+                <span className="text-[0.8rem] text-[var(--color-mute)]">Same picks as us. Just type your name. No sign up.</span>
               </div>
             ) : null
           }
@@ -75,7 +75,7 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
 
         <div className="mt-[clamp(40px,6vw,72px)] grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
           <section>
-            <Label>This week&apos;s slate</Label>
+            <Label>This week&apos;s picks</Label>
             <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
               {view.items.map((item) => (
                 <PublicCard key={item.id} item={item} picks={view.picks} players={view.players} house={house} reactions={reactions} now={now} />
@@ -102,7 +102,7 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
 
         {season ? (
           <section className="mt-[clamp(48px,7vw,88px)]">
-            <Label>Season standings</Label>
+            <Label>Who&apos;s winning the season</Label>
             <div className="mt-5">
               <SeasonStandings summary={season.summary} />
             </div>
@@ -111,7 +111,7 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
 
         {published.length > 1 ? (
           <section className="mt-[clamp(48px,7vw,88px)]">
-            <Label>Every week</Label>
+            <Label>Past weeks</Label>
             <ul className="mt-4 flex flex-wrap gap-2">
               {published.map((w) => (
                 <li key={w.id}>

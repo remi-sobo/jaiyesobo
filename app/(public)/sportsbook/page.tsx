@@ -6,10 +6,10 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Sobo Sportsbook · Jaiye vs Remi",
-  description: "A weekly NBA pick'em, all season long. No money, just bragging rights. Think you can beat us?",
+  description: "Me vs my dad, picking NBA games every week. Think you can beat us?",
   openGraph: {
     title: "Sobo Sportsbook · Jaiye vs Remi",
-    description: "A weekly NBA pick'em. Think you can beat us?",
+    description: "Me vs my dad, picking NBA games every week. Think you can beat us?",
     type: "website",
   },
 };

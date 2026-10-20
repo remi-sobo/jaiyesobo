@@ -54,7 +54,7 @@ export default function DraftBoard({
   const turnLabel = (() => {
     if (turn === null) return "Draft complete.";
     const name = turn === "human" ? humanLabel : aiLabel;
-    if (bothHuman) return `${name} — your pick.`;
+    if (bothHuman) return `${name}, your pick.`;
     if (turn === "human") return "Your pick.";
     return aiThinking ? "Claude is thinking…" : "Claude is up.";
   })();
