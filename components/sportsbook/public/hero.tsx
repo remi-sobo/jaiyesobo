@@ -5,7 +5,7 @@ import type { SbItem } from "@/lib/sportsbook/types";
 import { ITEM_TYPE_LABEL } from "@/lib/sportsbook/types";
 
 /** Faint half court lines behind the hero. Pure SVG, no image request. */
-function CourtLines() {
+export function CourtLines() {
   return (
     <svg aria-hidden className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.07]" viewBox="0 0 600 400" preserveAspectRatio="xMinYMid slice">
       <g fill="none" stroke="#F5F1EA" strokeWidth="2">
@@ -21,7 +21,7 @@ function CourtLines() {
 }
 
 /** An arena style score box: label on top, big lit digits. */
-function ScoreBox({ name, points, tone }: { name: string; points: number; tone: "red" | "bone" }) {
+export function ScoreBox({ name, points, tone }: { name: string; points: number; tone: "red" | "bone" }) {
   return (
     <div className="flex min-w-0 flex-1 flex-col items-center border border-[var(--color-line-strong)] bg-[#050505] px-3 py-3 shadow-[inset_0_0_24px_rgba(0,0,0,0.9)]">
       <div className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.3em] text-[var(--color-mute)]">{name}</div>
