@@ -4,6 +4,7 @@ import { getLatestPublishedPrediction } from "@/lib/nba/data";
 import { CURRENT_SEASON, deriveBracket } from "@/lib/nba/logic";
 import { TEAMS, type TeamCode } from "@/lib/nba/teams";
 import { featuredWeekNumber, loadWeekView } from "@/lib/sportsbook/view";
+import { scheduleLiveSync } from "@/lib/sportsbook/live";
 import { currentWeekNumber, weekRangeLabel } from "@/lib/sportsbook/weeks";
 import { SectionLabel } from "@/components/site/type";
 import { TeamTile } from "@/components/predictions/team-tile";
@@ -174,6 +175,7 @@ export function PredictionsPanel({ pred }: { pred: PredictionState }) {
 }
 
 export default async function ThisSeason() {
+  scheduleLiveSync();
   const [book, pred] = await Promise.all([loadBook(), loadPrediction()]);
   return (
     <section className="border-t border-[var(--color-line)] bg-[var(--color-off-black)] px-5 py-[clamp(52px,7vw,104px)] min-[760px]:px-10">

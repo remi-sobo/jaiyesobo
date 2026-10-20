@@ -12,15 +12,14 @@ export type WeekView = {
   submitted: string[];
   /** When this view was loaded. Components use it instead of reading the clock. */
   now: number;
-  /** Total challengers with at least one pick this week, including ones whose picks are still hidden. */
+  /** Total challengers with at least one pick this week. */
   challengerCount: number;
 };
 
 /**
  * Loads a week for display. Public viewers see:
  *  - Jaiye's and Remi's picks once they tap Submit (locked and public), or at tip-off.
- *  - Challengers' picks only after tip-off, so friends can't copy each other.
- *  - Their own picks, always.
+ *  - Challengers' picks right away. Everyone can see what everyone picked.
  */
 export async function loadWeekView(n: number, opts: { admin?: boolean; viewerId?: string | null } = {}): Promise<WeekView | null> {
   const week = await getWeek(n);
@@ -34,7 +33,7 @@ export async function loadWeekView(n: number, opts: { admin?: boolean; viewerId?
   const shown = new Set(submitted.filter((id) => houseIds.has(id)));
   const picks = opts.admin
     ? all
-    : all.filter((p) => lockedIds.has(p.item_id) || p.player_id === opts.viewerId || shown.has(p.player_id));
+    : all.filter((p) => !houseIds.has(p.player_id) || shown.has(p.player_id) || lockedIds.has(p.item_id));
   const visiblePlayers = opts.admin ? players : players.filter((p) => !p.hidden || p.id === opts.viewerId);
   const challengerCount = new Set(all.filter((p) => players.find((x) => x.id === p.player_id)?.kind === "challenger").map((p) => p.player_id)).size;
   return { week, items, picks, players: visiblePlayers, board: weekBoard(items, all, visiblePlayers), challengerCount, submitted, now };
