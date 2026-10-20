@@ -51,7 +51,7 @@ export default async function PlayPage() {
             No slate is open right now, {me.display_name}. New picks drop every Monday.
           </p>
         ) : (
-          <PlayBoard me={me} items={view.items} picks={view.picks} now={view.now} />
+          <PlayBoard me={me} items={view.items} picks={view.picks} now={view.now} week={view.week.week_number} submitted={view.submitted.includes(me.id)} />
         )}
       </div>
     </main>
