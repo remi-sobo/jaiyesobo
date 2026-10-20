@@ -5,11 +5,18 @@ import PlaySomething from "@/components/home/play-something";
 import RightNow from "@/components/home/right-now";
 import Archive from "@/components/home/archive";
 import Reveal from "@/components/site/reveal";
+import ThisSeason from "@/components/home/this-season";
+
+// The season section shows live Sportsbook scores, so refresh every 5 minutes.
+export const revalidate = 300;
 
 export default function Home() {
   return (
     <main>
       <Hero />
+      <Reveal>
+        <ThisSeason />
+      </Reveal>
       <Reveal>
         <LatestDrop />
       </Reveal>
