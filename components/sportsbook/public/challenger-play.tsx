@@ -72,16 +72,69 @@ export function JoinForm() {
   );
 }
 
-export function PlayBoard({ me, items, picks, now, newCode }: { me: SbPlayer; items: SbItem[]; picks: SbPick[]; now: number; newCode?: boolean }) {
+export function PlayBoard({
+  me,
+  items,
+  picks,
+  now,
+  week,
+  submitted,
+  newCode,
+}: {
+  me: SbPlayer;
+  items: SbItem[];
+  picks: SbPick[];
+  now: number;
+  week: number;
+  submitted: boolean;
+  newCode?: boolean;
+}) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
   const mine = (id: string) => picks.find((p) => p.item_id === id && p.player_id === me.id);
   const lockOn = picks.find((p) => p.player_id === me.id && p.is_lock)?.item_id ?? null;
-  const done = items.filter((i) => {
-    const p = mine(i.id);
-    return p && (p.choice !== null || p.guess !== null);
-  }).length;
+  const picked = (id: string) => {
+    const p = mine(id);
+    return !!p && (p.choice !== null || p.guess !== null);
+  };
+  const done = items.filter((i) => picked(i.id)).length;
+  // Cards that still need an answer before Submit turns on. Started games don't count.
+  const missing = items.filter((i) => Date.parse(i.locks_at) > now && !picked(i.id));
+  const [submitting, setSubmitting] = useState(false);
+
+  async function submit() {
+    if (!window.confirm("Submit your picks? They lock for the week and you can't change them.")) return;
+    setSubmitting(true);
+    setError(null);
+    const res = await post({ action: "submit", week });
+    setSubmitting(false);
+    if (!res.ok) setError(res.error ?? "Couldn't submit.");
+    router.refresh();
+  }
+
+  const submitBlock = submitted ? (
+    <div className="border border-[var(--color-green)] bg-[var(--color-green)]/10 p-4 text-center">
+      <div className="font-[family-name:var(--font-fraunces)] text-2xl font-black text-[var(--color-green)]">✓ Your picks are in!</div>
+      <p className="mt-1 text-[0.9rem] text-[var(--color-mute)]">
+        They&apos;re locked for the week. Check the leaderboard after the games to see if you beat Jaiye and Remi.
+      </p>
+    </div>
+  ) : (
+    <div className="flex flex-col items-center gap-2">
+      <button
+        type="button"
+        disabled={missing.length > 0 || submitting}
+        onClick={submit}
+        className="min-h-14 w-full max-w-[420px] bg-[var(--color-red)] px-6 font-[family-name:var(--font-jetbrains)] text-[0.8rem] uppercase tracking-[0.2em] text-[var(--color-black)] hover:bg-[var(--color-bone)] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-[var(--color-red)]"
+      >
+        {submitting ? "Submitting…" : missing.length > 0 ? `${missing.length} ${missing.length === 1 ? "card" : "cards"} left to pick` : "Submit my picks"}
+      </button>
+      <span className="text-[0.8rem] text-[var(--color-mute)]">
+        {missing.length > 0 ? "Pick every card, then submit." : "Once you submit, your picks are locked for the week."}
+      </span>
+    </div>
+  );
 
   async function save(itemId: string, payload: Record<string, unknown>) {
     setSaving(itemId);
@@ -98,7 +151,7 @@ export function PlayBoard({ me, items, picks, now, newCode }: { me: SbPlayer; it
         <div>
           <div className="font-[family-name:var(--font-fraunces)] text-xl font-black">Playing as {me.display_name}</div>
           <div className="mt-1 text-[0.85rem] text-[var(--color-mute)]">
-            {done} of {items.length} picked. Picks save as you tap and lock at tip-off.
+            {submitted ? "Submitted and locked. Good luck!" : `${done} of ${items.length} picked. Pick every card, then tap Submit.`}
           </div>
         </div>
         <div className={`font-[family-name:var(--font-jetbrains)] text-[0.75rem] ${newCode ? "text-[var(--color-games-yellow)]" : "text-[var(--color-mute)]"}`}>
@@ -107,11 +160,23 @@ export function PlayBoard({ me, items, picks, now, newCode }: { me: SbPlayer; it
         </div>
       </div>
       {error ? <p className="mb-4 border border-[var(--color-red)] px-3 py-2 text-[0.9rem] text-[var(--color-red-soft)]">{error}</p> : null}
+      {submitted ? <div className="mb-6">{submitBlock}</div> : null}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {items.map((item) => (
-          <PlayCard key={item.id} item={item} pick={mine(item.id)} now={now} saving={saving === item.id} lockElsewhere={!!lockOn && lockOn !== item.id} onSave={(p) => save(item.id, p)} />
+          <PlayCard
+            key={item.id}
+            item={item}
+            pick={mine(item.id)}
+            now={now}
+            saving={saving === item.id}
+            lockElsewhere={!!lockOn && lockOn !== item.id}
+            frozen={submitted}
+            needsPick={!submitted && missing.some((m) => m.id === item.id)}
+            onSave={(p) => save(item.id, p)}
+          />
         ))}
       </div>
+      <div className="mt-8">{submitBlock}</div>
       <button
         type="button"
         onClick={async () => {
@@ -133,6 +198,8 @@ function PlayCard({
   now,
   saving,
   lockElsewhere,
+  frozen,
+  needsPick,
   onSave,
 }: {
   item: SbItem;
@@ -140,13 +207,24 @@ function PlayCard({
   now: number;
   saving: boolean;
   lockElsewhere: boolean;
+  frozen: boolean;
+  needsPick: boolean;
   onSave: (p: Record<string, unknown>) => void;
 }) {
-  const locked = isLocked(item, now) || item.status !== "open";
+  const locked = isLocked(item, now) || item.status !== "open" || frozen;
   const picked = !!pick && (pick.choice !== null || pick.guess !== null);
   const [guess, setGuess] = useState(pick?.guess !== null && pick?.guess !== undefined ? String(pick.guess) : "");
   return (
-    <div className={`flex flex-col border bg-[var(--color-off-black)] p-4 ${picked ? "border-[var(--color-line-hover)]" : "border-[var(--color-line-strong)]"}`}>
+    <div
+      className={`flex flex-col border bg-[var(--color-off-black)] p-4 ${
+        needsPick ? "border-[var(--color-red)]" : picked ? "border-[var(--color-line-hover)]" : "border-[var(--color-line-strong)]"
+      }`}
+    >
+      {needsPick ? (
+        <div className="mb-2 self-start bg-[var(--color-red)] px-2 py-0.5 font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.2em] text-[var(--color-black)]">
+          Needs a pick
+        </div>
+      ) : null}
       <CardHead item={item} now={now} />
       <CardPrompt item={item} />
       <div className="mt-3 flex flex-col gap-1.5">

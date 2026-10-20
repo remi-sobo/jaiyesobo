@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { ipFromRequest } from "@/lib/rate-limit";
-import { ActionError, savePick } from "@/lib/sportsbook/actions";
+import { ActionError, savePick, submitPicks } from "@/lib/sportsbook/actions";
 import { castVote, getVisitor, isReactionKey, toggleReaction } from "@/lib/sportsbook/fans";
 import {
   checkDisplayName,
@@ -37,6 +37,7 @@ async function tooMany(req: Request, kind: "join" | "restore"): Promise<boolean>
  *   join { name }        new challenger, sets the cookie, returns their code
  *   restore { code }     same challenger on another device
  *   pick { item_id, choice?, guess?, is_lock? }
+ *   submit { week }      lock this challenger's picks for the week
  *   leave                forget this device
  *   react { item_id, player_id, emoji }   toggle an emoji on a revealed pick
  *   vote { week_id, choice }             who wins the week, jaiye or remi
@@ -85,6 +86,14 @@ export async function POST(req: Request) {
           guess: body.guess === null ? null : typeof body.guess === "number" ? body.guess : undefined,
           is_lock: typeof body.is_lock === "boolean" ? body.is_lock : undefined,
         });
+        return NextResponse.json({ ok: true });
+      }
+      case "submit": {
+        const me = await getChallenger();
+        if (!me) return NextResponse.json({ error: "Join first." }, { status: 401 });
+        const week = typeof body.week === "number" ? body.week : 0;
+        if (!week) break;
+        await submitPicks(week, me.id);
         return NextResponse.json({ ok: true });
       }
       case "react": {
