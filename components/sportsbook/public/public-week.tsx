@@ -6,20 +6,6 @@ import { ReactionBar } from "./fan-bits";
 
 type House = { jaiye: SbPlayer | undefined; remi: SbPlayer | undefined };
 
-export function ScoreHeader({ board, house, label }: { board: Board[]; house: House; label: string }) {
-  const pts = (p: SbPlayer | undefined) => board.find((b) => b.player.id === p?.id)?.score.points ?? 0;
-  return (
-    <div className="flex flex-col items-center gap-2 text-center">
-      <div className="font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.25em] text-[var(--color-mute)]">{label}</div>
-      <div className="flex items-baseline gap-4 font-[family-name:var(--font-fraunces)] font-black leading-none tracking-[-0.03em]">
-        <span className="text-[clamp(2rem,6vw,3.6rem)] text-[var(--color-red)]">JAIYE {pts(house.jaiye)}</span>
-        <span className="text-[1.4rem] text-[var(--color-mute)]">·</span>
-        <span className="text-[clamp(2rem,6vw,3.6rem)]">REMI {pts(house.remi)}</span>
-      </div>
-    </div>
-  );
-}
-
 function HousePick({
   item,
   player,
@@ -104,7 +90,13 @@ export function PublicCard({
   const challengerIds = new Set(players.filter((p) => p.kind === "challenger").map((p) => p.id));
   const crowd = mine.filter((p) => challengerIds.has(p.player_id) && p.choice !== null);
   return (
-    <div className="flex flex-col border border-[var(--color-line-strong)] bg-[var(--color-off-black)] p-4">
+    <div className="relative flex flex-col border border-[var(--color-line-strong)] bg-[var(--color-off-black)] p-4 pt-5">
+      {/* Slip stripe: red for the Upset Special, yellow for Jaiye's Prop. */}
+      <span
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-1"
+        style={{ background: item.type === "upset" ? "var(--color-red)" : item.type === "custom" ? "var(--color-games-yellow)" : "var(--color-line-strong)" }}
+      />
       <CardHead item={item} now={now} />
       <CardPrompt item={item} />
       {item.type !== "closest" ? (
@@ -125,7 +117,12 @@ export function PublicCard({
           })}
         </ul>
       ) : null}
-      <div className="mt-3 flex flex-1 flex-col justify-end gap-2">
+      {/* Perforated tear line, like a betting slip. */}
+      <div aria-hidden className="relative -mx-4 mt-4 border-t border-dashed border-[var(--color-line-strong)]">
+        <span className="absolute -left-2 -top-2 h-4 w-4 rounded-full border border-[var(--color-line-strong)] bg-[var(--color-black)]" />
+        <span className="absolute -right-2 -top-2 h-4 w-4 rounded-full border border-[var(--color-line-strong)] bg-[var(--color-black)]" />
+      </div>
+      <div className="mt-1 flex flex-1 flex-col justify-end gap-2">
         {revealed ? (
           <>
             <HousePick item={item} player={house.jaiye} pick={mine.find((p) => p.player_id === house.jaiye?.id)} tone="jaiye" reactions={reactions} allPicks={picks} locked={locked} />

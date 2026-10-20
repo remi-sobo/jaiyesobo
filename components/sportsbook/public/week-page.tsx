@@ -5,7 +5,8 @@ import { listWeeks } from "@/lib/sportsbook/data";
 import { loadSeason, loadWeekView } from "@/lib/sportsbook/view";
 import { weekRangeLabel, weekSlug } from "@/lib/sportsbook/weeks";
 import { FanVote } from "./fan-bits";
-import { PublicCard, ScoreHeader, SeasonStandings, WeekBoard } from "./public-week";
+import { PublicCard, SeasonStandings, WeekBoard } from "./public-week";
+import { PlayButton, SportsbookHero, Ticker } from "./hero";
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
@@ -53,29 +54,20 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
   return (
     <main className="px-4 py-[clamp(40px,6vw,80px)] min-[760px]:px-10">
       <div className="mx-auto max-w-[1240px]">
-        <header className="text-center">
-          <div className="font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.3em] text-[var(--color-red)]">Sobo Sportsbook</div>
-          <h1 className="mt-4 font-[family-name:var(--font-fraunces)] text-[clamp(2.6rem,8vw,5.6rem)] font-black uppercase leading-[0.88] tracking-[-0.04em]">
-            Jaiye <span className="font-normal italic lowercase text-[var(--color-red)]">vs</span> Remi
-          </h1>
-          <p className="mx-auto mt-4 max-w-[52ch] text-[1rem] leading-relaxed text-[var(--color-mute)]">
-            A weekly NBA pick&apos;em, all season long. No money, just bragging rights. Anyone can jump in.
-          </p>
-          <div className="mt-8">
-            <ScoreHeader board={view.board} house={house} label={`Week ${n} · ${weekRangeLabel(view.week)}${view.week.status === "final" ? " · Final" : ""}`} />
-          </div>
-          {isOpen ? (
-            <div className="mt-8 flex flex-col items-center gap-2">
-              <Link
-                href="/sportsbook/play"
-                className="inline-flex min-h-12 items-center gap-3 bg-[var(--color-red)] px-[26px] py-[15px] font-[family-name:var(--font-jetbrains)] text-[0.75rem] uppercase tracking-[0.2em] text-[var(--color-black)] transition-colors hover:bg-[var(--color-bone)]"
-              >
-                {me ? `Make your picks, ${me.display_name}` : "Think you can beat us? Play this week"}
-              </Link>
-              <span className="text-[0.8rem] text-[var(--color-mute)]">Same picks, same points. Just a name, no sign up.</span>
-            </div>
-          ) : null}
-        </header>
+        <SportsbookHero
+          jaiye={view.board.find((b) => b.player.kind === "jaiye")?.score.points ?? 0}
+          remi={view.board.find((b) => b.player.kind === "remi")?.score.points ?? 0}
+          weekLabel={`Week ${n} · ${weekRangeLabel(view.week)}${view.week.status === "final" ? " · Final" : ""}`}
+          cta={
+            isOpen ? (
+              <div className="flex flex-col items-start gap-2">
+                <PlayButton href="/sportsbook/play">{me ? `Make your picks, ${me.display_name}` : "Think you can beat us?"}</PlayButton>
+                <span className="text-[0.8rem] text-[var(--color-mute)]">Same picks, same points. Just a name, no sign up.</span>
+              </div>
+            ) : null
+          }
+        />
+        <Ticker items={view.items} />
 
         <div className="mt-[clamp(40px,6vw,72px)] grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
           <section>
