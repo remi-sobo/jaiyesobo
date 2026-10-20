@@ -4,7 +4,7 @@ import GameShell from "@/components/games/game-shell";
 import { getPlayableCrosswords } from "@/lib/games/crossword-data";
 
 export const metadata: Metadata = {
-  title: "Crossword — Jaiye's Games",
+  title: "Crossword · Jaiye's Games",
   description: "Themed NBA crosswords built from word packs.",
 };
 
@@ -30,8 +30,7 @@ export default async function CrosswordIndex() {
       <section className="px-6 lg:px-10 pb-24 max-w-[1100px] mx-auto">
         {packs.length === 0 ? (
           <div className="border border-dashed border-[var(--color-line)] rounded p-10 text-center text-[var(--color-warm-mute)]">
-            No crosswords yet. Curators: open a verified word pack and click
-            <span className="text-[var(--color-bone)]"> Generate crossword</span> to bring one online.
+            No crosswords yet. I&apos;m still making them. Check back soon.
           </div>
         ) : (
           <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

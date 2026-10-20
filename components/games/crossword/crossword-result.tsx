@@ -50,7 +50,7 @@ export default function CrosswordResult({ result, onReplay }: Props) {
         />
         <Stat
           label="Streak"
-          value={result.streak ? `${result.streak.current_streak}` : "—"}
+          value={result.streak ? `${result.streak.current_streak}` : "0"}
         />
       </div>
 

@@ -38,7 +38,7 @@ export default function PlayerBoard({
     <div>
       {challengers.length ? (
         <p className="mb-3 text-[0.9rem] text-[var(--color-mute)]">
-          {beatJaiye} of {challengers.length} {challengers.length === 1 ? "challenger is" : "challengers are"} beating Jaiye. Tap a name to see their picks.
+          {beatJaiye === 0 ? "Nobody is beating me yet." : `${beatJaiye} of ${challengers.length} ${challengers.length === 1 ? "person is" : "people are"} beating me right now.`} Tap a name to see their picks.
         </p>
       ) : null}
       <ol>

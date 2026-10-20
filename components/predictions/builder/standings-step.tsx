@@ -188,7 +188,7 @@ export default function StandingsStep({ picks, update }: { picks: PredictionPick
   return (
     <div>
       <StepIntro title="Rank every team." accent="every">
-        Put all 15 teams in each conference in order, 1 to 15. Drag the dots, or use the arrows for small moves.
+        Put all 15 teams in order, best to worst. Drag the dots or tap the arrows.
       </StepIntro>
       <div className="grid grid-cols-1 gap-10 @min-[760px]:grid-cols-2 @min-[760px]:gap-8">
         <ConferenceList conf="west" order={picks.standings.west} onChange={set("west")} />

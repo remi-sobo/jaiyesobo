@@ -49,7 +49,7 @@ export default function RosterColumn({ label, accent, picks, isActive, isThinkin
                 </span>
               ) : (
                 <span className="font-[family-name:var(--font-fraunces)] italic text-[0.85rem] text-[var(--color-mute)]">
-                  {isThinking && i === picks.length ? "thinking…" : "—"}
+                  {isThinking && i === picks.length ? "thinking…" : "·"}
                 </span>
               )}
             </div>

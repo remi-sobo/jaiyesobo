@@ -29,7 +29,7 @@ function HousePick({
       <div className="flex items-center gap-2 border-t border-[var(--color-line)] pt-2 text-[0.9rem]">
         <Who label={tone === "jaiye" ? "J" : "R"} tone={tone} />
         <span className="font-medium">{player.display_name}</span>
-        <span className="text-[var(--color-mute)]">Not submitted yet</span>
+        <span className="text-[var(--color-mute)]">Still picking</span>
       </div>
     );
   }
@@ -135,7 +135,7 @@ export function PublicCard({
           </>
         ) : (
           <div className="border-t border-[var(--color-line)] pt-2 text-[0.82rem] text-[var(--color-mute)]">
-            Jaiye and Remi haven&apos;t submitted their picks yet.
+            Me and my dad are still picking this one.
           </div>
         )}
       </div>
@@ -146,14 +146,14 @@ export function PublicCard({
 
 export function SeasonStandings({ summary }: { summary: SeasonSummary }) {
   const { jaiyeVsRemi: h, rows, weekly } = summary;
-  const leader = h.jaiye > h.remi ? `Jaiye leads ${h.jaiye}-${h.remi}` : h.remi > h.jaiye ? `Remi leads ${h.remi}-${h.jaiye}` : h.jaiye ? `Tied ${h.jaiye}-${h.remi}` : "No weeks final yet";
+  const leader = h.jaiye > h.remi ? `Jaiye leads ${h.jaiye}-${h.remi}` : h.remi > h.jaiye ? `Remi leads ${h.remi}-${h.jaiye}` : h.jaiye ? `Tied ${h.jaiye}-${h.remi}` : "No weeks done yet";
   const max = Math.max(1, ...weekly.flatMap((w) => [w.jaiye, w.remi]));
   return (
     <div className="flex flex-col gap-6">
       <div>
         <div className="font-[family-name:var(--font-fraunces)] text-[clamp(1.8rem,5vw,2.8rem)] font-black leading-none tracking-[-0.03em]">{leader}</div>
         <div className="mt-2 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">
-          Jaiye vs Remi, weeks won{h.ties ? ` · ${h.ties} tied` : ""}
+          Weeks won, me vs my dad{h.ties ? ` · ${h.ties} tied` : ""}
         </div>
       </div>
 

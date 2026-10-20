@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "NBA Predictions · Jaiye Sobo",
-  description: "My picks for the whole NBA season. Standings, playoffs, the Finals and the awards. Locked in.",
+  description: "My picks for the whole NBA season. Who makes the playoffs, who wins it all, and who wins MVP. No take backs.",
 };
 
 export default async function PredictionsPage() {

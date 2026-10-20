@@ -49,7 +49,7 @@ export default function WheelHandoff({
         autoFocus
         className="bg-[var(--color-red)] text-[var(--color-bone)] font-[family-name:var(--font-jetbrains)] text-sm uppercase tracking-[0.2em] px-10 py-5 rounded-sm hover:bg-[var(--color-red-bright)] transition-colors"
       >
-        I&apos;m {nextPlayerName} — pick →
+        I&apos;m {nextPlayerName}. My pick →
       </button>
     </div>
   );

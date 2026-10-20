@@ -10,10 +10,10 @@ import { pad2 } from "@/lib/content/format";
 export const metadata: Metadata = {
   title: "Play something I made · Jaiye Sobo",
   description:
-    "Basketball games Jaiye came up with. He decides how they work, then he and his dad build them.",
+    "Basketball games I came up with. I make the rules, then me and my dad build them.",
   openGraph: {
     title: "Jaiye's Games",
-    description: "Basketball games made by Jaiye Sobo, age 9.",
+    description: "Basketball games made by me, Jaiye. I'm 9.",
     type: "website",
   },
 };

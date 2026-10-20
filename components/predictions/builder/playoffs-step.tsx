@@ -195,8 +195,8 @@ export default function PlayoffsStep({ picks, update }: { picks: PredictionPicks
   const b = deriveBracket(picks);
   return (
     <div>
-      <StepIntro title="Run the bracket." accent="bracket.">
-        Tap who wins each series, then how many games it takes. Later rounds fill in as you go.
+      <StepIntro title="Pick the playoffs." accent="playoffs.">
+        Tap who wins each series, then how many games. The next round fills in by itself.
       </StepIntro>
       <FullBracket b={b} update={update} />
       <RoundTabs b={b} update={update} />

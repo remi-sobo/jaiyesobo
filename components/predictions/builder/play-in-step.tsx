@@ -72,8 +72,8 @@ function SideCard({ picks, side, update }: { picks: PredictionPicks; side: Side;
 export default function PlayInStep({ picks, update }: { picks: PredictionPicks; update: UpdatePicks }) {
   return (
     <div>
-      <StepIntro title="Who survives the Play-In?" accent="Play-In?">
-        Seeds 7 to 10 from your standings play for the last two spots. Tap the winner of each game.
+      <StepIntro title="Who gets out of the Play-In?" accent="Play-In?">
+        Teams 7 to 10 fight for the last two playoff spots. Tap who wins each game.
       </StepIntro>
       <div className="grid grid-cols-1 gap-6 @min-[760px]:grid-cols-2">
         <SideCard picks={picks} side="W" update={update} />

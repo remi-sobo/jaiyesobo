@@ -4,9 +4,9 @@ import TriviaGame from "@/components/games/trivia/trivia-game";
 import { getStreakForCurrentSession } from "@/lib/games/trivia-data";
 
 export const metadata: Metadata = {
-  title: "The Court Report — NBA Trivia · Jaiye's Games",
+  title: "The Court Report · NBA Trivia · Jaiye's Games",
   description:
-    "10 NBA trivia questions a day. Pick your difficulty. Don't get cooked. Curated by Jaiye Sobo.",
+    "10 NBA trivia questions a day. Pick how hard. Don't get cooked. Made by Jaiye Sobo.",
 };
 
 export const dynamic = "force-dynamic";

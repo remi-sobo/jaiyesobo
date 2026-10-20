@@ -45,8 +45,8 @@ export default function DraftWheelStart({ onSubmit, initialA = "" }: Props) {
       </h1>
       <p className="text-[var(--color-mute)] text-[1rem] mb-10 leading-relaxed">
         The wheel hands each of you a random franchise every round. You pick the
-        best player at <em>that</em> position from <em>your</em> team. Five rounds
-        — G, G, F, F, C. AI judges. Each player gets one re-roll if the wheel
+        best player at <em>that</em> position from <em>your</em> team. Five rounds:
+        G, G, F, F, C. The AI judges. Each player gets one re-roll if the wheel
         lands ugly.
       </p>
 

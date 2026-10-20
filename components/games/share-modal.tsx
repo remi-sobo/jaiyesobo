@@ -46,7 +46,7 @@ export default function ShareModal({ open, onClose, url, title, subtext }: Props
     }
   }
 
-  const tweetText = encodeURIComponent(`${title}${subtext ? " — " + subtext : ""}`);
+  const tweetText = encodeURIComponent(`${title}${subtext ? ": " + subtext : ""}`);
   const tweetUrl = `https://twitter.com/intent/tweet?text=${tweetText}&url=${encodeURIComponent(url)}`;
   const wa = `https://wa.me/?text=${encodeURIComponent(`${title} ${url}`)}`;
   const sms = `sms:?&body=${encodeURIComponent(`${title} ${url}`)}`;

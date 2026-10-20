@@ -11,7 +11,7 @@ export async function generateMetadata(props: PageProps<"/predictions/[season]">
   const { season } = await props.params;
   if (!isSeasonSlug(season)) return { title: "Not found · Jaiye Sobo" };
   const title = `Jaiye's ${season} NBA Predictions`;
-  const description = `Standings, playoffs, the Finals and the awards for ${season}. Locked in.`;
+  const description = `My picks for the ${season} NBA season. Who wins it all, who wins MVP, all of it. No take backs.`;
   return {
     title,
     description,

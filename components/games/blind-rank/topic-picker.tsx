@@ -41,7 +41,7 @@ export default function TopicPicker({ topics, onStart, busy = false }: Props) {
             No topics ready yet.
           </div>
           <p className="text-[var(--color-mute)] text-sm">
-            Jaiye is curating. Check back soon.
+            I&apos;m still making these. Check back soon.
           </p>
         </div>
       ) : (

@@ -78,7 +78,7 @@ export default function PickInput({ pool, excludeIds, disabled, onPick, onFailed
   return (
     <div className="flex flex-col gap-2">
       <label className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.25em] text-[var(--color-games-yellow)]">
-        Your turn — type a player&apos;s name
+        Your turn. Type a player&apos;s name
       </label>
       <div className="relative">
         <input

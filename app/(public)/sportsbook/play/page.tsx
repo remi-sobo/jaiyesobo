@@ -11,8 +11,8 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Beat the Sobos · Sobo Sportsbook",
-  description: "Play this week's NBA slate against Jaiye and Remi. Just a name, no sign up.",
-  openGraph: { title: "Think you can beat Jaiye and Remi?", description: "Play this week's NBA slate. Just a name, no sign up.", type: "website" },
+  description: "Pick NBA games against me and my dad. Just type your name and play.",
+  openGraph: { title: "Think you can beat Jaiye and Remi?", description: "Pick NBA games against me and my dad. Just type your name and play.", type: "website" },
 };
 
 export default async function PlayPage() {
@@ -38,17 +38,17 @@ export default async function PlayPage() {
             Beat the <em className="font-normal italic text-[var(--color-red)]">Sobos.</em>
           </h1>
           <p className="mx-auto mt-4 max-w-[50ch] text-[1rem] leading-relaxed text-[var(--color-mute)]">
-            Same picks as Jaiye and Remi, same points. Most points by Sunday night wins the week. No money, just bragging rights.
+            Pick the same games as me and my dad. Most points by Sunday night wins the week. No money, just bragging rights.
           </p>
           <Link href="/sportsbook" className="mt-4 inline-block font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)] hover:text-[var(--color-red)]">
-            See the leaderboard
+            See who&apos;s winning
           </Link>
         </header>
         {!me ? (
           <JoinForm />
         ) : !open || !view ? (
           <p className="text-center text-[1.05rem] text-[var(--color-mute)]">
-            No slate is open right now, {me.display_name}. New picks drop every Monday.
+            No picks are open right now, {me.display_name}. New ones drop every Monday.
           </p>
         ) : (
           <PlayBoard me={me} items={view.items} picks={view.picks} now={view.now} week={view.week.week_number} submitted={view.submitted.includes(me.id)} />

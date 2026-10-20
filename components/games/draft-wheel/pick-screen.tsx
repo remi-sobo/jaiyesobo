@@ -135,7 +135,7 @@ export default function PickScreen({
       {empty ? (
         <div className="p-8 border border-dashed border-[var(--color-line)] rounded text-[var(--color-mute)] mb-6">
           No verified {positionLabel(position).toLowerCase()}s available for this team.{" "}
-          {rerollAvailable ? "Use your re-roll." : "Locking an empty slot — judge will dock you."}
+          {rerollAvailable ? "Use your re-roll." : "That slot is empty. The judge will take points off."}
         </div>
       ) : (
         <div className="relative mb-6">

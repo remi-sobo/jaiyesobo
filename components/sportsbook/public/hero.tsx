@@ -73,7 +73,7 @@ export function SportsbookHero({
             <ScoreBox name="Remi" points={remi} tone="bone" />
           </div>
           <p className="relative max-w-[44ch] text-[0.98rem] leading-relaxed text-[var(--color-mute)]">
-            Me and my dad pick NBA games every week. Whoever gets the most right wins the week. Anyone can play!
+            Me vs my dad. Every week we pick NBA games and whoever gets the most right wins. Think you can beat us? Pull up.
           </p>
           {cta ? <div className="relative">{cta}</div> : null}
         </div>
@@ -158,7 +158,7 @@ export function OpeningWeekBanner() {
           🎉 Opening Week
         </span>
         <span className="font-[family-name:var(--font-jetbrains)] text-[0.68rem] uppercase tracking-[0.2em]">
-          The 2026-27 season tips off · Week 1 is live · Welcome to the Sobo Sportsbook
+          The season is finally here · Week 1 is live · Let&apos;s get it
         </span>
       </div>
     </div>
