@@ -3,10 +3,10 @@ import { getChallenger } from "@/lib/sportsbook/players";
 import { getVisitor, loadReactions, loadVotes } from "@/lib/sportsbook/fans";
 import { listWeeks } from "@/lib/sportsbook/data";
 import { loadSeason, loadWeekView } from "@/lib/sportsbook/view";
-import { weekRangeLabel, weekSlug } from "@/lib/sportsbook/weeks";
+import { currentWeekNumber, weekRangeLabel, weekSlug } from "@/lib/sportsbook/weeks";
 import { FanVote } from "./fan-bits";
 import { PublicCard, SeasonStandings, WeekBoard } from "./public-week";
-import { PlayButton, SportsbookHero, Ticker } from "./hero";
+import { OpeningWeekBanner, PlayButton, SportsbookHero, Ticker } from "./hero";
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
@@ -54,6 +54,7 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
   return (
     <main className="px-4 py-[clamp(40px,6vw,80px)] min-[760px]:px-10">
       <div className="mx-auto max-w-[1240px]">
+        {n === 1 && currentWeekNumber(new Date(now)) === 1 ? <OpeningWeekBanner /> : null}
         <SportsbookHero
           jaiye={view.board.find((b) => b.player.kind === "jaiye")?.score.points ?? 0}
           remi={view.board.find((b) => b.player.kind === "remi")?.score.points ?? 0}

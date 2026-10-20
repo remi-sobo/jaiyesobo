@@ -4,6 +4,8 @@ import Link from "next/link";
 import { getChallenger } from "@/lib/sportsbook/players";
 import { featuredWeekNumber, loadWeekView } from "@/lib/sportsbook/view";
 import { JoinForm, PlayBoard } from "@/components/sportsbook/public/challenger-play";
+import { OpeningWeekBanner } from "@/components/sportsbook/public/hero";
+import { currentWeekNumber, requestNow } from "@/lib/sportsbook/weeks";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +24,11 @@ export default async function PlayPage() {
   return (
     <main className="px-4 py-[clamp(40px,6vw,80px)] min-[760px]:px-10">
       <div className="mx-auto max-w-[1000px]">
+        {currentWeekNumber(new Date(requestNow())) === 1 ? (
+          <div className="mb-8">
+            <OpeningWeekBanner />
+          </div>
+        ) : null}
         <header className="mb-10 text-center">
           <div className="relative mx-auto mb-5 h-28 w-28 overflow-hidden rounded-full border-2 border-[var(--color-red)] shadow-[0_0_40px_rgba(230,57,70,0.35)]">
             <Image src="/jaiye-hero.jpg" alt="Jaiye in his number 23 jersey" fill sizes="112px" className="object-cover object-[center_18%]" />
