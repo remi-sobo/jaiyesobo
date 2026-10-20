@@ -45,7 +45,7 @@ export async function getSettings(): Promise<SportsbookSettings> {
   const { data } = await createServiceClient().from("app_config").select("value").eq("key", "sportsbook_settings").maybeSingle();
   const v = (data?.value ?? {}) as Partial<SportsbookSettings>;
   return {
-    fav_teams: (v.fav_teams ?? ["POR", "GSW"]).filter(isTeamCode),
+    fav_teams: (v.fav_teams ?? ["SAS"]).filter(isTeamCode),
     fav_players: (v.fav_players ?? []).filter((p): p is string => typeof p === "string"),
   };
 }

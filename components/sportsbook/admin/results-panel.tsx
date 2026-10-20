@@ -236,7 +236,7 @@ export function SettingsPanel({ favTeams, favPlayers }: { favTeams: TeamCode[]; 
         <input
           value={playersText}
           onChange={(e) => setPlayersText(e.target.value)}
-          placeholder="Scoot Henderson, Victor Wembanyama"
+          placeholder="Victor Wembanyama, De'Aaron Fox"
           className="mt-1 h-11 w-full border border-[var(--color-line-strong)] bg-[var(--color-warm-surface)] px-3 text-[var(--color-bone)]"
         />
       </label>

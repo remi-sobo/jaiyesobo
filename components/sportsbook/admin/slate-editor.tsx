@@ -204,7 +204,7 @@ export function AddProp({
           value={prompt}
           maxLength={140}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Will the Blazers make 15+ threes on Friday?"
+          placeholder="Will Wemby get 5+ blocks on Friday?"
           className="h-11 border border-[var(--color-line-strong)] bg-[var(--color-warm-surface)] px-3"
         />
         {options.map((o, i) => (
