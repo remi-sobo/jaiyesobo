@@ -40,8 +40,8 @@ export function PredictionsComingSoon({ season, ownerName }: { season: string; o
           {ownerName}&apos;s {season} picks are <em className="font-normal italic text-[var(--color-red)]">coming soon.</em>
         </h1>
         <p className="mx-auto mt-6 max-w-[48ch] text-[1.05rem] leading-relaxed text-[var(--color-mute)]">
-          Standings, play-in, every playoff series, the Finals and the awards. Once they&apos;re locked in, they&apos;re
-          locked forever.
+          Who makes the playoffs, who wins every series, and who wins MVP. Once I post my picks, I can&apos;t change
+          them.
         </p>
       </div>
     </main>

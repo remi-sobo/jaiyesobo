@@ -89,7 +89,7 @@ export function SportsbookPanel({ book }: { book: BookState }) {
         <em className="font-normal lowercase text-[var(--color-mute)]">vs</em> Remi
       </h2>
       <p className="relative mt-4 max-w-[46ch] text-[1rem] leading-[1.7] text-[var(--color-mute)]">
-        Me and my dad, picking NBA games every week all season. No money, just bragging rights. You can play too.
+        Me and my dad pick NBA games every week. Whoever gets the most right wins the week. You can play too!
       </p>
 
       <div className="relative mt-6 flex max-w-[380px] gap-2">
@@ -99,7 +99,7 @@ export function SportsbookPanel({ book }: { book: BookState }) {
 
       {book?.teaser ? (
         <div className="relative mt-6 border-l-2 border-[var(--color-red)] pl-4">
-          <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">On the slate</div>
+          <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">This week</div>
           <div className="mt-1 font-[family-name:var(--font-fraunces)] text-[1.2rem] font-black leading-tight tracking-[-0.02em]">{book.teaser}</div>
         </div>
       ) : null}
@@ -112,7 +112,7 @@ export function SportsbookPanel({ book }: { book: BookState }) {
           </Link>
         ) : null}
         <Link href="/sportsbook" className={`${btn} border border-[var(--color-line-strong)] text-[var(--color-bone)] hover:border-[var(--color-red)]`}>
-          See the board
+          See who&apos;s winning
         </Link>
         {book && book.challengers > 0 ? (
           <span className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.15em] text-[var(--color-mute)]">
@@ -135,11 +135,11 @@ export function PredictionsPanel({ pred }: { pred: PredictionState }) {
       <h2 className="mt-5 font-[family-name:var(--font-fraunces)] text-[clamp(2rem,4vw,2.8rem)] font-black leading-[0.92] tracking-[-0.03em]">
         {champ ? (
           <>
-            My champion: <em className="font-normal italic text-[var(--color-red)]">{champ.name}.</em>
+            My pick to win it all: <em className="font-normal italic text-[var(--color-red)]">{champ.name}.</em>
           </>
         ) : (
           <>
-            My whole season, <em className="font-normal italic text-[var(--color-red)]">called.</em>
+            My picks for <em className="font-normal italic text-[var(--color-red)]">this season.</em>
           </>
         )}
       </h2>
@@ -158,15 +158,15 @@ export function PredictionsPanel({ pred }: { pred: PredictionState }) {
           ) : null}
           <p className="mt-2 text-[0.95rem] leading-[1.6] text-[var(--color-mute)]">
             {pred
-              ? "Standings, play-in, every series and the awards. Locked in before tip-off."
-              : "Standings, play-in, every playoff series, the Finals and the awards. Coming soon. Once they're in, they're locked forever."}
+              ? "Who makes the playoffs, who wins every series, and who wins MVP. I can't change them now."
+              : "Who makes the playoffs, who wins every series, and who wins MVP. I'm still working on them. Once I post them, I can't change them."}
           </p>
         </div>
       </div>
 
       <div className="mt-8">
         <Link href="/predictions" className={`${btn} border border-[var(--color-line-strong)] text-[var(--color-bone)] hover:border-[var(--color-red)]`}>
-          {pred ? "See my bracket" : "Take a look"}
+          {pred ? "See all my picks" : "Check it out"}
         </Link>
       </div>
     </div>
