@@ -73,7 +73,7 @@ export function SportsbookHero({
             <ScoreBox name="Remi" points={remi} tone="bone" />
           </div>
           <p className="relative max-w-[44ch] text-[0.98rem] leading-relaxed text-[var(--color-mute)]">
-            A weekly NBA pick&apos;em, all season long. No money, just bragging rights. Anyone can jump in.
+            Me and my dad pick NBA games every week. Whoever gets the most right wins the week. Anyone can play!
           </p>
           {cta ? <div className="relative">{cta}</div> : null}
         </div>
@@ -91,7 +91,7 @@ export function SportsbookHero({
           <div className="absolute inset-0 bg-[linear-gradient(0deg,var(--color-off-black)_0%,transparent_45%)] md:bg-[linear-gradient(90deg,var(--color-off-black)_0%,transparent_35%)]" />
           <div className="absolute inset-0 bg-[var(--color-red)] opacity-[0.12] mix-blend-multiply" />
           <div className="absolute right-3 top-3 border border-[rgba(245,241,234,0.35)] bg-[rgba(10,10,10,0.6)] px-2.5 py-1 font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.25em] text-[var(--color-bone)] backdrop-blur-sm">
-            No. 23 · The House
+            #23 · Jaiye
           </div>
         </div>
       </div>
