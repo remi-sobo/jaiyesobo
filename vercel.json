@@ -3,5 +3,9 @@
     "app/api/upload/route.ts": {
       "maxDuration": 60
     }
-  }
+  },
+  "crons": [
+    { "path": "/api/cron/sportsbook?job=nightly", "schedule": "0 10 * * *" },
+    { "path": "/api/cron/sportsbook?job=weekly", "schedule": "0 12 * * 1" }
+  ]
 }
