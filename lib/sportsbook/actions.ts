@@ -1,6 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { buildContext, draftOne, draftSlate, half, writeRecap, type DraftItem } from "./draft";
-import { getItems, getPicks, getPlayers, getWeek, gradeWeek, nightlySync, weekBoard } from "./data";
+import { getItems, getPicks, getPlayers, getSubmissions, getWeek, gradeWeek, nightlySync, weekBoard } from "./data";
 import { pickPoints } from "./grade";
 import type { ItemOption, SbItem, SbPick, SbWeek } from "./types";
 import { SB_SEASON, currentWeekNumber, weekWindow } from "./weeks";
@@ -143,6 +143,7 @@ export async function savePick(
   const { item, week } = await draftItemAndWeek(itemId);
   if (week.status !== "open") throw new ActionError("This week isn't open.");
   if (new Date(item.locks_at) <= new Date()) throw new ActionError("That pick is locked.");
+  if ((await getSubmissions(week.id)).includes(playerId)) throw new ActionError("These picks are submitted and locked.");
   const supa = db();
   const { data: prev } = await supa.from("sb_picks").select("choice, guess, is_lock, talk").eq("item_id", itemId).eq("player_id", playerId).maybeSingle();
 
@@ -171,7 +172,33 @@ export async function savePick(
   const { error } = await supa
     .from("sb_picks")
     .upsert({ item_id: itemId, player_id: playerId, choice, guess, is_lock: isLock, talk }, { onConflict: "item_id,player_id" });
-  if (error) throw new ActionError(error.message.includes("locked") ? "That pick is locked." : "Couldn't save that pick.");
+  if (error) {
+    if (error.message.includes("submitted")) throw new ActionError("These picks are submitted and locked.");
+    throw new ActionError(error.message.includes("locked") ? "That pick is locked." : "Couldn't save that pick.");
+  }
+}
+
+/**
+ * Jaiye or Remi submits: every pick for the week locks for good and goes public.
+ * Every card that hasn't tipped off yet needs an answer first.
+ */
+export async function submitPicks(n: number, playerId: string): Promise<void> {
+  const week = await getWeek(n);
+  if (!week || week.status !== "open") throw new ActionError("This week isn't open.");
+  const items = await getItems(week.id);
+  const picks = (await getPicks(items.map((i) => i.id))).filter((p) => p.player_id === playerId);
+  const now = Date.now();
+  const missing = items.filter((i) => {
+    if (Date.parse(i.locks_at) <= now) return false;
+    const p = picks.find((x) => x.item_id === i.id);
+    return !p || (p.choice === null && p.guess === null);
+  });
+  if (missing.length) throw new ActionError(`Pick ${missing.length} more ${missing.length === 1 ? "card" : "cards"} first.`);
+  const { error } = await db().from("sb_submissions").insert({ week_id: week.id, player_id: playerId });
+  if (error) {
+    if (error.code === "23505") return;
+    throw new ActionError(error.code === "42P01" ? "Submitting needs migration 026 first." : "Couldn't submit.");
+  }
 }
 
 /** Hand grading for Jaiye's Prop, or voiding any pick. */

@@ -131,6 +131,13 @@ export async function getPicks(itemIds: string[]): Promise<SbPick[]> {
   return out;
 }
 
+/** Players who submitted (and locked) their picks for a week. Empty if migration 026 isn't in yet. */
+export async function getSubmissions(weekId: string): Promise<string[]> {
+  const { data, error } = await supa().from("sb_submissions").select("player_id").eq("week_id", weekId);
+  if (error) return [];
+  return (data ?? []).map((r) => r.player_id as string);
+}
+
 export async function getPlayers(): Promise<SbPlayer[]> {
   const { data, error } = await supa().from("sb_players").select("id, kind, display_name, code, hidden").order("created_at");
   if (error) throw error;

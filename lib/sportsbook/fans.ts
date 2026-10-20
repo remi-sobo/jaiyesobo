@@ -40,13 +40,19 @@ export async function loadReactions(itemIds: string[], visitor: string | null): 
   return out;
 }
 
-/** Turns a reaction on or off. Only for picks that are already revealed. */
+/** Turns a reaction on or off. Only for picks that are already public. */
 export async function toggleReaction(itemId: string, playerId: string, emoji: ReactionKey, visitor: string): Promise<void> {
   const supa = createServiceClient();
   const { data: item } = await supa.from("sb_items").select("locks_at").eq("id", itemId).maybeSingle();
-  if (!item || Date.parse(item.locks_at) > Date.now()) throw new Error("not_revealed");
+  if (!item) throw new Error("no_item");
   const { data: pick } = await supa.from("sb_picks").select("item_id").eq("item_id", itemId).eq("player_id", playerId).maybeSingle();
   if (!pick) throw new Error("no_pick");
+  if (Date.parse(item.locks_at) > Date.now()) {
+    // Before tip-off only submitted picks are public.
+    const { data: it } = await supa.from("sb_items").select("week_id").eq("id", itemId).single();
+    const { data: sub } = await supa.from("sb_submissions").select("player_id").eq("week_id", it?.week_id).eq("player_id", playerId).maybeSingle();
+    if (!sub) throw new Error("not_revealed");
+  }
   const key = { item_id: itemId, player_id: playerId, emoji, visitor };
   const { data: had } = await supa.from("sb_reactions").select("emoji").match(key).maybeSingle();
   if (had) await supa.from("sb_reactions").delete().match(key);
