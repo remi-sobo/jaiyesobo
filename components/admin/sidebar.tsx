@@ -93,6 +93,7 @@ export default function Sidebar({
       </NavGroup>
 
       <NavGroup label="Season">
+        <NavItem href="/admin/sportsbook" active={is("/admin/sportsbook")} label="Sobo Sportsbook" />
         <NavItem href="/admin/predictions" active={is("/admin/predictions")} label="NBA Predictions" />
       </NavGroup>
 
@@ -121,6 +122,7 @@ const MOBILE_LINKS = [
   { href: "/admin/uploads", label: "Uploads" },
   { href: "/admin/ask-dad", label: "Ask Dad" },
   { href: "/admin/feedback", label: "Feedback" },
+  { href: "/admin/sportsbook", label: "Sportsbook" },
   { href: "/admin/predictions", label: "Predictions" },
   { href: "/admin/setup", label: "Setup" },
 ];
