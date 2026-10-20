@@ -182,12 +182,12 @@ Rules:
 - note: one fun line on why it's interesting, no more than 120 characters. Kid friendly, no gambling talk about money.
 - Never use em dashes or en dashes.`;
 
-const PlayerSchema = z.object({ person_id: z.number().int(), name: z.string(), team: z.string(), game_id: z.string().optional() });
+const PlayerSchema = z.object({ person_id: z.number(), name: z.string(), team: z.string(), game_id: z.string().optional() });
 
 const AiItem = z.object({
   type: z.enum(["winner", "spread", "total", "team_total", "player_ou", "h2h", "yes_no", "margin", "week_wins", "weekly_leader", "closest", "upset"]),
-  prompt: z.string().max(140),
-  note: z.string().max(200),
+  prompt: z.string(),
+  note: z.string(),
   game_id: z.string().optional(),
   team: z.string().optional(),
   line: z.number().optional(),
@@ -247,7 +247,12 @@ function gameForPlayer(ctx: SlateContext, pl: PlayerInfo, hint?: string): Game |
 const ref = (p: PlayerInfo, g: Game): PlayerRef => ({ person_id: p.person_id, name: p.name, team: p.team, game_id: g.game_id });
 
 export function toDraftItem(ai: AiItem, ctx: SlateContext): DraftItem | null {
-  const base = { type: ai.type as ItemType, prompt: ai.prompt.trim(), note: ai.note?.trim() || null, points: DEFAULT_POINTS[ai.type] };
+  const base = {
+    type: ai.type as ItemType,
+    prompt: ai.prompt.trim().slice(0, 140),
+    note: ai.note?.trim().slice(0, 200) || null,
+    points: DEFAULT_POINTS[ai.type],
+  };
   const team = ai.team && isTeamCode(ai.team.toUpperCase()) ? (ai.team.toUpperCase() as TeamCode) : null;
   const line = typeof ai.line === "number" ? half(ai.line) : null;
   const ou = (l: number): ItemOption[] => [
@@ -421,7 +426,8 @@ export function toDraftItem(ai: AiItem, ctx: SlateContext): DraftItem | null {
 /** Drafts a full slate. Throws if the AI can't produce at least 8 valid items. */
 export async function draftSlate(ctx: SlateContext, avoid: string[] = []): Promise<DraftItem[]> {
   if (ctx.games.length === 0) throw new Error("No upcoming games this week.");
-  const schema = z.object({ items: z.array(AiItem).min(10).max(14) });
+  // Structured output rejects array length rules, so counts are checked in code below.
+  const schema = z.object({ items: z.array(AiItem) });
   const out = await askModel(
     schema,
     SYSTEM,
@@ -438,7 +444,7 @@ Build this week's slate: 11 or 12 items, at least 6 different types, exactly one
 
 /** One replacement item, optionally of a given type. */
 export async function draftOne(ctx: SlateContext, avoid: string[], type?: ItemType): Promise<DraftItem> {
-  const schema = z.object({ items: z.array(AiItem).min(1).max(3) });
+  const schema = z.object({ items: z.array(AiItem) });
   const want = type && type !== "custom" ? `of type "${type}" (${ITEM_TYPE_LABEL[type]})` : "of a type that isn't already overused in the avoid list";
   const out = await askModel(
     schema,
