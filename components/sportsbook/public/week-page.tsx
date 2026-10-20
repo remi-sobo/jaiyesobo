@@ -7,6 +7,9 @@ import { currentWeekNumber, weekRangeLabel, weekSlug } from "@/lib/sportsbook/we
 import { FanVote } from "./fan-bits";
 import { PublicCard, SeasonStandings } from "./public-week";
 import PlayerBoard from "./player-board";
+import VideoPopout from "@/components/site/video-popout";
+import { sportsbookEpisode } from "@/lib/content/episodes";
+import { pad } from "@/lib/content/format";
 import { scheduleLiveSync } from "@/lib/sportsbook/live";
 import { OpeningWeekBanner, PlayButton, SportsbookHero, Ticker } from "./hero";
 
@@ -53,6 +56,7 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
   const published = weeks.filter((w) => w.status !== "draft").sort((a, b) => b.week_number - a.week_number);
   const lastRecap = view.week.recap ? view.week : published.find((w) => w.status === "final" && w.recap && w.week_number < n);
   const isOpen = view.week.status === "open";
+  const episode = sportsbookEpisode();
 
   return (
     <main className="px-4 py-[clamp(40px,6vw,80px)] min-[760px]:px-10">
@@ -83,6 +87,20 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
             </div>
           </section>
           <aside className="flex flex-col gap-8">
+            {episode ? (
+              <div>
+                <Label>Watch me break it down</Label>
+                <div className="mt-4">
+                  <VideoPopout
+                    youtubeId={episode.youtubeId}
+                    title={episode.title}
+                    label={`EP. ${pad(episode.number)} · On The Court`}
+                    href={`/pod/${episode.slug}`}
+                    compact
+                  />
+                </div>
+              </div>
+            ) : null}
             <FanVote weekId={view.week.id} open={isOpen} tally={votes} />
             <div>
               <Label>Week {n} leaderboard</Label>

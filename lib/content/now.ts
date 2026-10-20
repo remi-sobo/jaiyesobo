@@ -41,7 +41,7 @@ export const now: NowSnapshot = {
     },
     {
       label: "Making",
-      value: "Ep. 002, the full Blazers preview. Every rotation, every prediction.",
+      value: "Ep. 003, the full Blazers preview. Every rotation, every prediction.",
       accent: "Blazers preview",
     },
     {
