@@ -3,53 +3,27 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const BROWSER = {
-  "User-Agent":
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
-  Accept: "application/json, text/plain, */*",
-  "Accept-Language": "en-US,en;q=0.9",
-  Referer: "https://www.nba.com/",
-  Origin: "https://www.nba.com",
-};
-
-async function tryJson(url: string, headers: Record<string, string>) {
-  try {
-    const r = await fetch(url, { headers, cache: "no-store" });
-    const text = await r.text();
-    let json: unknown = null;
-    try {
-      json = JSON.parse(text);
-    } catch {}
-    return { status: r.status, json, head: text.slice(0, 200) };
-  } catch (e) {
-    return { status: 0, json: null, head: String(e) };
-  }
+async function j(url: string) {
+  const r = await fetch(url, { cache: "no-store" });
+  return { status: r.status, json: r.ok ? await r.json() : null };
 }
 
-/** Temporary: which NBA data sources answer from Vercel, and what they look like. */
+/** Temporary: ESPN roster and range shapes. */
 export async function GET() {
   const out: Record<string, unknown> = {};
-  const nba = await tryJson("https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json", BROWSER);
-  out.nbaScoreboard = { status: nba.status, head: nba.json ? undefined : nba.head };
-
-  const sb = await tryJson("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=20261020", {});
-  out.espnScoreboard = sb.status;
-  const j = sb.json as { events?: Array<Record<string, unknown>> } | null;
-  const ev = j?.events?.[0];
-  out.espnEvents = j?.events?.length ?? 0;
-  if (ev) {
-    out.espnEventSample = JSON.stringify(ev).slice(0, 2500);
-    const sum = await tryJson(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=${ev.id}`, {});
-    out.espnSummary = sum.status;
-    const sj = sum.json as { boxscore?: { players?: Array<Record<string, unknown>> } } | null;
-    out.espnBoxSample = JSON.stringify(sj?.boxscore?.players?.[0] ?? null).slice(0, 2500);
-  }
-  const last = await tryJson("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=20260415", {});
-  const lj = last.json as { events?: Array<{ id: string }> } | null;
-  if (lj?.events?.[0]) {
-    const sum = await tryJson(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=${lj.events[0].id}`, {});
-    const sj = sum.json as { boxscore?: { players?: Array<Record<string, unknown>> } } | null;
-    out.espnFinalBox = JSON.stringify(sj?.boxscore?.players?.[0] ?? null).slice(0, 3000);
-  }
+  const range = await j("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=20261019-20261025&limit=200");
+  const evs = (range.json?.events ?? []) as Array<{ id: string; date: string; status: unknown; competitions: Array<{ competitors: Array<{ homeAway: string; team: { abbreviation: string } }> }> }>;
+  out.rangeStatus = range.status;
+  out.rangeEvents = evs.length;
+  out.rangeList = evs.map((e) => `${e.id} ${e.date} ${e.competitions[0].competitors.map((c) => c.homeAway + ":" + c.team.abbreviation).join(" ")}`);
+  out.statusSample = JSON.stringify(evs[0]?.status ?? null);
+  const ros = await j("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/gs/roster");
+  out.rosterStatus = ros.status;
+  out.rosterKeys = Object.keys(ros.json ?? {});
+  out.rosterSample = JSON.stringify((ros.json?.athletes ?? [])[0] ?? null).slice(0, 1500);
+  out.rosterCount = (ros.json?.athletes ?? []).length;
+  const teams = await j("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams");
+  const list = teams.json?.sports?.[0]?.leagues?.[0]?.teams ?? [];
+  out.teamAbbrs = list.map((t: { team: { abbreviation: string; id: string } }) => `${t.team.abbreviation}:${t.team.id}`);
   return NextResponse.json(out);
 }
