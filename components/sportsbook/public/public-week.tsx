@@ -27,7 +27,9 @@ function HousePick({
   tone,
   reactions,
   allPicks,
+  locked,
 }: {
+  locked: boolean;
   item: SbItem;
   player: SbPlayer | undefined;
   pick: SbPick | undefined;
@@ -36,6 +38,15 @@ function HousePick({
   allPicks: SbPick[];
 }) {
   if (!player) return null;
+  if (!pick && !locked) {
+    return (
+      <div className="flex items-center gap-2 border-t border-[var(--color-line)] pt-2 text-[0.9rem]">
+        <Who label={tone === "jaiye" ? "J" : "R"} tone={tone} />
+        <span className="font-medium">{player.display_name}</span>
+        <span className="text-[var(--color-mute)]">Not submitted yet</span>
+      </div>
+    );
+  }
   const label =
     item.type === "closest"
       ? pick?.guess !== null && pick?.guess !== undefined
@@ -85,8 +96,11 @@ export function PublicCard({
   reactions: ReactionMap;
   now: number;
 }) {
-  const revealed = isLocked(item, now) || item.status !== "open";
+  const locked = isLocked(item, now) || item.status !== "open";
   const mine = picks.filter((p) => p.item_id === item.id);
+  // House picks only reach the page once submitted (or at tip-off).
+  const houseIn = mine.some((p) => p.player_id === house.jaiye?.id || p.player_id === house.remi?.id);
+  const revealed = locked || houseIn;
   const challengerIds = new Set(players.filter((p) => p.kind === "challenger").map((p) => p.id));
   const crowd = mine.filter((p) => challengerIds.has(p.player_id) && p.choice !== null);
   return (
@@ -102,7 +116,7 @@ export function PublicCard({
               <li key={o.key} className={`flex items-center gap-2 text-[0.88rem] ${item.status === "graded" && !won ? "text-[var(--color-mute)]" : ""}`}>
                 <TeamDot option={o} />
                 <span className="min-w-0 flex-1">{o.label}</span>
-                {revealed && share !== null ? (
+                {locked && share !== null ? (
                   <span className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] text-[var(--color-mute)]">{share}%</span>
                 ) : null}
                 {won ? <span className="text-[var(--color-green)]">✓</span> : null}
@@ -114,17 +128,21 @@ export function PublicCard({
       <div className="mt-3 flex flex-1 flex-col justify-end gap-2">
         {revealed ? (
           <>
-            <HousePick item={item} player={house.jaiye} pick={mine.find((p) => p.player_id === house.jaiye?.id)} tone="jaiye" reactions={reactions} allPicks={picks} />
-            <HousePick item={item} player={house.remi} pick={mine.find((p) => p.player_id === house.remi?.id)} tone="remi" reactions={reactions} allPicks={picks} />
-            {crowd.length ? (
+            <HousePick item={item} player={house.jaiye} pick={mine.find((p) => p.player_id === house.jaiye?.id)} tone="jaiye" reactions={reactions} allPicks={picks} locked={locked} />
+            <HousePick item={item} player={house.remi} pick={mine.find((p) => p.player_id === house.remi?.id)} tone="remi" reactions={reactions} allPicks={picks} locked={locked} />
+            {locked && crowd.length ? (
               <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.15em] text-[var(--color-mute)]">
                 % = what {crowd.length} {crowd.length === 1 ? "challenger" : "challengers"} picked
+              </div>
+            ) : !locked ? (
+              <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.15em] text-[var(--color-mute)]">
+                Challenger picks stay hidden until tip-off
               </div>
             ) : null}
           </>
         ) : (
           <div className="border-t border-[var(--color-line)] pt-2 text-[0.82rem] text-[var(--color-mute)]">
-            Picks stay hidden until tip-off. No copying.
+            Jaiye and Remi haven&apos;t submitted their picks yet.
           </div>
         )}
       </div>

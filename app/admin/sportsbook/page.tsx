@@ -91,9 +91,9 @@ export default async function AdminSportsbookPage(props: { searchParams: Promise
           {status === "open" && view && house ? (
             <>
               <p className="mb-5 max-w-[60ch] text-[0.9rem] text-[var(--color-warm-mute)]">
-                Pass the phone. A pick stays covered until you&apos;ve both picked that card. Each pick locks at tip-off.
+                Pass the phone. A pick stays covered until you&apos;ve both picked that card. When you&apos;re done, tap Submit: your picks lock for the week and show on the public page. Anything not submitted locks at tip-off.
               </p>
-              <SharedPicks items={view.items} picks={view.picks} ids={{ jaiye: house.jaiye.id, remi: house.remi.id }} now={view.now} />
+              <SharedPicks items={view.items} picks={view.picks} ids={{ jaiye: house.jaiye.id, remi: house.remi.id }} now={view.now} week={n} submitted={view.submitted} />
               <AddPropInline week={n} />
               <Section title="Live board">
                 <BoardTable board={view.board} />

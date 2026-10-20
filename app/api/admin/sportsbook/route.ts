@@ -15,6 +15,7 @@ import {
   removeItem,
   saveRecap,
   savePick,
+  submitPicks,
   updateItem,
 } from "@/lib/sportsbook/actions";
 import { checkDisplayName, getHousePlayers } from "@/lib/sportsbook/players";
@@ -84,6 +85,13 @@ export async function POST(req: Request) {
           is_lock: typeof body.is_lock === "boolean" ? body.is_lock : undefined,
           talk: body.talk === null ? null : typeof body.talk === "string" ? body.talk : undefined,
         });
+        return NextResponse.json({ ok: true });
+      }
+      case "submit": {
+        const who = body.player === "remi" || body.player === "jaiye" ? body.player : null;
+        if (!who || !week) break;
+        const house = await getHousePlayers();
+        await submitPicks(week, house[who].id);
         return NextResponse.json({ ok: true });
       }
       case "refresh":
