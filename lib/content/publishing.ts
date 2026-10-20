@@ -10,8 +10,8 @@ import type { Schedule } from "./types";
 export const schedule: Schedule = {
   latestColumnSlug: "ja-to-the-blazers",
   nextColumnTopic: "The rookies who actually matter",
-  latestEpisodeSlug: "season-kickoff",
-  inStudio: "Ep. 002 · the full Blazers preview",
-  nextReleaseDate: "2026-09-23",
-  nextRelease: "Ep. 002",
+  latestEpisodeSlug: "sportsbook-week-1",
+  inStudio: "Ep. 003 · the full Blazers preview",
+  nextReleaseDate: "2026-10-27",
+  nextRelease: "Ep. 003",
 };

@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import ArticleBody from "@/components/site/article-body";
+import EpisodePlayer from "@/components/site/episode-player";
 import { notFound } from "next/navigation";
 import { episodes, getEpisode } from "@/lib/content/episodes";
 import { getVaultEntry } from "@/lib/content/vault";
 import { formatDate, pad } from "@/lib/content/format";
-import { Accent, Badge, SectionLabel } from "@/components/site/type";
+import { Accent, SectionLabel } from "@/components/site/type";
 import { VaultCompact } from "@/components/site/vault";
 
 export function generateStaticParams() {
@@ -67,17 +69,7 @@ export default async function EpisodePage(props: PageProps<"/pod/[slug]">) {
           {ep.standfirst}
         </p>
 
-        <div className="mt-10 border border-[var(--color-line-strong)] bg-[var(--color-off-black)] p-2">
-          <div className="relative aspect-video w-full">
-            <iframe
-              className="absolute inset-0 h-full w-full border-0"
-              src={`https://www.youtube-nocookie.com/embed/${ep.youtubeId}`}
-              title={ep.title}
-              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
-        </div>
+        <EpisodePlayer youtubeId={ep.youtubeId} title={ep.title} chapters={ep.chapters} />
 
         {ep.audioUrl && (
           <audio controls preload="none" src={ep.audioUrl} className="mt-4 w-full">
@@ -99,29 +91,24 @@ export default async function EpisodePage(props: PageProps<"/pod/[slug]">) {
           </a>
         </div>
 
-        <section id="chapters" className="mt-16 scroll-mt-24">
-          <SectionLabel>Chapters</SectionLabel>
-          <ul className="mt-6 list-none">
-            {ep.chapters.map((c) => (
-              <li
-                key={c.time}
-                className="grid grid-cols-[minmax(0,68px)_minmax(0,1fr)] gap-4 border-t border-[var(--color-line)] py-4"
-              >
-                <span className="font-[family-name:var(--font-jetbrains)] text-[0.75rem] tracking-[0.05em] text-[var(--color-red)]">
-                  {c.time}
-                </span>
-                <p className="text-[1.05rem] leading-[1.7] text-pretty">
-                  {c.segment && (
-                    <>
-                      <Badge>{c.segment}</Badge>{" "}
-                    </>
-                  )}
-                  {c.text}
+        {ep.article ? (
+          <section id="article" className="mt-16 scroll-mt-24">
+            <SectionLabel tone="red">The article</SectionLabel>
+            {ep.myTake ? (
+              <div className="mt-8 border-l-2 border-[var(--color-red)] pl-6">
+                <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.25em] text-[var(--color-mute)]">
+                  My take
+                </div>
+                <p className="mt-3 font-[family-name:var(--font-fraunces)] text-[clamp(1.4rem,3vw,1.9rem)] font-black leading-[1.15] tracking-[-0.025em] text-pretty">
+                  {ep.myTake}
                 </p>
-              </li>
-            ))}
-          </ul>
-        </section>
+              </div>
+            ) : null}
+            <div className="mt-10">
+              <ArticleBody blocks={ep.article} />
+            </div>
+          </section>
+        ) : null}
 
         {vault && (
           <div className="mt-16">

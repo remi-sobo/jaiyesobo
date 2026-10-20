@@ -3,7 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPost, publishedPosts, visiblePosts } from "@/lib/content/posts";
 import { formatDate, pad } from "@/lib/content/format";
-import { Accent, HandNote } from "@/components/site/type";
+import { Accent } from "@/components/site/type";
+import ArticleBody from "@/components/site/article-body";
 
 export function generateStaticParams() {
   return visiblePosts().map((p) => ({ slug: p.slug }));
@@ -90,42 +91,8 @@ export default async function PostPage(props: PageProps<"/column/[slug]">) {
           </div>
         )}
 
-        <div className="mt-12 flex flex-col gap-[26px]">
-          {post.body.map((block, i) => {
-            if (block.kind === "p") {
-              return (
-                <p key={i} className="text-[1.1rem] leading-[1.75] text-pretty">
-                  {block.text}
-                </p>
-              );
-            }
-            if (block.kind === "pull") {
-              return (
-                <div
-                  key={i}
-                  className="flex flex-col gap-1.5 border border-[var(--color-line-strong)] bg-[var(--color-off-black)] px-[clamp(20px,3vw,32px)] py-7 font-[family-name:var(--font-fraunces)] text-[clamp(1.3rem,3vw,1.8rem)] font-black leading-[1.25] tracking-[-0.02em]"
-                >
-                  {block.lines.map((line, j) => (
-                    <span
-                      key={j}
-                      className={
-                        block.accentLast && j === block.lines.length - 1
-                          ? "text-[var(--color-red)]"
-                          : undefined
-                      }
-                    >
-                      {line}
-                    </span>
-                  ))}
-                </div>
-              );
-            }
-            return (
-              <HandNote key={i} align="right" className="max-w-[26ch]">
-                {block.text}
-              </HandNote>
-            );
-          })}
+        <div className="mt-12">
+          <ArticleBody blocks={post.body} />
         </div>
 
         <footer className="mt-16 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-line)] pt-7 font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">

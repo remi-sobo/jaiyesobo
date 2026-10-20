@@ -59,6 +59,10 @@ export type Episode = {
   chapters: Chapter[];
   /** Links this episode to the vault entry recorded when it was taped. */
   vaultId?: string;
+  /** The written version, in the same style as a column. Shown under the video. */
+  article?: Block[];
+  /** The blunt one-liner in the red-bordered block, like a column's. */
+  myTake?: string;
 };
 
 /**

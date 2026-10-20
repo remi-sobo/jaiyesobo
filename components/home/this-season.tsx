@@ -9,6 +9,9 @@ import { currentWeekNumber, weekRangeLabel } from "@/lib/sportsbook/weeks";
 import { SectionLabel } from "@/components/site/type";
 import { TeamTile } from "@/components/predictions/team-tile";
 import { CourtLines, ScoreBox } from "@/components/sportsbook/public/hero";
+import VideoPopout from "@/components/site/video-popout";
+import { sportsbookEpisode } from "@/lib/content/episodes";
+import { pad } from "@/lib/content/format";
 
 type BookState = {
   week: number;
@@ -72,6 +75,7 @@ const btn =
   "inline-flex min-h-12 items-center gap-3 px-[22px] py-[14px] font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.2em] transition-colors duration-300";
 
 export function SportsbookPanel({ book }: { book: BookState }) {
+  const episode = sportsbookEpisode();
   return (
     <div className="relative flex flex-col overflow-hidden border border-[var(--color-line-strong)] bg-[var(--color-black)] p-6 md:p-8">
       <CourtLines />
@@ -93,9 +97,20 @@ export function SportsbookPanel({ book }: { book: BookState }) {
         Me and my dad pick NBA games every week. Whoever gets the most right wins the week. You can play too!
       </p>
 
-      <div className="relative mt-6 flex max-w-[380px] gap-2">
-        <ScoreBox name="Jaiye" points={book?.jaiye ?? 0} tone="red" />
-        <ScoreBox name="Remi" points={book?.remi ?? 0} tone="bone" />
+      <div className="relative mt-6 grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] sm:items-center">
+        <div className="flex max-w-[380px] gap-2">
+          <ScoreBox name="Jaiye" points={book?.jaiye ?? 0} tone="red" />
+          <ScoreBox name="Remi" points={book?.remi ?? 0} tone="bone" />
+        </div>
+        {episode ? (
+          <VideoPopout
+            youtubeId={episode.youtubeId}
+            title={episode.title}
+            label={`EP. ${pad(episode.number)} · Watch`}
+            href={`/pod/${episode.slug}`}
+            compact
+          />
+        ) : null}
       </div>
 
       {book?.teaser ? (

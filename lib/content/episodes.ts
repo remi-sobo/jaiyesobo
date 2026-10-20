@@ -3,6 +3,93 @@ import type { Episode } from "./types";
 /** On The Court. Newest first. */
 export const episodes: Episode[] = [
   {
+    number: 2,
+    slug: "sportsbook-week-1",
+    title: "Opening night: my Week 1 Sportsbook picks",
+    titleAccent: "Week 1",
+    standfirst:
+      "First day of the season, so I went through every one of my Sobo Sportsbook picks. My dad got a lot of clown emojis.",
+    date: "2026-10-20",
+    runtime: "11:30",
+    guests: "Jaiye",
+    youtubeId: "m3zazl94p4E",
+    myTake: "The Mavs aren't winning that game. San Antonio wins the whole thing this year.",
+    chapters: [
+      { time: "00:00", text: "Welcome back. The Sobo Sportsbook drops on day one of the season." },
+      { time: "00:37", text: "Celtics or Pistons for the first W. My dad gets a clown emoji." },
+      { time: "01:30", text: "Who drops the most in one game: Tatum, Jalen Williams, Brunson or Booker." },
+      { time: "02:19", text: "Do the Knicks beat Philly by 4 or more?" },
+      { time: "03:19", text: "How many games do the Knicks win this week? I say two." },
+      { time: "04:37", text: "Jalen Williams or De'Aaron Fox on Tuesday." },
+      { time: "05:47", text: "Checking my mom's picks. Then Hawks vs Magic, over or under." },
+      { time: "06:29", text: "The Upset Special. I'm riding with Portland.", segment: "Upset Special" },
+      { time: "07:58", text: "Lakers or Warriors. Steph is old folk." },
+      { time: "08:29", text: "Closest guess: total points in Lakers vs Warriors." },
+      { time: "10:23", text: "Mavs vs Spurs. I've got San Antonio winning it all." },
+      { time: "11:07", text: "How the leaderboard works. Signing out." },
+    ],
+    article: [
+      {
+        kind: "p",
+        text: "Whadup, y'all. Welcome to the On The Court article. Today is the first day of the NBA season, and me and my dad just dropped the Sobo Sportsbook. Let's get into it.",
+      },
+      {
+        kind: "p",
+        text: "Here's how it works. Every Monday new picks drop. You pick every game, you get one Lock of the Week, and once a game starts you can't change it. Most points by Sunday wins the week. And you can play against us.",
+      },
+      {
+        kind: "p",
+        text: "First one. Celtics or Pistons, who gets the first W of the season? I took the Celtics. I have a feeling Jayson Tatum goes off, and I think their new guys are gonna be pretty good. My dad took the Pistons. Somebody gave me a laughing emoji. I'm pretty sure it was my dad. So he got a clown emoji.",
+      },
+      {
+        kind: "pull",
+        lines: ["He's a clown, bro.", "He's a clown, bro.", "He's a clown, bro."],
+        accentLast: true,
+      },
+      {
+        kind: "p",
+        text: "Who drops the most in one game this week: Tatum, Jalen Williams, Brunson or Booker? We both said Brunson. 75 percent of y'all said Brunson too. Nobody picked Jalen Williams or Book. I didn't pick them either, but come on. That's still kinda disrespectful.",
+      },
+      {
+        kind: "p",
+        text: "Do the Knicks beat Philly by 4 or more? I said yes. My dad said no. The Knicks kept their team together, so they already know how everybody plays. They've been building that for like three years. That's chemistry.",
+      },
+      {
+        kind: "p",
+        text: "How many games do the Knicks win this week? I said two. My dad said zero or one. That's just bad, bro. 88 percent of y'all said two. So it's me and everybody against my dad.",
+      },
+      {
+        kind: "p",
+        text: "Jalen Williams or De'Aaron Fox on Tuesday? I took Jalen Williams. People forget about him because Shai is on that team. But when he's healthy he can really go, and he's healthy right now. 63 percent of y'all agree with me.",
+      },
+      {
+        kind: "p",
+        text: "Hawks vs Magic, over or under 224.5 points? Me, my dad and my mom all said under. Those teams just aren't scoring like that.",
+      },
+      {
+        kind: "p",
+        text: "Then the Upset Special. You pick one underdog to win. I took Portland over Phoenix. That's my team and I believe in them. Most of y'all took the Wizards over Milwaukee. Somebody even took the Pelicans over Indiana. Bold.",
+      },
+      {
+        kind: "p",
+        text: "Lakers or Warriors? Lakers. Luka is at his peak. I'm taking Luka over Steph any day. Steph is old folk. The Warriors are my least favorite team and I've never believed in them.",
+      },
+      { kind: "note", text: "Steph, I hope you're not reading this." },
+      {
+        kind: "p",
+        text: "The hard one. Guess the total points in Lakers vs Warriors. Closest guess wins, and if you hit it exactly you get double. I said 237. My dad said 235. So if they score 236 or more, I win that one.",
+      },
+      {
+        kind: "p",
+        text: "Last one. Mavs vs Spurs on Saturday, how much do the Mavs win by? The Mavs aren't winning. Cooper Flagg vs Dylan Harper, the number 1 pick against the number 2 pick. I think San Antonio wins the whole thing this year. And Wemby is winning MVP. It's his year.",
+      },
+      {
+        kind: "p",
+        text: "One more thing. You can tap anybody's name on the leaderboard and see all their picks, their points, and if they beat me or my dad. So go play at jaiyesobo.com/sportsbook. On The Court, signing out. Peace.",
+      },
+    ],
+  },
+  {
     number: 1,
     slug: "season-kickoff",
     title: "Season kickoff: the craziest offseason ever",
@@ -81,4 +168,9 @@ export function getEpisode(slug: string): Episode | undefined {
 
 export function latestEpisode(): Episode {
   return episodes[0];
+}
+
+/** The newest episode about the Sobo Sportsbook. Its slug starts with "sportsbook". */
+export function sportsbookEpisode(): Episode | undefined {
+  return episodes.find((e) => e.slug.startsWith("sportsbook"));
 }
