@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import Nav from "@/components/nav";
 import Footer from "@/components/footer";
 import { games, GAME_STATUS_LABEL, featuredGame } from "@/lib/content/games";
@@ -91,19 +92,48 @@ export default function GamesPage() {
         <section className="px-5 py-[clamp(52px,7vw,104px)] min-[760px]:px-10">
           <div className="mx-auto max-w-[1200px]">
             <div className="grid gap-px bg-[var(--color-line-strong)] [grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))]">
-              {rest.map((g) => (
-                <div key={g.slug} className="bg-[var(--color-black)] p-6">
-                  <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">
-                    Game {pad2(g.number)} · {GAME_STATUS_LABEL[g.status]}
+              {rest.map((g) => {
+                const isLive = g.status === "live" && g.href;
+                const toneClass = isLive
+                  ? "text-[var(--color-games-yellow)]"
+                  : "text-[var(--color-mute)]";
+                const inner = (
+                  <>
+                    <div
+                      className={`font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] ${toneClass}`}
+                    >
+                      Game {pad2(g.number)} · {GAME_STATUS_LABEL[g.status]}
+                    </div>
+                    <h3 className="mt-4 font-[family-name:var(--font-fraunces)] text-[1.5rem] font-black leading-tight tracking-[-0.02em]">
+                      {g.title}
+                    </h3>
+                    <p className="mt-3 text-[0.95rem] leading-[1.6] text-[var(--color-mute)]">
+                      {g.description}
+                    </p>
+                    {isLive && (
+                      <div className="mt-4 font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-bone)]">
+                        Play →
+                      </div>
+                    )}
+                  </>
+                );
+                if (isLive && g.href) {
+                  return (
+                    <Link
+                      key={g.slug}
+                      href={g.href}
+                      className="block bg-[var(--color-black)] p-6 transition-colors hover:bg-[var(--color-off-black)]"
+                    >
+                      {inner}
+                    </Link>
+                  );
+                }
+                return (
+                  <div key={g.slug} className="bg-[var(--color-black)] p-6">
+                    {inner}
                   </div>
-                  <h3 className="mt-4 font-[family-name:var(--font-fraunces)] text-[1.5rem] font-black leading-tight tracking-[-0.02em]">
-                    {g.title}
-                  </h3>
-                  <p className="mt-3 text-[0.95rem] leading-[1.6] text-[var(--color-mute)]">
-                    {g.description}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
 
               <div className="bg-[var(--color-black)] p-6">
                 <div className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">
