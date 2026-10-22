@@ -127,10 +127,10 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
           </section>
         ) : null}
 
-        {published.length > 1 ? (
-          <section className="mt-[clamp(48px,7vw,88px)]">
-            <Label>Past weeks</Label>
-            <ul className="mt-4 flex flex-wrap gap-2">
+        <section className="mt-[clamp(48px,7vw,88px)]">
+          <Label>{published.length > 1 ? "Past weeks" : "Season archive"}</Label>
+          <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+            <ul className="flex flex-wrap gap-2">
               {published.map((w) => (
                 <li key={w.id}>
                   <Link
@@ -144,8 +144,14 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
                 </li>
               ))}
             </ul>
-          </section>
-        ) : null}
+            <Link
+              href="/sportsbook/archive"
+              className="inline-flex min-h-10 items-center justify-center bg-[var(--color-red)] px-4 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.2em] text-[var(--color-black)] hover:bg-[var(--color-bone)]"
+            >
+              {published.length > 1 ? "Open the full archive →" : "See every week →"}
+            </Link>
+          </div>
+        </section>
       </div>
     </main>
   );

@@ -254,26 +254,30 @@ export type PlayerWeekScore = {
   lockHit: boolean | null;
 };
 
-/** Points one pick earned. Null means not graded yet. */
+/**
+ * Points one pick earned. Null means not graded yet.
+ *
+ * Right pays `item.points`, wrong costs `item.points`, and a Lock doubles both
+ * the gain and the loss. A perfect Closest guess still carries its 2× bonus,
+ * which the Lock then stacks on top of.
+ */
 export function pickPoints(item: SbItem, pick: SbPick, allPicks: SbPick[]): number | null {
   if (item.status === "void") return 0;
   if (item.status !== "graded" || !item.result) return null;
-  let base = 0;
-  let right = false;
+  const mult = pick.is_lock ? 2 : 1;
   if (item.type === "closest") {
     const actual = item.result.actual;
-    if (actual == null || pick.guess == null) return pick.is_lock ? -item.points : 0;
+    if (actual == null) return 0;
+    if (pick.guess == null) return -item.points * mult;
     const guesses = allPicks.filter((p) => p.item_id === item.id && p.guess != null).map((p) => Math.abs(p.guess! - actual));
     const best = Math.min(...guesses);
     const mine = Math.abs(pick.guess - actual);
-    right = mine === best;
-    base = right ? (mine === 0 ? item.points * 2 : item.points) : 0;
-  } else {
-    right = !!pick.choice && item.result.winners.includes(pick.choice);
-    base = right ? item.points : 0;
+    if (mine !== best) return -item.points * mult;
+    const base = mine === 0 ? item.points * 2 : item.points;
+    return base * mult;
   }
-  if (pick.is_lock) return right ? base * 2 : -item.points;
-  return base;
+  const right = !!pick.choice && item.result.winners.includes(pick.choice);
+  return (right ? item.points : -item.points) * mult;
 }
 
 export function isPickRight(item: SbItem, pick: SbPick, allPicks: SbPick[]): boolean | null {
