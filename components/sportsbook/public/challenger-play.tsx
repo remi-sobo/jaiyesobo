@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { SbItem, SbPick, SbPlayer } from "@/lib/sportsbook/types";
-import { CardHead, CardPrompt, ResultLine, TeamDot, isLocked, isWinningOption } from "../card-parts";
+import { FANTASY_RULES, type SbItem, type SbPick, type SbPlayer } from "@/lib/sportsbook/types";
+import { groupTiles, hasTiles } from "@/lib/sportsbook/tiles";
+import { CardHead, CardPrompt, ResultLine, TeamDot, isLocked, isWinningOption, tileStatus } from "../card-parts";
+import TileGrid from "../tiles";
 
 async function post(body: Record<string, unknown>): Promise<{ ok: boolean; error?: string; code?: string }> {
   const res = await fetch("/api/sportsbook", {
@@ -99,12 +101,14 @@ export function PlayBoard({
     return !!p && (p.choice !== null || p.guess !== null);
   };
   const done = items.filter((i) => picked(i.id)).length;
-  // Cards that still need an answer before Submit turns on. Started games don't count.
+  // Open cards with no answer yet. Skipping is fine: a skipped pick scores 0.
   const missing = items.filter((i) => Date.parse(i.locks_at) > now && !picked(i.id));
   const [submitting, setSubmitting] = useState(false);
+  const tiles = hasTiles(items);
 
   async function submit() {
-    if (!window.confirm("Lock in your picks? You can't change them after this.")) return;
+    const skip = missing.length ? ` You skipped ${missing.length}. Those score 0.` : "";
+    if (!window.confirm(`Lock in your picks?${skip} You can't change them after this.`)) return;
     setSubmitting(true);
     setError(null);
     const res = await post({ action: "submit", week });
@@ -124,14 +128,14 @@ export function PlayBoard({
     <div className="flex flex-col items-center gap-2">
       <button
         type="button"
-        disabled={missing.length > 0 || submitting}
+        disabled={done === 0 || submitting}
         onClick={submit}
         className="min-h-14 w-full max-w-[420px] bg-[var(--color-red)] px-6 font-[family-name:var(--font-jetbrains)] text-[0.8rem] uppercase tracking-[0.2em] text-[var(--color-black)] hover:bg-[var(--color-bone)] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-[var(--color-red)]"
       >
-        {submitting ? "Submitting…" : missing.length > 0 ? `${missing.length} ${missing.length === 1 ? "card" : "cards"} left to pick` : "Submit my picks"}
+        {submitting ? "Submitting…" : done === 0 ? "Make a pick first" : `Submit my ${done} ${done === 1 ? "pick" : "picks"}`}
       </button>
       <span className="text-[0.8rem] text-[var(--color-mute)]">
-        {missing.length > 0 ? "Pick them all, then submit." : "After you submit, no changes. No take backs."}
+        {missing.length > 0 ? `${missing.length} not picked yet. You can skip some, but skipped ones score 0.` : "After you submit, no changes. No take backs."}
       </span>
     </div>
   );
@@ -145,13 +149,29 @@ export function PlayBoard({
     router.refresh();
   }
 
+  const card = (item: SbItem) => (
+    <PlayCard
+      key={item.id}
+      item={item}
+      pick={mine(item.id)}
+      now={now}
+      saving={saving === item.id}
+      lockElsewhere={!!lockOn && lockOn !== item.id}
+      frozen={submitted}
+      needsPick={false}
+      onSave={(p) => save(item.id, p)}
+    />
+  );
+
   return (
     <div>
       <div className="mb-6 flex flex-col gap-2 border border-[var(--color-line-strong)] bg-[var(--color-off-black)] p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="font-[family-name:var(--font-fraunces)] text-xl font-black">Playing as {me.display_name}</div>
           <div className="mt-1 text-[0.85rem] text-[var(--color-mute)]">
-            {submitted ? "You're locked in. Good luck. You're gonna need it." : `${done} of ${items.length} picked. Pick them all, then hit Submit.`}
+            {submitted
+              ? "You're locked in. Good luck. You're gonna need it."
+              : `${done} of ${items.length} picked. ${tiles ? "Tap a tile to pick. " : ""}Hit Submit when you're done.`}
           </div>
         </div>
         <div className={`font-[family-name:var(--font-jetbrains)] text-[0.75rem] ${newCode ? "text-[var(--color-games-yellow)]" : "text-[var(--color-mute)]"}`}>
@@ -161,21 +181,30 @@ export function PlayBoard({
       </div>
       {error ? <p className="mb-4 border border-[var(--color-red)] px-3 py-2 text-[0.9rem] text-[var(--color-red-soft)]">{error}</p> : null}
       {submitted ? <div className="mb-6">{submitBlock}</div> : null}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {items.map((item) => (
-          <PlayCard
-            key={item.id}
-            item={item}
-            pick={mine(item.id)}
-            now={now}
-            saving={saving === item.id}
-            lockElsewhere={!!lockOn && lockOn !== item.id}
-            frozen={submitted}
-            needsPick={!submitted && missing.some((m) => m.id === item.id)}
-            onSave={(p) => save(item.id, p)}
-          />
-        ))}
-      </div>
+      {tiles ? (
+        <TileGrid
+          footer={submitted ? undefined : submitBlock}
+          tiles={groupTiles(items).map((g) => ({
+            category: g.category,
+            count: g.items.length,
+            done: g.items.filter((i) => picked(i.id)).length,
+            status: tileStatus(g.items, now),
+            content: (
+              <>
+                {g.category === "fantasy" ? (
+                  <p className="mb-4 font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.12em] text-[var(--color-mute)]">
+                    Fantasy points: {FANTASY_RULES}
+                  </p>
+                ) : null}
+                {error ? <p className="mb-4 border border-[var(--color-red)] px-3 py-2 text-[0.9rem] text-[var(--color-red-soft)]">{error}</p> : null}
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{g.items.map(card)}</div>
+              </>
+            ),
+          }))}
+        />
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{items.map(card)}</div>
+      )}
       <div className="mt-8">{submitBlock}</div>
       <button
         type="button"

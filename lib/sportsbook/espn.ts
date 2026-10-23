@@ -52,6 +52,46 @@ export type EspnGame = {
   postponed: boolean;
 };
 
+/** Extra scoreboard info used for drafting only. Not stored. */
+export type EspnGameInfo = {
+  /** Like "SA -3.5". Null when no line is posted yet. */
+  odds: string | null;
+  /** Points the favorite is giving, as a positive number. */
+  spread: number | null;
+  over_under: number | null;
+  /** National TV, like "ESPN" or "TNT". */
+  tv: string | null;
+  home_record: string | null;
+  away_record: string | null;
+};
+
+function parseInfo(e: unknown): EspnGameInfo {
+  const comp = obj(arr(obj(e).competitions)[0]);
+  const odds = obj(arr(comp.odds)[0]);
+  const details = typeof odds.details === "string" && odds.details !== "EVEN" ? odds.details : null;
+  const spreadNum = Number(odds.spread);
+  const ou = Number(odds.overUnder);
+  const national = arr(comp.broadcasts)
+    .map(obj)
+    .filter((b) => b.market === "national")
+    .flatMap((b) => arr(b.names).map(String));
+  const teams = arr(comp.competitors).map(obj);
+  const rec = (side: string) => {
+    const c = teams.find((t) => t.homeAway === side);
+    const all = arr(c?.records).map(obj);
+    const r = all.find((x) => x.type === "total" || x.name === "overall") ?? all[0];
+    return typeof r?.summary === "string" ? r.summary : null;
+  };
+  return {
+    odds: details,
+    spread: Number.isFinite(spreadNum) ? Math.abs(spreadNum) : odds.details === "EVEN" ? 0 : null,
+    over_under: Number.isFinite(ou) && ou > 0 ? ou : null,
+    tv: national.length ? national.join("/") : null,
+    home_record: rec("home"),
+    away_record: rec("away"),
+  };
+}
+
 function parseEvent(e: unknown): EspnGame | null {
   const ev = obj(e);
   const comp = obj(arr(ev.competitions)[0]);
@@ -81,16 +121,24 @@ function parseEvent(e: unknown): EspnGame | null {
 
 /** Games between two dates (YYYY-MM-DD, inclusive). ESPN takes one day per request. */
 export async function fetchGames(fromIso: string, toIso: string): Promise<EspnGame[]> {
+  return (await fetchGamesWithInfo(fromIso, toIso)).map((g) => g.game);
+}
+
+/** Same as fetchGames, plus odds, TV and records for the drafter. */
+export async function fetchGamesWithInfo(fromIso: string, toIso: string): Promise<Array<{ game: EspnGame; info: EspnGameInfo }>> {
   const days: string[] = [];
   for (let d = new Date(`${fromIso}T12:00:00Z`); d <= new Date(`${toIso}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + 1)) {
     days.push(d.toISOString().slice(0, 10).replaceAll("-", ""));
   }
-  const seen = new Map<string, EspnGame>();
+  const seen = new Map<string, { game: EspnGame; info: EspnGameInfo }>();
   const results = await Promise.all(
     days.map((day) => getJson(`${BASE}/scoreboard?dates=${day}&limit=100`).catch(() => null)),
   );
   for (const r of results) {
-    for (const g of arr(obj(r).events).map(parseEvent)) if (g) seen.set(g.game_id, g);
+    for (const e of arr(obj(r).events)) {
+      const game = parseEvent(e);
+      if (game) seen.set(game.game_id, { game, info: parseInfo(e) });
+    }
   }
   return [...seen.values()];
 }
@@ -101,6 +149,7 @@ const STAT_KEYS = {
   ast: "assists",
   stl: "steals",
   blk: "blocks",
+  tov: "turnovers",
   fg3: "threePointFieldGoalsMade-threePointFieldGoalsAttempted",
   min: "minutes",
 } as const;
@@ -138,6 +187,7 @@ export async function fetchBox(gameId: string): Promise<PlayerLine[]> {
         fg3m: fg3,
         stl: val(STAT_KEYS.stl),
         blk: val(STAT_KEYS.blk),
+        tov: val(STAT_KEYS.tov),
       });
     }
   }

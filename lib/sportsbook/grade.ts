@@ -4,7 +4,7 @@
  */
 
 import type { TeamCode } from "@/lib/nba/teams";
-import type { ItemResult, ItemSpec, PlayerRef, SbItem, SbPick, StatKey } from "./types";
+import type { ItemResult, ItemSpec, MostStat, PlayerRef, SbItem, SbPick, StatKey } from "./types";
 
 export type PlayerLine = {
   person_id: number;
@@ -17,7 +17,18 @@ export type PlayerLine = {
   fg3m: number;
   stl: number;
   blk: number;
+  /** Turnovers. 0 for games stored before migration 027. */
+  tov: number;
 };
+
+/** One decimal, so 52.3 shows like the apps do. */
+export function fantasyPoints(p: Pick<PlayerLine, "pts" | "reb" | "ast" | "stl" | "blk" | "tov">): number {
+  return Math.round((p.pts + 1.2 * p.reb + 1.5 * p.ast + 3 * p.stl + 3 * p.blk - (p.tov ?? 0)) * 10) / 10;
+}
+
+export function statValue(p: PlayerLine, stat: MostStat): number {
+  return stat === "fantasy" ? fantasyPoints(p) : p[stat];
+}
 
 export type GameBox = {
   game_id: string;
@@ -178,6 +189,8 @@ export function gradeItem(item: Pick<SbItem, "spec" | "options" | "locks_at">, c
       if (a.value === b.value) return { state: "void", display: `Tie. ${disp}` };
       return ok([a.value > b.value ? "a" : "b"], disp);
     }
+    case "most":
+      return gradeMost(spec, item.locks_at, ctx);
     case "yes_no": {
       const g = needGame(ctx, spec.player.game_id);
       if (g === "void") return { state: "void", display: "Game postponed" };
@@ -241,6 +254,45 @@ export function gradeItem(item: Pick<SbItem, "spec" | "options" | "locks_at">, c
       // Graded by hand from admin.
       return { state: "pending" };
   }
+}
+
+function gradeMost(spec: Extract<ItemSpec, { type: "most" }>, locksAt: string, ctx: GradeContext): GradeOutcome {
+  const values: number[] = [];
+  if (spec.scope === "game") {
+    for (const ref of spec.players) {
+      const g = needGame(ctx, ref.game_id);
+      if (g === "void") return { state: "void", display: "Game postponed" };
+      if (!g || g.players.length === 0) return { state: "pending" };
+      const p = findPlayer(g, ref);
+      if (!p || !p.played) return { state: "void", display: `${ref.name} didn't play` };
+      values.push(statValue(p, spec.stat));
+    }
+  } else {
+    // Week long: every game from the lock to Sunday. A missed game counts as 0.
+    const lockMs = Date.parse(locksAt);
+    const games = ctx.weekGames.filter((g) => Date.parse(g.tip_at) >= lockMs && !g.postponed);
+    for (const ref of spec.players) {
+      const theirs = games.filter((g) => g.home === ref.team || g.away === ref.team);
+      if (theirs.some((g) => g.status !== 3 || g.players.length === 0)) return { state: "pending" };
+      if (!ctx.weekOver && theirs.length === 0) return { state: "pending" };
+      let total = 0;
+      let played = 0;
+      for (const g of theirs) {
+        const p = findPlayer(g, ref);
+        if (p?.played) {
+          total += statValue(p, spec.stat);
+          played++;
+        }
+      }
+      if (played === 0) return { state: "void", display: `${ref.name} didn't play this week` };
+      values.push(Math.round(total * 10) / 10);
+    }
+  }
+  const disp = spec.players.map((p, i) => `${p.name} ${values[i]}`).join(", ") + (spec.scope === "week" ? " this week." : ".");
+  const max = Math.max(...values);
+  const winners = values.map((v, i) => (v === max ? String(i) : null)).filter((v): v is string => v !== null);
+  if (winners.length === spec.players.length) return { state: "void", display: `Tie. ${disp}` };
+  return ok(winners, disp, max);
 }
 
 /* Scoring */

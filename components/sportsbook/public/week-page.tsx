@@ -12,6 +12,10 @@ import { sportsbookEpisode } from "@/lib/content/episodes";
 import { pad } from "@/lib/content/format";
 import { scheduleLiveSync } from "@/lib/sportsbook/live";
 import { OpeningWeekBanner, PlayButton, SportsbookHero, Ticker } from "./hero";
+import TileGrid from "../tiles";
+import { groupTiles, hasTiles } from "@/lib/sportsbook/tiles";
+import { tileStatus } from "../card-parts";
+import { FANTASY_RULES } from "@/lib/sportsbook/types";
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
@@ -80,11 +84,40 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
         <div className="mt-[clamp(40px,6vw,72px)] grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
           <section>
             <Label>This week&apos;s picks</Label>
-            <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {view.items.map((item) => (
-                <PublicCard key={item.id} item={item} picks={view.picks} players={view.players} house={house} reactions={reactions} now={now} />
-              ))}
-            </div>
+            {hasTiles(view.items) ? (
+              <div className="mt-5">
+                <p className="mb-4 max-w-[60ch] text-[0.92rem] text-[var(--color-mute)]">
+                  {view.items.length} picks in {groupTiles(view.items).length} tiles. Tap one to see the picks and what me and my dad chose.
+                </p>
+                <TileGrid
+                  tiles={groupTiles(view.items).map((g) => ({
+                    category: g.category,
+                    count: g.items.length,
+                    status: tileStatus(g.items, now),
+                    content: (
+                      <>
+                        {g.category === "fantasy" ? (
+                          <p className="mb-4 font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.12em] text-[var(--color-mute)]">
+                            Fantasy points: {FANTASY_RULES}
+                          </p>
+                        ) : null}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          {g.items.map((item) => (
+                            <PublicCard key={item.id} item={item} picks={view.picks} players={view.players} house={house} reactions={reactions} now={now} />
+                          ))}
+                        </div>
+                      </>
+                    ),
+                  }))}
+                />
+              </div>
+            ) : (
+              <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {view.items.map((item) => (
+                  <PublicCard key={item.id} item={item} picks={view.picks} players={view.players} house={house} reactions={reactions} now={now} />
+                ))}
+              </div>
+            )}
           </section>
           <aside className="flex flex-col gap-8">
             {episode ? (

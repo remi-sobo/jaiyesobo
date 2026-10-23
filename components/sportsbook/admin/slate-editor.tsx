@@ -1,16 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import type { SbItem } from "@/lib/sportsbook/types";
+import { CATEGORIES, CATEGORY_INFO, categoryOf, type SbItem } from "@/lib/sportsbook/types";
 import { CardHead, CardPrompt, TeamDot } from "../card-parts";
+import { TILE_TONE } from "../tiles";
 import { useSbAction } from "./use-action";
 
 const btn =
   "min-h-10 border px-3 font-[family-name:var(--font-jetbrains)] text-[0.62rem] uppercase tracking-[0.15em] disabled:opacity-40";
 
-/** Monday: the AI draft, ready to swap, edit, add Jaiye's Prop, then open. */
+/**
+ * Sunday: the AI drafts six tiles of about 5 picks. Swap a pick, redo a whole
+ * tile, add Jaiye's Prop, then open the week.
+ */
 export default function SlateEditor({ week, items, status, now }: { week: number; items: SbItem[]; status: "none" | "draft"; now: number }) {
   const { run, busy, error } = useSbAction();
+  const [note, setNote] = useState<string | null>(null);
+  const groups = CATEGORIES.map((c) => ({ category: c, items: items.filter((i) => categoryOf(i) === c) }));
 
   return (
     <div>
@@ -18,10 +24,16 @@ export default function SlateEditor({ week, items, status, now }: { week: number
         <button
           type="button"
           disabled={!!busy}
-          onClick={() => run("draft", { week })}
+          onClick={async () => {
+            if (items.length && !window.confirm("Redraft every tile? All the AI picks get replaced. Jaiye's Props stay.")) return;
+            setNote(null);
+            const res = await run("draft", { week });
+            const failed = Array.isArray(res?.failed) ? (res.failed as string[]) : [];
+            if (failed.length) setNote(`These tiles didn't come back: ${failed.join(", ")}. Tap "Redo this tile" on each one.`);
+          }}
           className={`${btn} border-[var(--color-red)] bg-[var(--color-red)] text-[var(--color-black)]`}
         >
-          {busy === "draft" ? "The AI is building your slate…" : items.length ? "Redraft the whole slate" : "Draft this week with AI"}
+          {busy === "draft" ? "The AI is building all 6 tiles…" : items.length ? "Redraft every tile" : "Draft this week with AI"}
         </button>
         {items.length > 0 ? (
           <button
@@ -38,15 +50,46 @@ export default function SlateEditor({ week, items, status, now }: { week: number
         </span>
       </div>
       {busy === "draft" ? (
-        <p className="mb-6 text-[0.9rem] text-[var(--color-warm-mute)]">Pulling the schedule and rosters, then picking matchups. Takes about 30 seconds.</p>
+        <p className="mb-6 text-[0.9rem] text-[var(--color-warm-mute)]">
+          Pulling the schedule, lines and rosters, then building 6 tiles at once. Takes about a minute. Keep this page open.
+        </p>
       ) : null}
       {error ? <p className="mb-4 border border-[var(--color-red)] px-3 py-2 text-[0.9rem] text-[var(--color-red-soft)]">{error}</p> : null}
+      {note ? <p className="mb-4 border border-[var(--color-amber)] px-3 py-2 text-[0.9rem] text-[var(--color-amber)]">{note}</p> : null}
 
-      <div className="grid grid-cols-1 gap-4 @min-[900px]:grid-cols-2">
-        {items.map((item) => (
-          <DraftCard key={item.id} item={item} now={now} busy={busy} run={run} />
-        ))}
-      </div>
+      {items.length > 0
+        ? groups.map((g) => (
+            <section key={g.category} className="mb-10">
+              <div className="mb-3 flex flex-wrap items-end gap-3 border-b border-[var(--color-line)] pb-2" style={{ borderBottomColor: TILE_TONE[g.category] }}>
+                <div className="min-w-0 flex-1">
+                  <h2 className="font-[family-name:var(--font-fraunces)] text-xl font-black">
+                    {CATEGORY_INFO[g.category].title}{" "}
+                    <span className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] font-normal uppercase tracking-[0.15em] text-[var(--color-warm-mute)]">
+                      {g.items.length} picks · {CATEGORY_INFO[g.category].points}
+                    </span>
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  disabled={!!busy}
+                  onClick={() => run("draft_tile", { week, category: g.category }, `tile:${g.category}`)}
+                  className={`${btn} border-[var(--color-line-strong)]`}
+                >
+                  {busy === `tile:${g.category}` ? "Redoing…" : g.items.length ? "Redo this tile" : "Draft this tile"}
+                </button>
+              </div>
+              {g.items.length ? (
+                <div className="grid grid-cols-1 gap-4 @min-[900px]:grid-cols-2">
+                  {g.items.map((item) => (
+                    <DraftCard key={item.id} item={item} now={now} busy={busy} run={run} />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[0.85rem] text-[var(--color-warm-mute)]">Empty. Tap &quot;Draft this tile&quot;.</p>
+              )}
+            </section>
+          ))
+        : null}
 
       <AddProp week={week} run={run} busy={busy} />
     </div>

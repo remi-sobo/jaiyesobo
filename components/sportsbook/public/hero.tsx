@@ -111,7 +111,7 @@ export function Ticker({ items }: { items: SbItem[] }) {
   ));
   return (
     <div className="overflow-hidden border-x border-b border-[var(--color-line-strong)] bg-[#050505] py-2.5 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.12em]">
-      <div className="flex w-max motion-safe:animate-[sb-ticker_60s_linear_infinite]">
+      <div className="flex w-max motion-safe:animate-[sb-ticker_60s_linear_infinite]" style={{ animationDuration: `${Math.max(60, items.length * 6)}s` }}>
         {run}
         <span aria-hidden className="flex">
           {run}

@@ -73,3 +73,11 @@ export function Who({ label, tone }: { label: string; tone: "jaiye" | "remi" | "
 export function Panel({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <div className={`border border-[var(--color-line-strong)] bg-[var(--color-off-black)] p-4 ${className}`}>{children}</div>;
 }
+
+/** The little line under a tile: when it starts, how many are done, or Final. */
+export function tileStatus(items: SbItem[], now: number): string {
+  const open = items.filter((i) => !isLocked(i, now)).sort((a, b) => a.locks_at.localeCompare(b.locks_at));
+  if (open.length) return `Starts ${tipLabel(open[0].locks_at)}`;
+  const done = items.filter((i) => i.status !== "open").length;
+  return done === items.length ? "Final" : done ? `${done} final` : "Playing";
+}

@@ -1,8 +1,8 @@
 import { createServiceClient } from "@/lib/supabase/server";
-import { buildContext, draftOne, draftSlate, half, writeRecap, type DraftItem } from "./draft";
+import { buildContext, draftOne, draftTile, draftTiles, half, writeRecap, type DraftItem } from "./draft";
 import { getItems, getPicks, getPlayers, getSubmissions, getWeek, gradeWeek, nightlySync, weekBoard } from "./data";
 import { pickPoints } from "./grade";
-import type { ItemOption, SbItem, SbPick, SbWeek } from "./types";
+import { CATEGORIES, categoryOf, type Category, type ItemOption, type SbItem, type SbPick, type SbWeek } from "./types";
 import { SB_SEASON, currentWeekNumber, weekWindow } from "./weeks";
 
 const db = () => createServiceClient();
@@ -22,8 +22,19 @@ async function ensureWeek(n: number): Promise<SbWeek> {
   return data as SbWeek;
 }
 
+/** Tiles in order, then by lock time inside each tile. */
 function rows(weekId: string, items: DraftItem[], startSort = 0) {
-  return items.map((i, k) => ({ ...i, week_id: weekId, sort: startSort + k }));
+  const rank = (i: DraftItem) => (i.category ? CATEGORIES.indexOf(i.category) : 99);
+  return [...items]
+    .sort((a, b) => rank(a) - rank(b) || a.locks_at.localeCompare(b.locks_at))
+    .map((i, k) => ({ ...i, week_id: weekId, sort: startSort + k }));
+}
+
+async function resort(weekId: string): Promise<void> {
+  const items = await getItems(weekId);
+  const rank = (i: SbItem) => CATEGORIES.indexOf(categoryOf(i));
+  const sorted = [...items].sort((a, b) => rank(a) - rank(b) || a.locks_at.localeCompare(b.locks_at));
+  await Promise.all(sorted.map((i, k) => (i.sort === k ? null : db().from("sb_items").update({ sort: k }).eq("id", i.id))));
 }
 
 async function recentPrompts(n: number): Promise<string[]> {
@@ -31,25 +42,48 @@ async function recentPrompts(n: number): Promise<string[]> {
   return prev ? (await getItems(prev.id)).map((i) => i.prompt) : [];
 }
 
-/** AI drafts (or redrafts) a week's slate. Only while the week is a draft. */
-export async function draftWeek(n: number): Promise<number> {
+/**
+ * AI drafts (or redrafts) every tile, about 30 picks. Only while the week is a
+ * draft. Jaiye's Props stay. Tiles that fail come back by name to redo alone.
+ */
+export async function draftWeek(n: number): Promise<{ count: number; failed: string[] }> {
   const week = await ensureWeek(n);
   if (week.status !== "draft") throw new ActionError("This week is already open.");
   const ctx = await buildContext(n);
-  const items = await draftSlate(ctx, await recentPrompts(n));
+  const { items, failed } = await draftTiles(ctx, await recentPrompts(n));
   const supa = db();
   const { error: delErr } = await supa.from("sb_items").delete().eq("week_id", week.id).neq("type", "custom");
   if (delErr) throw delErr;
-  const { data: kept } = await supa.from("sb_items").select("id").eq("week_id", week.id);
-  const { error } = await supa.from("sb_items").insert(rows(week.id, items, (kept ?? []).length));
+  const { error } = await supa.from("sb_items").insert(rows(week.id, items));
   if (error) throw error;
+  await resort(week.id);
+  return { count: items.length, failed };
+}
+
+/** Redo one tile: its AI picks are replaced, everything else stays. */
+export async function draftOneTile(n: number, category: Category): Promise<number> {
+  const week = await ensureWeek(n);
+  if (week.status !== "draft") throw new ActionError("This week is already open.");
+  const ctx = await buildContext(n);
+  const current = await getItems(week.id);
+  const others = current.filter((i) => categoryOf(i) !== category).map((i) => i.prompt);
+  const items = await draftTile(ctx, category, [...others, ...(await recentPrompts(n))]);
+  const supa = db();
+  const drop = current.filter((i) => categoryOf(i) === category && i.type !== "custom").map((i) => i.id);
+  if (drop.length) {
+    const { error } = await supa.from("sb_items").delete().in("id", drop);
+    if (error) throw error;
+  }
+  const { error } = await supa.from("sb_items").insert(rows(week.id, items, current.length));
+  if (error) throw error;
+  await resort(week.id);
   return items.length;
 }
 
 async function draftItemAndWeek(itemId: string): Promise<{ item: SbItem; week: SbWeek }> {
   const { data, error } = await db()
     .from("sb_items")
-    .select("id, week_id, sort, type, prompt, note, options, points, spec, locks_at, status, result, sb_weeks!inner(id, season, week_number, starts_on, ends_on, status, recap, finalized_at)")
+    .select("id, week_id, sort, category, type, prompt, note, options, points, spec, locks_at, status, result, sb_weeks!inner(id, season, week_number, starts_on, ends_on, status, recap, finalized_at)")
     .eq("id", itemId)
     .single();
   if (error || !data) throw new ActionError("Pick not found.");
@@ -63,10 +97,10 @@ export async function regenerateItem(itemId: string): Promise<void> {
   if (item.type === "custom") throw new ActionError("Edit Jaiye's Prop by hand instead.");
   const ctx = await buildContext(week.week_number);
   const avoid = [...(await getItems(week.id)).map((i) => i.prompt), ...(await recentPrompts(week.week_number))];
-  const next = await draftOne(ctx, avoid, item.type);
+  const next = await draftOne(ctx, avoid, categoryOf(item), item.type);
   const { error } = await db()
     .from("sb_items")
-    .update({ type: next.type, prompt: next.prompt, note: next.note, options: next.options, points: next.points, spec: next.spec, locks_at: next.locks_at })
+    .update({ category: next.category, type: next.type, prompt: next.prompt, note: next.note, options: next.options, points: next.points, spec: next.spec, locks_at: next.locks_at })
     .eq("id", itemId);
   if (error) throw error;
 }
@@ -110,10 +144,12 @@ export async function addProp(n: number, input: { prompt: string; options: strin
   if (opts.length < 2) throw new ActionError("Give at least 2 answers.");
   const locks = new Date(input.locks_at);
   if (Number.isNaN(locks.getTime()) || locks <= new Date()) throw new ActionError("Pick a lock time in the future.");
-  const count = (await getItems(week.id)).length;
+  const existing = await getItems(week.id);
+  const tiles = existing.some((i) => i.category !== null);
   const { error } = await db().from("sb_items").insert({
     week_id: week.id,
-    sort: count,
+    sort: existing.length,
+    category: tiles ? "wild" : null,
     type: "custom",
     prompt,
     note: "Written by Jaiye.",
@@ -123,6 +159,7 @@ export async function addProp(n: number, input: { prompt: string; options: strin
     locks_at: locks.toISOString(),
   });
   if (error) throw error;
+  if (tiles) await resort(week.id);
 }
 
 export async function openWeek(n: number): Promise<void> {
@@ -179,21 +216,15 @@ export async function savePick(
 }
 
 /**
- * Jaiye or Remi submits: every pick for the week locks for good and goes public.
- * Every card that hasn't tipped off yet needs an answer first.
+ * Submit: every pick for the week locks for good and goes public. Skipping
+ * is fine (a skipped pick scores 0), but there has to be at least one pick.
  */
 export async function submitPicks(n: number, playerId: string): Promise<void> {
   const week = await getWeek(n);
   if (!week || week.status !== "open") throw new ActionError("This week isn't open.");
   const items = await getItems(week.id);
   const picks = (await getPicks(items.map((i) => i.id))).filter((p) => p.player_id === playerId);
-  const now = Date.now();
-  const missing = items.filter((i) => {
-    if (Date.parse(i.locks_at) <= now) return false;
-    const p = picks.find((x) => x.item_id === i.id);
-    return !p || (p.choice === null && p.guess === null);
-  });
-  if (missing.length) throw new ActionError(`Pick ${missing.length} more ${missing.length === 1 ? "card" : "cards"} first.`);
+  if (!picks.some((p) => p.choice !== null || p.guess !== null)) throw new ActionError("Make at least one pick first.");
   const { error } = await db().from("sb_submissions").insert({ week_id: week.id, player_id: playerId });
   if (error) {
     if (error.code === "23505") return;

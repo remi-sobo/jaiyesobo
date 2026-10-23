@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/session";
 import { createServiceClient } from "@/lib/supabase/server";
 import { isTeamCode } from "@/lib/nba/teams";
+import { CATEGORIES } from "@/lib/sportsbook/types";
 import {
   ActionError,
   addProp,
+  draftOneTile,
   draftWeek,
   finalizeWeek,
   gradeByHand,
@@ -21,7 +23,7 @@ import {
 import { checkDisplayName, getHousePlayers } from "@/lib/sportsbook/players";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 type Body = Record<string, unknown>;
 const str = (v: unknown) => (typeof v === "string" ? v : "");
@@ -47,7 +49,12 @@ export async function POST(req: Request) {
     switch (body.action) {
       case "draft":
         if (!week) break;
-        return NextResponse.json({ ok: true, count: await draftWeek(week) });
+        return NextResponse.json({ ok: true, ...(await draftWeek(week)) });
+      case "draft_tile": {
+        const cat = CATEGORIES.find((c) => c === body.category);
+        if (!week || !cat) break;
+        return NextResponse.json({ ok: true, count: await draftOneTile(week, cat) });
+      }
       case "regenerate":
         await regenerateItem(str(body.item_id));
         return NextResponse.json({ ok: true });

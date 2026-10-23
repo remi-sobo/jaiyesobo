@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import type { SbItem, SbPick } from "@/lib/sportsbook/types";
-import { CardHead, CardPrompt, ResultLine, TeamDot, isLocked, isWinningOption } from "../card-parts";
+import { FANTASY_RULES, type SbItem, type SbPick } from "@/lib/sportsbook/types";
+import { groupTiles, hasTiles } from "@/lib/sportsbook/tiles";
+import { CardHead, CardPrompt, ResultLine, TeamDot, isLocked, isWinningOption, tileStatus } from "../card-parts";
+import TileGrid from "../tiles";
 import { useSbAction } from "./use-action";
 
 type Side = "jaiye" | "remi";
@@ -31,12 +33,12 @@ export default function SharedPicks({
   const lockItem = (side: Side) => picks.find((p) => p.player_id === ids[side] && p.is_lock)?.item_id ?? null;
 
   const isSubmitted = (side: Side) => submitted.includes(ids[side]);
-  const left = (side: Side) =>
-    items.filter((i) => {
-      if (Date.parse(i.locks_at) <= now) return false;
-      const p = picks.find((x) => x.item_id === i.id && x.player_id === ids[side]);
-      return !p || (p.choice === null && p.guess === null);
-    }).length;
+  const has = (side: Side, itemId: string) => {
+    const p = picks.find((x) => x.item_id === itemId && x.player_id === ids[side]);
+    return !!p && (p.choice !== null || p.guess !== null);
+  };
+  const left = (side: Side) => items.filter((i) => Date.parse(i.locks_at) > now && !has(side, i.id)).length;
+  const made = (side: Side) => items.filter((i) => has(side, i.id)).length;
 
   const submitBar = (
     <div className="grid grid-cols-1 gap-3 @min-[600px]:grid-cols-2">
@@ -49,9 +51,10 @@ export default function SharedPicks({
           <button
             key={side}
             type="button"
-            disabled={!!busy || left(side) > 0}
+            disabled={!!busy || made(side) === 0}
             onClick={() => {
-              if (window.confirm(`Submit ${SIDE_NAME[side]}'s picks? They lock for the week and go on the public page.`)) {
+              const skip = left(side) ? ` ${left(side)} skipped, those score 0.` : "";
+              if (window.confirm(`Submit ${SIDE_NAME[side]}'s picks?${skip} They lock for the week and go on the public page.`)) {
                 void run("submit", { week, player: side }, `submit:${side}`);
               }
             }}
@@ -61,9 +64,9 @@ export default function SharedPicks({
           >
             {busy === `submit:${side}`
               ? "Submitting…"
-              : left(side) > 0
-                ? `${SIDE_NAME[side]}: ${left(side)} ${left(side) === 1 ? "card" : "cards"} left to pick`
-                : `Submit ${SIDE_NAME[side]}'s picks`}
+              : made(side) === 0
+                ? `${SIDE_NAME[side]}: no picks yet`
+                : `Submit ${SIDE_NAME[side]}'s ${made(side)} ${made(side) === 1 ? "pick" : "picks"}${left(side) ? ` (${left(side)} skipped)` : ""}`}
           </button>
         ),
       )}
@@ -74,11 +77,39 @@ export default function SharedPicks({
     <div>
       {error ? <p className="mb-4 border border-[var(--color-red)] px-3 py-2 text-[0.9rem] text-[var(--color-red-soft)]">{error}</p> : null}
       <div className="mb-5">{submitBar}</div>
-      <div className="grid grid-cols-1 gap-4 @min-[900px]:grid-cols-2">
-        {items.map((item) => (
-          <SharedCard key={item.id} item={item} picks={picks} ids={ids} now={now} busy={busy} run={run} lockItem={lockItem} isSubmitted={isSubmitted} />
-        ))}
-      </div>
+      {hasTiles(items) ? (
+        <TileGrid
+          footer={submitBar}
+          tiles={groupTiles(items).map((g) => ({
+            category: g.category,
+            count: g.items.length,
+            // A tile counts as done when both have picked every card in it.
+            done: g.items.filter((i) => has("jaiye", i.id) && has("remi", i.id)).length,
+            status: `J ${g.items.filter((i) => has("jaiye", i.id)).length} · R ${g.items.filter((i) => has("remi", i.id)).length} · ${tileStatus(g.items, now)}`,
+            content: (
+              <>
+                {g.category === "fantasy" ? (
+                  <p className="mb-4 font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.12em] text-[var(--color-warm-mute)]">
+                    Fantasy points: {FANTASY_RULES}
+                  </p>
+                ) : null}
+                {error ? <p className="mb-4 border border-[var(--color-red)] px-3 py-2 text-[0.9rem] text-[var(--color-red-soft)]">{error}</p> : null}
+                <div className="grid grid-cols-1 gap-4 @min-[760px]:grid-cols-2">
+                  {g.items.map((item) => (
+                    <SharedCard key={item.id} item={item} picks={picks} ids={ids} now={now} busy={busy} run={run} lockItem={lockItem} isSubmitted={isSubmitted} />
+                  ))}
+                </div>
+              </>
+            ),
+          }))}
+        />
+      ) : (
+        <div className="grid grid-cols-1 gap-4 @min-[900px]:grid-cols-2">
+          {items.map((item) => (
+            <SharedCard key={item.id} item={item} picks={picks} ids={ids} now={now} busy={busy} run={run} lockItem={lockItem} isSubmitted={isSubmitted} />
+          ))}
+        </div>
+      )}
       <div className="mt-5">{submitBar}</div>
     </div>
   );

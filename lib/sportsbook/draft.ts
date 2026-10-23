@@ -10,14 +10,30 @@ import { generateObject, generateText } from "ai";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/server";
 import { TEAMS, isTeamCode, type TeamCode } from "@/lib/nba/teams";
-import { fetchRoster, type RosterPlayer } from "./espn";
-import { getGamesBetween, syncGames } from "./data";
-import { DEFAULT_POINTS, ITEM_TYPE_LABEL, STAT_LABEL, type ItemOption, type ItemSpec, type ItemType, type PlayerRef, type StatKey } from "./types";
-import { tipLabel, weekBounds, weekWindow, type WeekWindow } from "./weeks";
+import { fetchGamesWithInfo, fetchRoster, type EspnGameInfo, type RosterPlayer } from "./espn";
+import { getGamesBetween, upsertGames } from "./data";
+import { fantasyPoints } from "./grade";
+import {
+  CATEGORY_INFO,
+  DEFAULT_POINTS,
+  MOST_STAT_LABEL,
+  STAT_LABEL,
+  categoryPoints,
+  CATEGORIES,
+  type Category,
+  type ItemOption,
+  type ItemSpec,
+  type ItemType,
+  type MostStat,
+  type PlayerRef,
+  type StatKey,
+} from "./types";
+import { pacificDate, tipLabel, weekBounds, weekWindow, type WeekWindow } from "./weeks";
 
 const MODELS = ["claude-sonnet-5-5", "claude-sonnet-4-6"];
 
 export type DraftItem = {
+  category: Category | null;
   type: ItemType;
   prompt: string;
   note: string | null;
@@ -29,13 +45,25 @@ export type DraftItem = {
 
 type Game = { game_id: string; tip_at: string; home: TeamCode; away: TeamCode };
 
-type PlayerInfo = RosterPlayer & { gp: number; pts: number; reb: number; ast: number; fg3m: number; last5: number | null };
+type PlayerInfo = RosterPlayer & {
+  gp: number;
+  pts: number;
+  reb: number;
+  ast: number;
+  fg3m: number;
+  stl: number;
+  blk: number;
+  fpts: number;
+  last5: number | null;
+};
 
 export type SlateContext = {
   week: WeekWindow;
   games: Game[];
   players: Map<number, PlayerInfo>;
   records: Map<TeamCode, { w: number; l: number }>;
+  /** Odds, TV and ESPN records by game id, when ESPN has them. */
+  info: Map<string, EspnGameInfo>;
   favorites: { teams: TeamCode[]; players: string[] };
 };
 
@@ -65,7 +93,9 @@ export const half = (n: number) => Math.floor(n) + 0.5;
 export async function buildContext(weekNumber: number, now = new Date()): Promise<SlateContext> {
   const week = weekWindow(weekNumber);
   const { start, end } = weekBounds(week);
-  await syncGames(week.starts_on, week.ends_on);
+  const fresh = await fetchGamesWithInfo(week.starts_on, week.ends_on);
+  await upsertGames(fresh.map((f) => f.game));
+  const info = new Map(fresh.map((f) => [f.game.game_id, f.info]));
   const soon = new Date(now.getTime() + 30 * 60_000);
   const games = (await getGamesBetween(start, end))
     .filter((g) => !g.postponed && new Date(g.tip_at) > soon)
@@ -76,14 +106,15 @@ export async function buildContext(weekNumber: number, now = new Date()): Promis
 
   const db = createServiceClient();
   const ids = rosters.map((p) => p.person_id);
-  const lines: Array<{ person_id: number; played: boolean; pts: number; reb: number; ast: number; fg3m: number; game_id: string }> = [];
+  type Line = { person_id: number; played: boolean; pts: number; reb: number; ast: number; fg3m: number; stl: number; blk: number; tov: number; game_id: string };
+  const lines: Line[] = [];
   for (let i = 0; i < ids.length; i += 200) {
     const { data } = await db
       .from("nba_player_games")
-      .select("person_id, played, pts, reb, ast, fg3m, game_id")
+      .select("person_id, played, pts, reb, ast, fg3m, stl, blk, tov, game_id")
       .in("person_id", ids.slice(i, i + 200))
       .eq("played", true);
-    lines.push(...((data ?? []) as typeof lines));
+    lines.push(...((data ?? []) as Line[]));
   }
   const { data: done } = await db.from("nba_games").select("game_id, tip_at, home, away, home_score, away_score").eq("status", 3);
   const order = new Map((done ?? []).map((g) => [g.game_id, g.tip_at as string]));
@@ -94,7 +125,7 @@ export async function buildContext(weekNumber: number, now = new Date()): Promis
       .filter((l) => Number(l.person_id) === p.person_id)
       .sort((a, b) => (order.get(b.game_id) ?? "").localeCompare(order.get(a.game_id) ?? ""));
     const gp = mine.length;
-    const avg = (k: "pts" | "reb" | "ast" | "fg3m") => (gp ? r1(mine.reduce((s, l) => s + l[k], 0) / gp) : 0);
+    const avg = (k: "pts" | "reb" | "ast" | "fg3m" | "stl" | "blk") => (gp ? r1(mine.reduce((s, l) => s + l[k], 0) / gp) : 0);
     const last = mine.slice(0, 5);
     players.set(p.person_id, {
       ...p,
@@ -103,6 +134,9 @@ export async function buildContext(weekNumber: number, now = new Date()): Promis
       reb: avg("reb"),
       ast: avg("ast"),
       fg3m: avg("fg3m"),
+      stl: avg("stl"),
+      blk: avg("blk"),
+      fpts: gp ? r1(mine.reduce((s, l) => s + fantasyPoints(l), 0) / gp) : 0,
       last5: last.length ? r1(last.reduce((s, l) => s + l.pts, 0) / last.length) : null,
     });
   }
@@ -121,28 +155,42 @@ export async function buildContext(weekNumber: number, now = new Date()): Promis
   }
 
   const s = await getSettings();
-  return { week, games, players, records, favorites: { teams: s.fav_teams, players: s.fav_players } };
+  return { week, games, players, records, info, favorites: { teams: s.fav_teams, players: s.fav_players } };
+}
+
+/** Games the team still plays this week, from the drafting window. */
+function gamesLeft(ctx: SlateContext, team: TeamCode): number {
+  return ctx.games.filter((g) => g.home === team || g.away === team).length;
 }
 
 function contextText(ctx: SlateContext, avoid: string[]): string {
-  const rec = (t: TeamCode) => {
+  const rec = (t: TeamCode, espn: string | null | undefined) => {
+    if (espn) return espn;
     const r = ctx.records.get(t);
     return r ? `${r.w}-${r.l}` : "0-0";
   };
   const games = ctx.games
-    .map((g) => `${g.game_id} | ${tipLabel(g.tip_at)} PT | ${g.away} (${rec(g.away)}) at ${g.home} (${rec(g.home)})`)
+    .map((g) => {
+      const i = ctx.info.get(g.game_id);
+      const extra = [i?.odds ? `line ${i.odds}` : null, i?.over_under ? `total ${i.over_under}` : null, i?.tv ? `national TV ${i.tv}` : null]
+        .filter(Boolean)
+        .join(", ");
+      return `${g.game_id} | ${pacificDate(new Date(g.tip_at))} ${tipLabel(g.tip_at)} PT | ${g.away} (${rec(g.away, i?.away_record)}) at ${g.home} (${rec(g.home, i?.home_record)})${extra ? ` | ${extra}` : ""}`;
+    })
     .join("\n");
+  const teams = [...new Set(ctx.games.flatMap((g) => [g.home, g.away]))].sort();
+  const perTeam = teams.map((t) => `${t} ${gamesLeft(ctx, t)}`).join(", ");
   const byTeam = new Map<TeamCode, PlayerInfo[]>();
   for (const p of ctx.players.values()) byTeam.set(p.team, [...(byTeam.get(p.team) ?? []), p]);
   const rosters = [...byTeam.entries()]
     .map(([team, ps]) => {
       const top = ps
         .filter((p) => !p.injured)
-        .sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name))
+        .sort((a, b) => b.fpts - a.fpts || b.pts - a.pts || a.name.localeCompare(b.name))
         .slice(0, 9)
         .map((p) =>
           p.gp
-            ? `${p.person_id} ${p.name} ${p.position}: ${p.gp}gp ${p.pts}pts ${p.reb}reb ${p.ast}ast ${p.fg3m}3pm${p.last5 !== null ? ` last5 ${p.last5}pts` : ""}`
+            ? `${p.person_id} ${p.name} ${p.position}: ${p.gp}gp ${p.pts}pts ${p.reb}reb ${p.ast}ast ${p.fg3m}3pm ${p.stl}stl ${p.blk}blk ${p.fpts}fantasy${p.last5 !== null ? ` last5 ${p.last5}pts` : ""}`
             : `${p.person_id} ${p.name} ${p.position}: no games yet`,
         )
         .join("\n  ");
@@ -151,28 +199,32 @@ function contextText(ctx: SlateContext, avoid: string[]): string {
     .join("\n");
   return `WEEK ${ctx.week.week_number} (${ctx.week.starts_on} to ${ctx.week.ends_on}).
 
-GAMES (id | tip | matchup with records):
+GAMES (id | date and tip | matchup with records | line, total and national TV when posted):
 ${games}
 
-ROSTERS (person_id name position: season averages). Injured players are left out.
+GAMES LEFT THIS WEEK PER TEAM: ${perTeam}
+
+ROSTERS (person_id name position: this season's averages; fantasy = points + 1.2 reb + 1.5 ast + 3 stl + 3 blk - turnovers). Injured players are left out.
 ${rosters}
 
 JAIYE'S FAVORITE TEAMS: ${ctx.favorites.teams.join(", ") || "none"}
 JAIYE'S FAVORITE PLAYERS: ${ctx.favorites.players.join(", ") || "none"}
 
-AVOID REPEATING THESE (recent prompts):
+ALREADY ON THE SLATE OR USED LAST WEEK (don't repeat these):
 ${avoid.join("\n") || "none"}`;
 }
 
-const SYSTEM = `You build the weekly slate for the Sobo Sportsbook, a no-money NBA pick'em between Jaiye and his dad Remi (plus friends). Always call them Jaiye and Remi. Make it fun, varied and fair, like the best prop menus on real betting apps, but kid friendly.
+const VOICE = `VOICE: You are writing as Jaiye, a confident 9 year old Black kid from East Palo Alto who loves hoops. Short sentences. Simple words a 4th grader uses. Swagger and confidence, playful trash talk, but never mean and never a caricature: no forced slang, at most one slang word. Sounds like a kid texting his friends, not a TV announcer or a grown up. No words like slate, matchup narrative, storyline, compelling, showdown, clash, or poised.`;
 
-Item types you can use:
+const SYSTEM = `You build picks for the Sobo Sportsbook, a no-money NBA pick'em between Jaiye and his dad Remi (plus friends). Always call them Jaiye and Remi. Make it fun, varied and fair, like the best prop menus on real betting apps, but kid friendly.
+
+Item types you can use (each tile tells you which ones it allows):
 - winner: who wins a game. Needs game_id.
 - spread: does "team" win by more than "line"? Use the favorite. Needs game_id, team, line.
 - total: game total points over/under "line". Needs game_id, line.
 - team_total: one team's points over/under "line". Needs game_id, team, line.
 - player_ou: a player's stat over/under "line". Needs game_id, player (person_id, name, team), stat, line.
-- h2h: which of two players gets more of a stat. Needs players (2, each with person_id, name, team, game_id), stat. Pick two stars with similar averages.
+- most: which player gets the most of a stat. Needs players (2 to 4, each with person_id, name, team, game_id), stat ("pts", "reb", "ast", "fg3m", "stl", "blk" or "fantasy") and scope. scope "game": each player's stat in the game you attach them to. scope "week": each player's total over all their games this week, so their teams must have the SAME number of games left (see GAMES LEFT THIS WEEK PER TEAM).
 - yes_no: needs game_id, player, check ("triple_double", "double_double", or "at_least" with stat and threshold). Make it about 30 to 50 percent likely.
 - margin: how much does "team" (the favorite) win by: 1 to 5, 6 to 10, 11+, or does the other team win. Needs game_id, team.
 - week_wins: how many games "team" wins this week. Needs team (one with 3 or more games this week).
@@ -182,25 +234,36 @@ Item types you can use:
 
 Rules:
 - Use ONLY game ids, teams and person_ids from the data. Never invent a player. A player must play in the game you attach them to.
-- Lines come from the numbers: player lines near their season or last 5 average, spreads from records and home court (about 2.5 points), totals around 215 to 235 unless the data says otherwise. Every line ends in .5.
-- Early in the season (players with no games yet) lean on winner, h2h, week_wins and weekly_leader, and set player lines from what you know about last season.
+- It is early in the season, so records are small. Also use what you know about how good teams were last season and their offseason moves.
+- Lines come from the numbers: player lines near their season or last 5 average, spreads from the posted line or from team strength and home court (about 2.5 points), totals from the posted total or around 215 to 235. Every line ends in .5.
 - Spread items across different days of the week so there is something to watch most nights.
 - Feature Jaiye's favorite teams and players when they play, but not every item.
-- prompt: the question on the card, short and punchy, no more than 90 characters. Plain words, like "Lakers or Warriors?" or "Will Wemby get 12+ rebounds?"
+- prompt: the question on the card, short and punchy, no more than 90 characters. Plain words, like "Knicks or Celtics?" or "Who gets more boards, Sabonis or Gobert?"
 - note: one line from Jaiye about the pick, no more than 120 characters, like "Wemby is a cheat code on the boards." No money talk.
 - Never use em dashes, en dashes or double hyphens (--).
-- VOICE: You are writing as Jaiye, a confident 9 year old Black kid from East Palo Alto who loves hoops. Short sentences. Simple words a 4th grader uses. Swagger and confidence, playful trash talk, but never mean and never a caricature: no forced slang, at most one slang word. Sounds like a kid texting his friends, not a TV announcer or a grown up. No words like slate, matchup narrative, storyline, compelling, showdown, clash, or poised.`;
+- ${VOICE}`;
+
+/** What each tile asks the model for. */
+const TILE_ASK: Record<Category, string> = {
+  matchups: `TILE: Big Matchups. Write 7 "winner" items, each a different game. Only the best, closest games of the week: two good teams that are close in strength, where you really don't know who wins. Never a good team against a bad team. If a line is posted, stay under 6 points. National TV games get a bump. Spread them across the week. prompt like "Knicks or Celtics?". note says why it's close.`,
+  battles: `TILE: Player Battles. Write 7 "most" items with exactly 2 players each. Two players with close averages in that stat, so it's a real coin flip. Mix the stats: no more than 2 about points, and use rebounds, assists, 3s, and blocks or steals too. Make 2 of them scope "week" (who gets more this week) with players whose teams have the same number of games left; the prompt should say "this week". The rest are scope "game", and the two players should play on the same night (same game is best). Use different players in every item.`,
+  fantasy: `TILE: Fantasy Showdown. Write 7 "most" items with stat "fantasy" and 3 or 4 players each. Stars with close fantasy averages, all playing on the same night (scope "game"), different nights for different items. You may make 1 of them scope "week" if all the players' teams have the same number of games left. prompt like "Who has the biggest fantasy night Tuesday?" Use different players in every item.`,
+  higher_lower: `TILE: Higher or Lower. Write 7 items: mostly "player_ou" (mix points, rebounds, assists and 3s, not all points), plus at most 1 "team_total" or "total". Lines close to the average so it's a real 50/50.`,
+  yes_no: `TILE: Yes or No. Write 7 items: mostly "yes_no" (double doubles, triple doubles, "at_least" big numbers like 35 points, 15 rebounds, 5 threes, 4 blocks), plus at most 1 "spread". About 30 to 50 percent likely each.`,
+  wild: `TILE: Wild Cards. Write exactly 1 "upset", exactly 1 "closest", then 4 more from "week_wins", "weekly_leader" and "margin" (at least one of each if you can).`,
+};
 
 const PlayerSchema = z.object({ person_id: z.number(), name: z.string(), team: z.string(), game_id: z.string().optional() });
 
 const AiItem = z.object({
-  type: z.enum(["winner", "spread", "total", "team_total", "player_ou", "h2h", "yes_no", "margin", "week_wins", "weekly_leader", "closest", "upset"]),
+  type: z.enum(["winner", "spread", "total", "team_total", "player_ou", "most", "yes_no", "margin", "week_wins", "weekly_leader", "closest", "upset"]),
   prompt: z.string(),
   note: z.string(),
   game_id: z.string().optional(),
   team: z.string().optional(),
   line: z.number().optional(),
-  stat: z.enum(["pts", "reb", "ast", "fg3m", "stl", "blk"]).optional(),
+  stat: z.enum(["pts", "reb", "ast", "fg3m", "stl", "blk", "fantasy"]).optional(),
+  scope: z.enum(["game", "week"]).optional(),
   player: PlayerSchema.optional(),
   players: z.array(PlayerSchema).optional(),
   check: z.enum(["triple_double", "double_double", "at_least"]).optional(),
@@ -255,12 +318,14 @@ function gameForPlayer(ctx: SlateContext, pl: PlayerInfo, hint?: string): Game |
 
 const ref = (p: PlayerInfo, g: Game): PlayerRef => ({ person_id: p.person_id, name: p.name, team: p.team, game_id: g.game_id });
 
-export function toDraftItem(ai: AiItem, ctx: SlateContext): DraftItem | null {
+export function toDraftItem(ai: AiItem, ctx: SlateContext, category: Category | null = null): DraftItem | null {
+  if (category && !CATEGORY_INFO[category].types.includes(ai.type)) return null;
   const base = {
+    category,
     type: ai.type as ItemType,
     prompt: cleanCopy(ai.prompt).slice(0, 140),
     note: ai.note ? cleanCopy(ai.note).slice(0, 200) || null : null,
-    points: DEFAULT_POINTS[ai.type],
+    points: category ? categoryPoints(category, ai.type) : DEFAULT_POINTS[ai.type],
   };
   const team = ai.team && isTeamCode(ai.team.toUpperCase()) ? (ai.team.toUpperCase() as TeamCode) : null;
   const line = typeof ai.line === "number" ? half(ai.line) : null;
@@ -272,12 +337,15 @@ export function toDraftItem(ai: AiItem, ctx: SlateContext): DraftItem | null {
     { key: "yes", label: "Yes" },
     { key: "no", label: "No" },
   ];
-  const stat: StatKey = ai.stat ?? "pts";
+  const stat: StatKey = ai.stat && ai.stat !== "fantasy" ? ai.stat : "pts";
 
   switch (ai.type) {
     case "winner": {
       const g = gameOf(ctx, ai.game_id);
       if (!g) return null;
+      // Big Matchups are close games only. A posted line over 6 is a mismatch.
+      const spread = ctx.info.get(g.game_id)?.spread;
+      if (category === "matchups" && typeof spread === "number" && spread > 6.5) return null;
       return {
         ...base,
         options: [
@@ -318,22 +386,35 @@ export function toDraftItem(ai: AiItem, ctx: SlateContext): DraftItem | null {
       if (!g) return null;
       return { ...base, options: ou(line), spec: { type: "player_ou", player: ref(pl, g), stat, line }, locks_at: g.tip_at };
     }
-    case "h2h": {
-      const ps = (ai.players ?? []).slice(0, 2).map((p) => {
-        const pl = realPlayer(ctx, p);
-        const g = pl ? gameForPlayer(ctx, pl, p.game_id) : null;
-        return pl && g ? { pl, g } : null;
-      });
-      if (ps.length !== 2 || !ps[0] || !ps[1] || ps[0].pl.person_id === ps[1].pl.person_id) return null;
-      const [a, b] = ps as Array<{ pl: PlayerInfo; g: Game }>;
+    case "most": {
+      const want: MostStat = ai.stat ?? "pts";
+      const scope = ai.scope ?? "game";
+      const ps = (ai.players ?? [])
+        .map((p) => {
+          const pl = realPlayer(ctx, p);
+          const g = pl ? gameForPlayer(ctx, pl, p.game_id) : null;
+          return pl && g ? { pl, g } : null;
+        })
+        .filter((x): x is { pl: PlayerInfo; g: Game } => !!x)
+        .filter((x, i, all) => all.findIndex((y) => y.pl.person_id === x.pl.person_id) === i)
+        .slice(0, 4);
+      if (ps.length < 2 || ps.length !== (ai.players ?? []).length) return null;
+      if (category === "battles" && ps.length !== 2) return null;
+      if (category === "fantasy" && (ps.length < 3 || want !== "fantasy")) return null;
+      let locks: string;
+      if (scope === "week") {
+        // Fair only when everyone has the same number of games left.
+        const counts = ps.map((x) => gamesLeft(ctx, x.pl.team));
+        if (counts[0] < 2 || counts.some((c) => c !== counts[0])) return null;
+        locks = ctx.games.filter((g) => ps.some((x) => plays(g, x.pl.team))).map((g) => g.tip_at).sort()[0];
+      } else {
+        locks = ps.map((x) => x.g.tip_at).sort()[0];
+      }
       return {
         ...base,
-        options: [
-          { key: "a", label: a.pl.name, team: a.pl.team },
-          { key: "b", label: b.pl.name, team: b.pl.team },
-        ],
-        spec: { type: "h2h", players: [ref(a.pl, a.g), ref(b.pl, b.g)], stat },
-        locks_at: a.g.tip_at < b.g.tip_at ? a.g.tip_at : b.g.tip_at,
+        options: ps.map((x, i) => ({ key: String(i), label: x.pl.name, team: x.pl.team })),
+        spec: { type: "most", players: ps.map((x) => ref(x.pl, x.g)), stat: want, scope },
+        locks_at: locks,
       };
     }
     case "yes_no": {
@@ -342,11 +423,11 @@ export function toDraftItem(ai: AiItem, ctx: SlateContext): DraftItem | null {
       const g = gameForPlayer(ctx, pl, ai.game_id ?? ai.player?.game_id);
       if (!g) return null;
       const check = ai.check ?? "double_double";
-      if (check === "at_least" && (!ai.stat || typeof ai.threshold !== "number")) return null;
+      if (check === "at_least" && (!ai.stat || ai.stat === "fantasy" || typeof ai.threshold !== "number")) return null;
       return {
         ...base,
         options: yesNo,
-        spec: { type: "yes_no", player: ref(pl, g), check, stat: ai.stat, threshold: ai.threshold },
+        spec: { type: "yes_no", player: ref(pl, g), check, stat: check === "at_least" ? stat : undefined, threshold: ai.threshold },
         locks_at: g.tip_at,
       };
     }
@@ -432,37 +513,79 @@ export function toDraftItem(ai: AiItem, ctx: SlateContext): DraftItem | null {
   }
 }
 
-/** Drafts a full slate. Throws if the AI can't produce at least 8 valid items. */
-export async function draftSlate(ctx: SlateContext, avoid: string[] = []): Promise<DraftItem[]> {
-  if (ctx.games.length === 0) throw new Error("No upcoming games this week.");
-  // Structured output rejects array length rules, so counts are checked in code below.
-  const schema = z.object({ items: z.array(AiItem) });
-  const out = await askModel(
-    schema,
-    SYSTEM,
-    `${contextText(ctx, avoid)}
+export const TILE_SIZE = 5;
 
-Build this week's slate: 11 or 12 items, at least 6 different types, exactly one "upset". Order them by when they lock.`,
-  );
-  const items = out.items.map((a) => toDraftItem(a, ctx)).filter((i): i is DraftItem => i !== null);
-  const upsets = items.filter((i) => i.type === "upset");
-  const cleaned = items.filter((i) => i.type !== "upset" || i === upsets[0]).slice(0, 12);
-  if (cleaned.length < 8) throw new Error(`Only ${cleaned.length} usable picks came back. Try again.`);
-  return cleaned.sort((a, b) => a.locks_at.localeCompare(b.locks_at));
+/** The best 5 from what came back, keeping each tile's rules. */
+function pickFive(category: Category, items: DraftItem[]): DraftItem[] {
+  const out: DraftItem[] = [];
+  const seenGames = new Set<string>();
+  const seenPrompts = new Set<string>();
+  const has = (t: ItemType) => out.some((i) => i.type === t);
+  // Wild Cards always lead with the Upset Special and the closest guess.
+  const ordered =
+    category === "wild"
+      ? [...items.filter((i) => i.type === "upset"), ...items.filter((i) => i.type === "closest"), ...items.filter((i) => i.type !== "upset" && i.type !== "closest")]
+      : items;
+  for (const it of ordered) {
+    if (out.length >= TILE_SIZE) break;
+    const key = it.prompt.toLowerCase();
+    if (seenPrompts.has(key)) continue;
+    if (category === "matchups") {
+      const g = (it.spec as { game_id: string }).game_id;
+      if (seenGames.has(g)) continue;
+      seenGames.add(g);
+    }
+    if (category === "wild" && (it.type === "upset" || it.type === "closest") && has(it.type)) continue;
+    seenPrompts.add(key);
+    out.push(it);
+  }
+  return out.sort((a, b) => a.locks_at.localeCompare(b.locks_at));
 }
 
-/** One replacement item, optionally of a given type. */
-export async function draftOne(ctx: SlateContext, avoid: string[], type?: ItemType): Promise<DraftItem> {
+/** Drafts one tile of 5. Tries twice before giving up. */
+export async function draftTile(ctx: SlateContext, category: Category, avoid: string[] = []): Promise<DraftItem[]> {
+  if (ctx.games.length === 0) throw new Error("No upcoming games this week.");
+  // Structured output rejects array length rules, so counts are checked in code.
   const schema = z.object({ items: z.array(AiItem) });
-  const want = type && type !== "custom" ? `of type "${type}" (${ITEM_TYPE_LABEL[type]})` : "of a type that isn't already overused in the avoid list";
+  let best: DraftItem[] = [];
+  for (let attempt = 0; attempt < 2 && best.length < TILE_SIZE; attempt++) {
+    const retry = attempt ? `\n\nLast try only ${best.length} were usable. Follow the tile rules exactly and only use ids from the data.` : "";
+    const out = await askModel(schema, SYSTEM, `${contextText(ctx, avoid)}\n\n${TILE_ASK[category]}${retry}`);
+    const items = out.items.map((a) => toDraftItem(a, ctx, category)).filter((i): i is DraftItem => i !== null);
+    const five = pickFive(category, [...best, ...items]);
+    if (five.length > best.length) best = five;
+  }
+  if (best.length < 3) throw new Error(`${CATEGORY_INFO[category].title}: only ${best.length} usable picks came back. Try that tile again.`);
+  return best;
+}
+
+/** Every tile at once. Tiles that fail are reported so they can be redone alone. */
+export async function draftTiles(ctx: SlateContext, avoid: string[] = []): Promise<{ items: DraftItem[]; failed: string[] }> {
+  const results = await Promise.allSettled(CATEGORIES.map((c) => draftTile(ctx, c, avoid)));
+  const items: DraftItem[] = [];
+  const failed: string[] = [];
+  results.forEach((r, i) => {
+    if (r.status === "fulfilled") items.push(...r.value);
+    else failed.push(CATEGORY_INFO[CATEGORIES[i]].title);
+  });
+  if (items.length === 0) throw new Error("The AI couldn't build any tiles. Try again.");
+  return { items, failed };
+}
+
+/** One replacement item for a tile. */
+export async function draftOne(ctx: SlateContext, avoid: string[], category: Category, type?: ItemType): Promise<DraftItem> {
+  const schema = z.object({ items: z.array(AiItem) });
+  const like = type && type !== "custom" ? ` Make them type "${type}".` : "";
   const out = await askModel(
     schema,
     SYSTEM,
     `${contextText(ctx, avoid)}
 
-Write 3 alternative items ${want}. Each must be different from everything in the avoid list.`,
+${TILE_ASK[category]}
+
+Actually write just 3 items for this tile.${like} Each must be different from everything in the "already on the slate" list.`,
   );
-  const items = out.items.map((a) => toDraftItem(a, ctx)).filter((i): i is DraftItem => i !== null);
+  const items = out.items.map((a) => toDraftItem(a, ctx, category)).filter((i): i is DraftItem => i !== null);
   if (!items[0]) throw new Error("Couldn't make a replacement. Try again.");
   return items[0];
 }
@@ -500,6 +623,6 @@ ${input.challengers} challengers played this week.`;
   throw last instanceof Error ? last : new Error(String(last));
 }
 
-export function statLabel(s: StatKey) {
-  return STAT_LABEL[s];
+export function statLabel(s: MostStat) {
+  return s === "fantasy" ? MOST_STAT_LABEL.fantasy : STAT_LABEL[s];
 }

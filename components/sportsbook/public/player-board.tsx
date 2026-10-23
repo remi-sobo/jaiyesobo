@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { Board } from "@/lib/sportsbook/data";
 import { pickPoints } from "@/lib/sportsbook/grade";
-import { ITEM_TYPE_LABEL, type SbItem, type SbPick } from "@/lib/sportsbook/types";
+import { CATEGORY_INFO, ITEM_TYPE_LABEL, categoryOf, type SbItem, type SbPick } from "@/lib/sportsbook/types";
+import { hasTiles } from "@/lib/sportsbook/tiles";
 import { tipLabel } from "@/lib/sportsbook/weeks";
 import { TeamDot } from "../card-parts";
 
@@ -160,8 +161,9 @@ function PicksDialog({
               {house ? `${p.display_name}'s picks show up once they submit.` : "No picks yet."}
             </li>
           ) : (
-            items.map((item) => {
+            items.map((item, idx) => {
               const pick = mine.find((k) => k.item_id === item.id);
+              const tile = hasTiles(items) && (idx === 0 || categoryOf(items[idx - 1]) !== categoryOf(item)) ? CATEGORY_INFO[categoryOf(item)].title : null;
               const answer =
                 item.type === "closest"
                   ? pick?.guess !== null && pick?.guess !== undefined
@@ -173,6 +175,9 @@ function PicksDialog({
                 item.status === "void" ? "void" : pts === null ? "pending" : pts > 0 ? "right" : "wrong";
               return (
                 <li key={item.id} className="border-t border-[var(--color-line)] py-3 first:border-t-0 first:pt-0">
+                  {tile ? (
+                    <div className="mb-2 font-[family-name:var(--font-fraunces)] text-[1.05rem] font-black text-[var(--color-bone)]">{tile}</div>
+                  ) : null}
                   <div className="flex items-center gap-2 font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.15em] text-[var(--color-mute)]">
                     <span className={item.type === "upset" ? "text-[var(--color-red)]" : ""}>{ITEM_TYPE_LABEL[item.type]}</span>
                     <span>·</span>

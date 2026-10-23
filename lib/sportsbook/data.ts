@@ -1,6 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import type { TeamCode } from "@/lib/nba/teams";
-import { fetchBox, fetchGames } from "./espn";
+import { fetchBox, fetchGames, type EspnGame } from "./espn";
 import { gradeItem, scoreWeek, weekWinner, type GameBox, type PlayerWeekScore } from "./grade";
 import type { ItemSpec, SbItem, SbPick, SbPlayer, SbWeek } from "./types";
 import { SB_SEASON, pacificDate, weekBounds, weekWindow } from "./weeks";
@@ -10,7 +10,10 @@ const supa = () => createServiceClient();
 /* NBA sync */
 
 export async function syncGames(fromIso: string, toIso: string): Promise<number> {
-  const games = await fetchGames(fromIso, toIso);
+  return upsertGames(await fetchGames(fromIso, toIso));
+}
+
+export async function upsertGames(games: EspnGame[]): Promise<number> {
   if (games.length === 0) return 0;
   const { error } = await supa()
     .from("nba_games")
@@ -79,7 +82,7 @@ export async function loadBoxes(gameIds: string[]): Promise<Map<string, GameBox>
   for (const g of games ?? []) out.set(g.game_id, { ...(g as Omit<GameBox, "players">), players: [] });
   const { data: lines, error: lErr } = await db
     .from("nba_player_games")
-    .select("game_id, person_id, name, team, played, pts, reb, ast, fg3m, stl, blk")
+    .select("game_id, person_id, name, team, played, pts, reb, ast, fg3m, stl, blk, tov")
     .in("game_id", gameIds);
   if (lErr) throw lErr;
   for (const l of lines ?? []) out.get(l.game_id)?.players.push({ ...l, person_id: Number(l.person_id) } as GameBox["players"][number]);
@@ -89,7 +92,7 @@ export async function loadBoxes(gameIds: string[]): Promise<Map<string, GameBox>
 /* Weeks, items, picks */
 
 const WEEK_COLS = "id, season, week_number, starts_on, ends_on, status, recap, finalized_at";
-const ITEM_COLS = "id, week_id, sort, type, prompt, note, options, points, spec, locks_at, status, result";
+const ITEM_COLS = "id, week_id, sort, category, type, prompt, note, options, points, spec, locks_at, status, result";
 
 export async function getWeek(n: number, season = SB_SEASON): Promise<SbWeek | null> {
   const { data, error } = await supa().from("sb_weeks").select(WEEK_COLS).eq("season", season).eq("week_number", n).maybeSingle();
@@ -160,6 +163,8 @@ function specGameIds(spec: ItemSpec): string[] {
       return [spec.player.game_id];
     case "h2h":
       return spec.players.map((p) => p.game_id);
+    case "most":
+      return spec.scope === "game" ? spec.players.map((p) => p.game_id) : [];
     case "week_wins":
       return spec.game_ids;
     case "upset":
@@ -177,7 +182,7 @@ export async function gradeWeek(week: SbWeek, now = new Date()): Promise<number>
   const bounds = weekBounds(weekWindow(week.week_number));
   const weekOver = now >= bounds.end;
 
-  const needsWeek = open.some((i) => i.type === "weekly_leader");
+  const needsWeek = open.some((i) => i.type === "weekly_leader" || (i.spec.type === "most" && i.spec.scope === "week"));
   const weekGameRows = needsWeek ? await getGamesBetween(bounds.start, bounds.end) : [];
   const ids = new Set<string>([...open.flatMap((i) => specGameIds(i.spec)), ...weekGameRows.map((g) => g.game_id)]);
   const boxes = await loadBoxes([...ids]);
