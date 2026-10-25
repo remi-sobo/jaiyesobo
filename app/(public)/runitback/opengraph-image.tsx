@@ -3,7 +3,7 @@ import { featuredWeekNumber, loadWeekView } from "@/lib/sportsbook/view";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const alt = "Sobo Sportsbook: Jaiye vs Remi";
+export const alt = "Run It Back Picks: Jaiye vs Remi";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -23,7 +23,7 @@ export default async function Image() {
     (
       <div style={{ width: "100%", height: "100%", background: "#0a0a0a", color: "#F5F1EA", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "64px 72px", fontFamily: "serif" }}>
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ fontSize: 24, letterSpacing: 8, color: "#E63946", fontFamily: "monospace" }}>SOBO SPORTSBOOK</div>
+          <div style={{ fontSize: 24, letterSpacing: 8, color: "#E63946", fontFamily: "monospace" }}>RUN IT BACK PICKS</div>
           <div style={{ fontSize: 112, fontWeight: 900, lineHeight: 0.9, marginTop: 24, letterSpacing: -3 }}>JAIYE vs REMI</div>
         </div>
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>

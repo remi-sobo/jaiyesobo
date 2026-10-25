@@ -55,7 +55,7 @@ export function Archive({ view }: { view: ArchiveView }) {
         <header className="flex flex-col gap-6 border-b border-[var(--color-line-strong)] pb-10">
           <div className="flex items-center gap-3 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.3em] text-[var(--color-red)]">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--color-red)]" />
-            Sobo Sportsbook · Season {SB_SEASON} archive
+            Run It Back Picks · Season {SB_SEASON} archive
           </div>
           <h1 className="font-[family-name:var(--font-fraunces)] text-[clamp(2.6rem,8vw,5.4rem)] font-black uppercase leading-[0.88] tracking-[-0.04em]">
             Every week. <span className="text-[var(--color-red)]">Every pick.</span>
@@ -71,13 +71,13 @@ export function Archive({ view }: { view: ArchiveView }) {
           </div>
           <div className="flex flex-wrap items-center gap-3 pt-2 font-[family-name:var(--font-jetbrains)] text-[0.72rem] uppercase tracking-[0.2em]">
             <Link
-              href="/sportsbook"
+              href="/runitback"
               className="inline-flex min-h-10 items-center border border-[var(--color-line-strong)] px-3 text-[var(--color-bone)] hover:border-[var(--color-red)]"
             >
               ← Back to this week
             </Link>
             <Link
-              href="/sportsbook/play"
+              href="/runitback/play"
               className="inline-flex min-h-10 items-center bg-[var(--color-red)] px-3 text-[var(--color-black)] hover:bg-[var(--color-bone)]"
             >
               Join this week
@@ -103,7 +103,7 @@ export function Archive({ view }: { view: ArchiveView }) {
               return (
                 <li key={w.week.id}>
                   <Link
-                    href={`/sportsbook/${w.week.season}/${weekSlug(w.week.week_number)}`}
+                    href={`/runitback/${w.week.season}/${weekSlug(w.week.week_number)}`}
                     className="group grid grid-cols-1 gap-5 border border-[var(--color-line-strong)] bg-[var(--color-off-black)] p-5 transition-colors hover:border-[var(--color-red)] md:grid-cols-[220px_minmax(0,1fr)_200px] md:items-center md:gap-6"
                   >
                     <div>
@@ -190,7 +190,7 @@ export function ArchiveEmpty() {
   return (
     <main className="px-5 py-[clamp(64px,10vw,140px)] min-[760px]:px-10">
       <div className="mx-auto max-w-[900px] text-center">
-        <div className="font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.25em] text-[var(--color-red)]">Sobo Sportsbook · Archive</div>
+        <div className="font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.25em] text-[var(--color-red)]">Run It Back Picks · Archive</div>
         <h1 className="mt-6 font-[family-name:var(--font-fraunces)] text-[clamp(2.4rem,7vw,5rem)] font-black leading-[0.9] tracking-[-0.04em]">
           Nothing to look back on <em className="font-normal italic text-[var(--color-red)]">yet.</em>
         </h1>
@@ -199,7 +199,7 @@ export function ArchiveEmpty() {
         </p>
         <div className="mt-8">
           <Link
-            href="/sportsbook"
+            href="/runitback"
             className="inline-flex min-h-11 items-center border border-[var(--color-line-strong)] px-4 font-[family-name:var(--font-jetbrains)] text-[0.72rem] uppercase tracking-[0.2em] hover:border-[var(--color-red)]"
           >
             Back to this week

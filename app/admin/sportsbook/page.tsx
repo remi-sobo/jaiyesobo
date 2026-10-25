@@ -43,7 +43,7 @@ export default async function AdminSportsbookPage(props: { searchParams: Promise
     <main className="@container px-4 pt-6 pb-24 md:px-8 md:pt-8 lg:px-10">
       <div className="mb-6 border-b border-[var(--color-line)] pb-5">
         <div className="mb-2 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.2em] text-[var(--color-warm-mute)]">
-          Admin · Sobo Sportsbook
+          Admin · Run It Back Picks
         </div>
         <h1 className="font-[family-name:var(--font-fraunces)] text-3xl font-semibold tracking-[-0.02em]">
           Jaiye vs Remi<span className="italic font-normal text-[var(--color-red)]">.</span>
@@ -72,7 +72,7 @@ export default async function AdminSportsbookPage(props: { searchParams: Promise
           </Link>
           <RefreshButton />
           <Link
-            href="/sportsbook"
+            href="/runitback"
             className="font-[family-name:var(--font-jetbrains)] text-[0.62rem] uppercase tracking-[0.15em] text-[var(--color-red)]"
           >
             Public page

@@ -5,10 +5,10 @@ import { Archive, ArchiveEmpty } from "@/components/sportsbook/public/archive";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Season archive · Sobo Sportsbook",
+  title: "Season archive · Run It Back Picks",
   description: "Every past week of Jaiye vs Remi — every pick, every score, every challenger.",
   openGraph: {
-    title: "Season archive · Sobo Sportsbook",
+    title: "Season archive · Run It Back Picks",
     description: "Every past week of Jaiye vs Remi — every pick, every score, every challenger.",
     type: "website",
   },

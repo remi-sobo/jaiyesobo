@@ -12,6 +12,9 @@ const nextConfig: NextConfig = {
       { source: "/ball", destination: "/now", permanent: true },
       { source: "/build", destination: "/now", permanent: true },
       { source: "/read", destination: "/now", permanent: true },
+      // The Sobo Sportsbook is now Run It Back Picks. Old links keep working.
+      { source: "/sportsbook", destination: "/runitback", permanent: true },
+      { source: "/sportsbook/:path*", destination: "/runitback/:path*", permanent: true },
     ];
   },
 };

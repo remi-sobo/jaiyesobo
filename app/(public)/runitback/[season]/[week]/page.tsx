@@ -5,13 +5,13 @@ import WeekPage from "@/components/sportsbook/public/week-page";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata(props: PageProps<"/sportsbook/[season]/[week]">): Promise<Metadata> {
+export async function generateMetadata(props: PageProps<"/runitback/[season]/[week]">): Promise<Metadata> {
   const { week } = await props.params;
   const n = parseWeekSlug(week);
-  return { title: n ? `Week ${n} · Sobo Sportsbook` : "Sobo Sportsbook" };
+  return { title: n ? `Week ${n} · Run It Back Picks` : "Run It Back Picks" };
 }
 
-export default async function SportsbookWeekPage(props: PageProps<"/sportsbook/[season]/[week]">) {
+export default async function SportsbookWeekPage(props: PageProps<"/runitback/[season]/[week]">) {
   const { season, week } = await props.params;
   const n = parseWeekSlug(week);
   if (season !== SB_SEASON || !n) notFound();

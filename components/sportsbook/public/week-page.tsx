@@ -26,7 +26,7 @@ export function SportsbookEmpty() {
   return (
     <main className="px-5 py-[clamp(64px,10vw,140px)] min-[760px]:px-10">
       <div className="mx-auto max-w-[900px] text-center">
-        <div className="font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.25em] text-[var(--color-red)]">Sobo Sportsbook</div>
+        <div className="font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.25em] text-[var(--color-red)]">Run It Back Picks</div>
         <h1 className="mt-6 font-[family-name:var(--font-fraunces)] text-[clamp(2.4rem,7vw,5rem)] font-black leading-[0.9] tracking-[-0.04em]">
           Jaiye vs Remi. <em className="font-normal italic text-[var(--color-red)]">Coming soon.</em>
         </h1>
@@ -69,7 +69,7 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
           cta={
             isOpen ? (
               <div className="flex flex-col items-start gap-2">
-                <PlayButton href="/sportsbook/play">{me ? `Make your picks, ${me.display_name}` : "Think you can beat us?"}</PlayButton>
+                <PlayButton href="/runitback/play">{me ? `Make your picks, ${me.display_name}` : "Think you can beat us?"}</PlayButton>
                 <span className="text-[0.8rem] text-[var(--color-mute)]">Same picks as us. Just type your name. No sign up.</span>
               </div>
             ) : null
@@ -134,7 +134,7 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
               {published.map((w) => (
                 <li key={w.id}>
                   <Link
-                    href={`/sportsbook/${w.season}/${weekSlug(w.week_number)}`}
+                    href={`/runitback/${w.season}/${weekSlug(w.week_number)}`}
                     className={`inline-flex min-h-10 items-center border px-3 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.15em] hover:border-[var(--color-red)] ${
                       w.week_number === n ? "border-[var(--color-red)]" : "border-[var(--color-line-strong)]"
                     }`}
@@ -145,7 +145,7 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
               ))}
             </ul>
             <Link
-              href="/sportsbook/archive"
+              href="/runitback/archive"
               className="inline-flex min-h-10 items-center justify-center bg-[var(--color-red)] px-4 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.2em] text-[var(--color-black)] hover:bg-[var(--color-bone)]"
             >
               {published.length > 1 ? "Open the full archive →" : "See every week →"}
