@@ -29,7 +29,7 @@ Ship one, watch it, then build the next.
 | Phase | Where | What | Done means |
 | --- | --- | --- | --- |
 | 1. Backend and website growth | jaiyesobo repo | Leagues, invites, rivalries, preset trash talk, reports and mutes, week scores, app API, account deletion, age band | Website players can create (admin only until Phase 3), join and play leagues; invite links work; rivalries show; app API passes its tests |
-| 2. The app, core | new repo `run-it-back-app` | Expo app: onboarding, This Week, pick cards, Lock, reveal card, leaderboard, leagues, Jaiye's Corner, profile, settings, delete account | Installed on Remi's and Jaiye's phones through TestFlight, playing the live week |
+| 2. The app, core | `mobile/` in this repo | Expo app: onboarding, This Week, pick cards, Lock, reveal card, leaderboard, leagues, Jaiye's Corner, profile, settings, delete account | Installed on Remi's and Jaiye's phones through TestFlight, playing the live week |
 | 3. Alerts and the pass | both | Push alerts, Season Pass purchase, paywall, share cards, Monday results sequence, commissioner nudges | TestFlight beta with current players for 2 to 3 weeks |
 | 4. Store ready | both | Age range checks, privacy and terms pages, App Store assets, review notes | Submitted to App Review |
 
@@ -97,7 +97,8 @@ service client, same as today.
 
 ### 3.3 App API (`/api/app/v1/...`)
 
-JSON in and out. Auth is `Authorization: Bearer <token>` resolved through `sb_app_sessions`.
+JSON in and out. Every request and response shape is typed in `lib/app-api/types.ts` (no Next.js or
+server imports) so the app in `mobile/` can import the same types. Auth is `Authorization: Bearer <token>` resolved through `sb_app_sessions`.
 Every route rate limited like the current join route. Errors are `{ error: "<message for a person>" }`.
 
 | Method and path | What |
@@ -139,7 +140,21 @@ board ranks, deleted players.
 - `/runitback/privacy`, `/runitback/terms`, `/runitback/support`, `/runitback/parents` pages
   (copy drafted separately, reviewed by a lawyer before launch).
 
-## 4. Phase 2: the app (new repo `remi-sobo/run-it-back-app`)
+## 4. Phase 2: the app (`mobile/` folder in this repo)
+
+The app lives in this repo so Claude Code sees the backend, the API and the app together.
+
+- `mobile/` is its own Expo project with its own `package.json` and lockfile. Not an npm
+  workspace: the website and the app install separately, so their dependencies never collide.
+- The website build ignores it. Add `mobile` to the `exclude` list in the root `tsconfig.json` and
+  ESLint config, and add an `ignoreCommand` to `vercel.json` so a commit that only touches
+  `mobile/` doesn't rebuild the website:
+  `"ignoreCommand": "git diff HEAD^ HEAD --quiet -- . ':(exclude)mobile'"`.
+- Shared API types live in `lib/app-api/types.ts` with no Next.js or server imports. The app imports
+  them through a path alias (`@shared/*` → `../lib/app-api/*`) set in `mobile/tsconfig.json` and
+  Metro's `watchFolders`. One source of truth for request and response shapes.
+- EAS builds run from `mobile/` (`eas.json` there). Commit messages for app work start with `app:`.
+- If the app ever outgrows the site, `git subtree split` moves `mobile/` to its own repo with history.
 
 - Expo (latest SDK), Expo Router, TypeScript, EAS Build and Submit. No Mac needed.
 - Bundle id `com.sobo.runitback` (confirm). Display name "Run It Back".
