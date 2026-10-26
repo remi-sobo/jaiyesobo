@@ -8,8 +8,11 @@ It loads React from unpkg, so it needs internet. The left panel jumps to every s
 including GROWTH (invite landing, rivalries, head to head, commissioner, Season Pass,
 Jaiye's dashboard) and MOMENTS (first week help, Lock sheet, reveal card, report or mute).
 
-Not final yet: the logo and app icon. A new vector logo system replaces the old one
-before Phase 2 starts; the prototype's logo marks are placeholders.
+The brand system v1 lives in `mobile/brand/` — vector masters (symbol, wordmark,
+app icon, social avatar), raster exports in `mobile/brand/png/`, color/type/radius
+tokens in `mobile/brand/brand_tokens.json`, and placement rules in
+`mobile/brand/BRAND_HANDOFF.md`. The prototype's logo marks are from the
+pre-handoff set; the authoritative masters now live in `mobile/brand/`.
 
 Build rules that carry over from the spec (docs/RUN-IT-BACK-APP-SPEC.md):
 - Copy and states come from the prototype; data comes from /api/app/v1 (lib/app-api/types.ts).
