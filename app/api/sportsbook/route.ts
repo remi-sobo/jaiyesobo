@@ -1,46 +1,37 @@
 import { NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/server";
-import { ipFromRequest } from "@/lib/rate-limit";
 import { ActionError, savePick, submitPicks } from "@/lib/sportsbook/actions";
 import { castVote, getVisitor, isReactionKey, toggleReaction } from "@/lib/sportsbook/fans";
 import {
+  challengerByCode,
   checkDisplayName,
   clearChallengerCookie,
+  createChallenger,
   getChallenger,
-  newPlayerCode,
-  normalizeCode,
+  isAgeBand,
   setChallengerCookie,
 } from "@/lib/sportsbook/players";
+import { joinLeague, leaveLeague } from "@/lib/sportsbook/leagues";
+import { overLimit } from "@/lib/sportsbook/limits";
+import { deleteTalk, fileReport, isReportContext, postTalk, setMute } from "@/lib/sportsbook/safety";
 
 export const dynamic = "force-dynamic";
 
 type Body = Record<string, unknown>;
 
-/** Joins and code restores are capped per IP so nobody floods the leaderboard. */
-async function tooMany(req: Request, kind: "join" | "restore"): Promise<boolean> {
-  const supa = createServiceClient();
-  const identifier = `sportsbook:${kind}:${ipFromRequest(req)}`;
-  const since = new Date(Date.now() - 60 * 60_000).toISOString();
-  const { count } = await supa
-    .from("pin_attempts")
-    .select("id", { count: "exact", head: true })
-    .eq("identifier", identifier)
-    .gte("attempted_at", since);
-  const limit = kind === "join" ? 5 : 10;
-  if ((count ?? 0) >= limit) return true;
-  await supa.from("pin_attempts").insert({ identifier, successful: false });
-  return false;
-}
-
 /**
  * POST /api/sportsbook { action }
- *   join { name }        new challenger, sets the cookie, returns their code
+ *   join { name, age_band, league? }   new challenger, sets the cookie, returns their code
  *   restore { code }     same challenger on another device
  *   pick { item_id, choice?, guess?, is_lock? }
  *   submit { week }      lock this challenger's picks for the week
  *   leave                forget this device
  *   react { item_id, player_id, emoji }   toggle an emoji on a revealed pick
  *   vote { week_id, choice }             who wins the week, jaiye or remi
+ *   league_join { code, from? }          join a private league
+ *   league_leave { league_id }
+ *   talk { item_id, key }                preset trash talk line (key null removes it)
+ *   report { player_id, context, ref_id? }
+ *   mute { player_id, muted }
  */
 export async function POST(req: Request) {
   let body: Body;
@@ -49,33 +40,27 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
-  const supa = createServiceClient();
   try {
     switch (body.action) {
       case "join": {
         const check = checkDisplayName(body.name);
         if (!check.ok) return NextResponse.json({ error: check.error }, { status: 400 });
-        if (await tooMany(req, "join")) return NextResponse.json({ error: "Too many new players from here. Try later." }, { status: 429 });
-        for (let attempt = 0; attempt < 5; attempt++) {
-          const code = newPlayerCode();
-          const { data, error } = await supa
-            .from("sb_players")
-            .insert({ kind: "challenger", display_name: check.name, code })
-            .select("id, code")
-            .single();
-          if (!error && data) {
-            await setChallengerCookie(data.id);
-            return NextResponse.json({ ok: true, code: data.code });
-          }
+        if (!isAgeBand(body.age_band)) return NextResponse.json({ error: "Tell us if you're 13 or older." }, { status: 400 });
+        if (await overLimit(req, "join")) return NextResponse.json({ error: "Too many new players from here. Try later." }, { status: 429 });
+        const { id, code } = await createChallenger(check.name, body.age_band);
+        await setChallengerCookie(id);
+        // Joining from an invite link drops you straight into that league.
+        if (typeof body.league === "string" && body.league) {
+          const inviter = typeof body.from === "string" && body.from ? await challengerByCode(body.from) : null;
+          await joinLeague(id, body.league, inviter).catch(() => null);
         }
-        return NextResponse.json({ error: "Couldn't sign you up. Try again." }, { status: 500 });
+        return NextResponse.json({ ok: true, code });
       }
       case "restore": {
-        if (await tooMany(req, "restore")) return NextResponse.json({ error: "Too many tries. Wait a bit." }, { status: 429 });
-        const code = normalizeCode(typeof body.code === "string" ? body.code : "");
-        const { data } = await supa.from("sb_players").select("id").eq("code", code).eq("kind", "challenger").maybeSingle();
-        if (!data) return NextResponse.json({ error: "No player with that code." }, { status: 404 });
-        await setChallengerCookie(data.id);
+        if (await overLimit(req, "restore")) return NextResponse.json({ error: "Too many tries. Wait a bit." }, { status: 429 });
+        const id = await challengerByCode(typeof body.code === "string" ? body.code : "");
+        if (!id) return NextResponse.json({ error: "No player with that code." }, { status: 404 });
+        await setChallengerCookie(id);
         return NextResponse.json({ ok: true });
       }
       case "pick": {
@@ -119,6 +104,41 @@ export async function POST(req: Request) {
       case "leave":
         await clearChallengerCookie();
         return NextResponse.json({ ok: true });
+      case "league_join": {
+        const me = await getChallenger();
+        if (!me) return NextResponse.json({ error: "Join first." }, { status: 401 });
+        if (await overLimit(req, "league_join")) return NextResponse.json({ error: "Too many tries. Wait a bit." }, { status: 429 });
+        const inviter = typeof body.from === "string" && body.from ? await challengerByCode(body.from) : null;
+        const league = await joinLeague(me.id, typeof body.code === "string" ? body.code : "", inviter);
+        return NextResponse.json({ ok: true, league_id: league.id });
+      }
+      case "league_leave": {
+        const me = await getChallenger();
+        if (!me) return NextResponse.json({ error: "Join first." }, { status: 401 });
+        await leaveLeague(me.id, typeof body.league_id === "string" ? body.league_id : "");
+        return NextResponse.json({ ok: true });
+      }
+      case "talk": {
+        const me = await getChallenger();
+        if (!me) return NextResponse.json({ error: "Join first." }, { status: 401 });
+        const itemId = typeof body.item_id === "string" ? body.item_id : "";
+        if (body.key === null) await deleteTalk(me.id, itemId);
+        else await postTalk(me.id, itemId, body.key);
+        return NextResponse.json({ ok: true });
+      }
+      case "report": {
+        if (!isReportContext(body.context)) break;
+        if (await overLimit(req, "report")) return NextResponse.json({ error: "Too many reports. Wait a bit." }, { status: 429 });
+        const me = await getChallenger();
+        await fileReport(me?.id ?? null, String(body.player_id ?? ""), body.context, typeof body.ref_id === "string" ? body.ref_id : null);
+        return NextResponse.json({ ok: true });
+      }
+      case "mute": {
+        const me = await getChallenger();
+        if (!me) return NextResponse.json({ error: "Join first." }, { status: 401 });
+        await setMute(me.id, String(body.player_id ?? ""), body.muted !== false);
+        return NextResponse.json({ ok: true });
+      }
     }
   } catch (e) {
     if (e instanceof ActionError) return NextResponse.json({ error: e.message }, { status: 400 });
