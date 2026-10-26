@@ -1,0 +1,54 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useFonts } from "expo-font";
+import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
+import { View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { colors } from "@/lib/brand";
+
+// Keep the native splash up until the Archivo faces have loaded, so the
+// brand lockup doesn't flash in a system font first.
+SplashScreen.preventAutoHideAsync().catch(() => {
+  /* already hidden on cold starts after a reload — fine. */
+});
+
+// One client for the whole app. The spec calls for optimistic pick saves
+// with retry and an offline banner; this is where that behavior will land.
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: 2, staleTime: 15_000, refetchOnWindowFocus: false },
+  },
+});
+
+export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts({
+    "Archivo-900-italic-semi": require("@/assets/fonts/Archivo-900-italic-semi.ttf"),
+    "Archivo-600": require("@/assets/fonts/Archivo-600.ttf"),
+  });
+
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [fontsLoaded, fontError]);
+
+  if (!fontsLoaded && !fontError) return null;
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <SafeAreaProvider>
+        <View style={{ flex: 1, backgroundColor: colors.ink }}>
+          <StatusBar style="light" />
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: colors.ink },
+            }}
+          />
+        </View>
+      </SafeAreaProvider>
+    </QueryClientProvider>
+  );
+}
