@@ -82,7 +82,7 @@ export function SportsbookPanel({ book }: { book: BookState }) {
       <CourtLines />
       <span aria-hidden className="absolute inset-x-0 top-0 h-1 bg-[var(--color-red)]" />
       <div className="relative flex flex-wrap items-center gap-3">
-        <BrandLockup variant="wordmark" className="h-6 w-auto md:h-7" />
+        <BrandLockup variant="wordmark" h={44} />
         {book ? (
           <span className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.25em] text-[var(--color-mute)]">
             Week {book.week} · {book.range}
