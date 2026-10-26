@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // The Expo app in mobile/ runs its own TypeScript + ESLint — the
+    // website build never looks inside.
+    "mobile/**",
   ]),
 ]);
 
