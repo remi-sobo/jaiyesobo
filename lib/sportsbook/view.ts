@@ -1,7 +1,6 @@
 import { getItems, getItemsForWeeks, getPicks, getPlayers, getSubmissions, getWeek, listWeeks, seasonSummary, weekBoard, type Board, type SeasonSummary } from "./data";
 import { weekWinner } from "./grade";
 import type { SbItem, SbPick, SbPlayer, SbWeek } from "./types";
-import { currentWeekNumber } from "./weeks";
 
 export type WeekView = {
   week: SbWeek;
@@ -40,13 +39,17 @@ export async function loadWeekView(n: number, opts: { admin?: boolean; viewerId?
   return { week, items, picks, players: visiblePlayers, board: weekBoard(items, all, visiblePlayers), challengerCount, submitted, now };
 }
 
-/** The week the public page leads with: this week once it's open, otherwise the last published one. */
+/** The week the public page leads with: the latest open week people are
+ *  actively playing, falling back to the latest published week when nothing
+ *  is open (end of season, or every published week is graded/final waiting
+ *  for the next one to open). An admin publishing a new week flips the
+ *  home page to it as soon as the deploy's cache cycles. */
 export async function featuredWeekNumber(): Promise<number | null> {
   const weeks = (await listWeeks()).filter((w) => w.status !== "draft");
   if (weeks.length === 0) return null;
-  const now = currentWeekNumber();
-  const best = weeks.filter((w) => w.week_number <= now).sort((a, b) => b.week_number - a.week_number)[0];
-  return (best ?? weeks[0]).week_number;
+  const sortedDesc = [...weeks].sort((a, b) => b.week_number - a.week_number);
+  const open = sortedDesc.find((w) => w.status === "open");
+  return (open ?? sortedDesc[0]).week_number;
 }
 
 export async function loadSeason(): Promise<{ weeks: SbWeek[]; summary: SeasonSummary }> {
