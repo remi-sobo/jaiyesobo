@@ -7,8 +7,9 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter", weight: ["40
 const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains", weight: ["400", "500"] });
 const caveat = Caveat({ subsets: ["latin"], variable: "--font-caveat", weight: ["400", "600"] });
 // Run It Back display face. Scoped to .runitback-brand (see globals.css) so
-// the rest of the site keeps Fraunces.
-const archivo = Archivo({ subsets: ["latin"], variable: "--font-archivo", weight: ["800", "900"], style: ["normal", "italic"] });
+// the rest of the site keeps Fraunces. The 600 weight is for the "PICKS"
+// sub-label of the wordmark lockup; 900 italic is the main display tier.
+const archivo = Archivo({ subsets: ["latin"], variable: "--font-archivo", weight: ["600", "800", "900"], style: ["normal", "italic"] });
 
 export const metadata: Metadata = {
   title: "Jaiye Sobo · Ballin' + Buildin'",
