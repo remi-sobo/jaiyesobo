@@ -1,11 +1,13 @@
 /**
- * Sportsbook weeks run Monday 12:00am to Sunday 11:59pm Pacific. Week 1 of
- * 2026-27 is the week of opening night.
+ * Sportsbook weeks run Sunday 12:00am to Saturday 11:59pm Pacific. Sunday
+ * is the transition day: the previous week closes and the new week opens
+ * on the same Sunday morning, right after Saturday night's final games.
+ * Week 1 of 2026-27 is the week of opening night.
  */
 
 export const SB_SEASON = "2026-27";
-/** Monday of opening week, Pacific. */
-export const SB_SEASON_START = "2026-10-19";
+/** Sunday of opening week, Pacific. */
+export const SB_SEASON_START = "2026-10-18";
 
 const TZ = "America/Los_Angeles";
 
