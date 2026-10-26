@@ -196,7 +196,7 @@ export function SeasonStandings({ summary }: { summary: SeasonSummary }) {
                     {house ? (
                       <span className="ml-2 font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.15em] text-[var(--color-mute)]">Sobo</span>
                     ) : beatBoth ? (
-                      <span className="ml-2 font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.15em] text-[var(--color-games-yellow)]">Beat the Sobos</span>
+                      <span className="ml-2 font-[family-name:var(--font-jetbrains)] text-[0.55rem] uppercase tracking-[0.15em] text-[var(--color-games-yellow)]">Beat Jaiye & Remi</span>
                     ) : null}
                   </td>
                   <td className="py-2 pr-2 text-right font-[family-name:var(--font-jetbrains)]">{r.points}</td>

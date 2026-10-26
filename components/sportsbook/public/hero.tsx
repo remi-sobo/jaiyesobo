@@ -56,7 +56,7 @@ export function SportsbookHero({
           <CourtLines />
           <div className="relative flex items-center gap-3 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.3em] text-[var(--color-red)]">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--color-red)]" />
-            Sobo Sportsbook · {weekLabel}
+            Run It Back Picks · {weekLabel}
           </div>
           <h1 className="relative font-[family-name:var(--font-fraunces)] font-black uppercase leading-[0.82] tracking-[-0.045em]">
             <span className="block text-[clamp(3.4rem,10vw,6.8rem)] text-[var(--color-red)]">Jaiye</span>

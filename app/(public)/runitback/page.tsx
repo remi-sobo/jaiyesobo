@@ -5,10 +5,10 @@ import WeekPage, { SportsbookEmpty } from "@/components/sportsbook/public/week-p
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Sobo Sportsbook · Jaiye vs Remi",
+  title: "Run It Back Picks · Jaiye vs Remi",
   description: "Me vs my dad, picking NBA games every week. Think you can beat us?",
   openGraph: {
-    title: "Sobo Sportsbook · Jaiye vs Remi",
+    title: "Run It Back Picks · Jaiye vs Remi",
     description: "Me vs my dad, picking NBA games every week. Think you can beat us?",
     type: "website",
   },

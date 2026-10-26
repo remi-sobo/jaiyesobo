@@ -167,7 +167,7 @@ export function ChallengersPanel({ players }: { players: SbPlayer[] }) {
     <div>
       {error ? <p className="mb-3 text-[0.9rem] text-[var(--color-red-soft)]">{error}</p> : null}
       {challengers.length === 0 ? (
-        <p className="text-[0.9rem] text-[var(--color-warm-mute)]">No challengers yet. Share jaiyesobo.com/sportsbook/play.</p>
+        <p className="text-[0.9rem] text-[var(--color-warm-mute)]">No challengers yet. Share jaiyesobo.com/runitback/play.</p>
       ) : (
         <ul className="flex flex-col">
           {challengers.map((p) => (

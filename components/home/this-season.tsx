@@ -82,7 +82,7 @@ export function SportsbookPanel({ book }: { book: BookState }) {
       <span aria-hidden className="absolute inset-x-0 top-0 h-1 bg-[var(--color-red)]" />
       <div className="relative flex flex-wrap items-center gap-3 font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.25em] text-[var(--color-red)]">
         <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--color-red)]" />
-        Sobo Sportsbook
+        Run It Back Picks
         {book ? <span className="text-[var(--color-mute)]">· Week {book.week} · {book.range}</span> : null}
         {book?.opening ? (
           <span className="bg-[var(--color-red)] px-2 py-0.5 text-[var(--color-black)]">🎉 Opening Week</span>
@@ -122,12 +122,12 @@ export function SportsbookPanel({ book }: { book: BookState }) {
 
       <div className="relative mt-8 flex flex-wrap items-center gap-3">
         {book?.open ? (
-          <Link href="/sportsbook/play" className={`${btn} bg-[var(--color-red)] text-[var(--color-black)] hover:bg-[var(--color-bone)]`}>
+          <Link href="/runitback/play" className={`${btn} bg-[var(--color-red)] text-[var(--color-black)] hover:bg-[var(--color-bone)]`}>
             <span aria-hidden className="h-0 w-0 border-y-[6px] border-l-[9px] border-y-transparent border-l-[var(--color-black)]" />
-            Beat the Sobos
+            Beat Jaiye & Remi
           </Link>
         ) : null}
-        <Link href="/sportsbook" className={`${btn} border border-[var(--color-line-strong)] text-[var(--color-bone)] hover:border-[var(--color-red)]`}>
+        <Link href="/runitback" className={`${btn} border border-[var(--color-line-strong)] text-[var(--color-bone)] hover:border-[var(--color-red)]`}>
           See who&apos;s winning
         </Link>
         {book && book.challengers > 0 ? (

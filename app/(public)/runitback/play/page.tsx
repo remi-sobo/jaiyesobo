@@ -10,7 +10,7 @@ import { currentWeekNumber, requestNow } from "@/lib/sportsbook/weeks";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Beat the Sobos · Sobo Sportsbook",
+  title: "Beat Jaiye & Remi · Run It Back Picks",
   description: "Pick NBA games against me and my dad. Just type your name and play.",
   openGraph: { title: "Think you can beat Jaiye and Remi?", description: "Pick NBA games against me and my dad. Just type your name and play.", type: "website" },
 };
@@ -33,14 +33,14 @@ export default async function PlayPage() {
           <div className="relative mx-auto mb-5 h-28 w-28 overflow-hidden rounded-full border-2 border-[var(--color-red)] shadow-[0_0_40px_rgba(230,57,70,0.35)]">
             <Image src="/jaiye-hero.jpg" alt="Jaiye in his number 23 jersey" fill sizes="112px" className="object-cover object-[center_18%]" />
           </div>
-          <div className="font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.3em] text-[var(--color-red)]">Sobo Sportsbook</div>
+          <div className="font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.3em] text-[var(--color-red)]">Run It Back Picks</div>
           <h1 className="mt-4 font-[family-name:var(--font-fraunces)] text-[clamp(2.4rem,7vw,4.6rem)] font-black leading-[0.9] tracking-[-0.04em]">
             Beat the <em className="font-normal italic text-[var(--color-red)]">Sobos.</em>
           </h1>
           <p className="mx-auto mt-4 max-w-[50ch] text-[1rem] leading-relaxed text-[var(--color-mute)]">
             Pick the same games as me and my dad. Most points by Sunday night wins the week. No money, just bragging rights.
           </p>
-          <Link href="/sportsbook" className="mt-4 inline-block font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)] hover:text-[var(--color-red)]">
+          <Link href="/runitback" className="mt-4 inline-block font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)] hover:text-[var(--color-red)]">
             See who&apos;s winning
           </Link>
         </header>
