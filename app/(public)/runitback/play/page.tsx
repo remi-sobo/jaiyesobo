@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { getChallenger } from "@/lib/sportsbook/players";
 import { featuredWeekNumber, loadWeekView } from "@/lib/sportsbook/view";
+import { BrandLockup } from "@/components/sportsbook/public/brand-lockup";
 import { JoinForm, PlayBoard } from "@/components/sportsbook/public/challenger-play";
 import { OpeningWeekBanner } from "@/components/sportsbook/public/hero";
 import { currentWeekNumber, requestNow } from "@/lib/sportsbook/weeks";
@@ -33,8 +34,8 @@ export default async function PlayPage() {
           <div className="relative mx-auto mb-5 h-28 w-28 overflow-hidden rounded-full border-2 border-[var(--color-red)] shadow-[0_0_40px_rgba(230,57,70,0.35)]">
             <Image src="/jaiye-hero.jpg" alt="Jaiye in his number 23 jersey" fill sizes="112px" className="object-cover object-[center_18%]" />
           </div>
-          <div className="font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.3em] text-[var(--color-red)]">Run It Back Picks</div>
-          <h1 className="mt-4 font-[family-name:var(--font-fraunces)] text-[clamp(2.4rem,7vw,4.6rem)] font-black leading-[0.9] tracking-[-0.04em]">
+          <BrandLockup variant="wordmark" className="mx-auto h-9 w-auto" priority />
+          <h1 className="mt-6 font-[family-name:var(--font-fraunces)] text-[clamp(2.4rem,7vw,4.6rem)] font-black leading-[0.9] tracking-[-0.04em]">
             Beat Jaiye <em className="font-normal italic text-[var(--color-red)]">&amp; Remi.</em>
           </h1>
           <p className="mx-auto mt-4 max-w-[50ch] text-[1rem] leading-relaxed text-[var(--color-mute)]">

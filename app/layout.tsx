@@ -1,11 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Caveat, Fraunces, Inter, JetBrains_Mono } from "next/font/google";
+import { Archivo, Caveat, Fraunces, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
 const fraunces = Fraunces({ subsets: ["latin"], variable: "--font-fraunces", weight: ["400", "600", "900"], style: ["normal", "italic"] });
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", weight: ["400", "500", "600"] });
 const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains", weight: ["400", "500"] });
 const caveat = Caveat({ subsets: ["latin"], variable: "--font-caveat", weight: ["400", "600"] });
+// Run It Back display face. Scoped to .runitback-brand (see globals.css) so
+// the rest of the site keeps Fraunces.
+const archivo = Archivo({ subsets: ["latin"], variable: "--font-archivo", weight: ["800", "900"], style: ["normal", "italic"] });
 
 export const metadata: Metadata = {
   title: "Jaiye Sobo · Ballin' + Buildin'",
@@ -29,7 +32,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${jetbrains.variable} ${caveat.variable}`}>
+    <html lang="en" className={`${fraunces.variable} ${inter.variable} ${jetbrains.variable} ${caveat.variable} ${archivo.variable}`}>
       <body>
         {/* Scroll entrances start at opacity 0. If JS never runs, they have
             to be visible anyway. */}

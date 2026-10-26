@@ -8,6 +8,7 @@ import { scheduleLiveSync } from "@/lib/sportsbook/live";
 import { currentWeekNumber, weekRangeLabel } from "@/lib/sportsbook/weeks";
 import { SectionLabel } from "@/components/site/type";
 import { TeamTile } from "@/components/predictions/team-tile";
+import { BrandLockup } from "@/components/sportsbook/public/brand-lockup";
 import { CourtLines, ScoreBox } from "@/components/sportsbook/public/hero";
 import VideoPopout from "@/components/site/video-popout";
 import { sportsbookEpisode } from "@/lib/content/episodes";
@@ -77,15 +78,18 @@ const btn =
 export function SportsbookPanel({ book }: { book: BookState }) {
   const episode = sportsbookEpisode();
   return (
-    <div className="relative flex flex-col overflow-hidden border border-[var(--color-line-strong)] bg-[var(--color-black)] p-6 md:p-8">
+    <div className="runitback-brand relative flex flex-col overflow-hidden border border-[var(--color-line-strong)] bg-[var(--color-black)] p-6 md:p-8">
       <CourtLines />
       <span aria-hidden className="absolute inset-x-0 top-0 h-1 bg-[var(--color-red)]" />
-      <div className="relative flex flex-wrap items-center gap-3 font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.25em] text-[var(--color-red)]">
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--color-red)]" />
-        Run It Back Picks
-        {book ? <span className="text-[var(--color-mute)]">· Week {book.week} · {book.range}</span> : null}
+      <div className="relative flex flex-wrap items-center gap-3">
+        <BrandLockup variant="wordmark" className="h-6 w-auto md:h-7" />
+        {book ? (
+          <span className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.25em] text-[var(--color-mute)]">
+            Week {book.week} · {book.range}
+          </span>
+        ) : null}
         {book?.opening ? (
-          <span className="bg-[var(--color-red)] px-2 py-0.5 text-[var(--color-black)]">🎉 Opening Week</span>
+          <span className="bg-[var(--color-red)] px-2 py-0.5 font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-black)]">🎉 Opening Week</span>
         ) : null}
       </div>
 

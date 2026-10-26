@@ -21,21 +21,21 @@ export default async function Image() {
   }
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", background: "#0a0a0a", color: "#F5F1EA", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "64px 72px", fontFamily: "serif" }}>
+      <div style={{ width: "100%", height: "100%", background: "#0B0B0C", color: "#F7F7F8", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "64px 72px", fontFamily: "sans-serif" }}>
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ fontSize: 24, letterSpacing: 8, color: "#E63946", fontFamily: "monospace" }}>RUN IT BACK PICKS</div>
+          <div style={{ fontSize: 24, letterSpacing: 8, color: "#E11D2E", fontFamily: "monospace" }}>RUN IT BACK PICKS</div>
           <div style={{ fontSize: 112, fontWeight: 900, lineHeight: 0.9, marginTop: 24, letterSpacing: -3 }}>JAIYE vs REMI</div>
         </div>
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
           <div style={{ display: "flex", flexDirection: "column", fontFamily: "monospace" }}>
-            <div style={{ fontSize: 26, color: "#8a8a8a", letterSpacing: 4 }}>{week ? `WEEK ${week}` : "WEEKLY NBA PICK'EM"}</div>
+            <div style={{ fontSize: 26, color: "#9CA3AF", letterSpacing: 4 }}>{week ? `WEEK ${week}` : "WEEKLY NBA PICK'EM"}</div>
             <div style={{ display: "flex", fontSize: 72, fontWeight: 700, marginTop: 8 }}>
-              <span style={{ color: "#E63946" }}>{`JAIYE ${jaiye}`}</span>
-              <span style={{ color: "#8a8a8a", margin: "0 24px" }}>·</span>
+              <span style={{ color: "#E11D2E" }}>{`JAIYE ${jaiye}`}</span>
+              <span style={{ color: "#9CA3AF", margin: "0 24px" }}>·</span>
               <span>{`REMI ${remi}`}</span>
             </div>
           </div>
-          <div style={{ fontSize: 30, fontFamily: "monospace", color: "#0a0a0a", background: "#E63946", padding: "16px 24px" }}>THINK YOU CAN BEAT US?</div>
+          <div style={{ fontSize: 30, fontFamily: "monospace", color: "#0B0B0C", background: "#E11D2E", padding: "16px 24px" }}>THINK YOU CAN BEAT US?</div>
         </div>
       </div>
     ),
