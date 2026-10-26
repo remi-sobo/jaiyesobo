@@ -135,6 +135,34 @@ body::before {
   to   { transform: scale(1.08); }
 }
 
+/* Run It Back Picks brand v1 — scoped to its own route group.
+   The /runitback layout wraps its children in `.runitback-brand`, which
+   overrides a few theme vars inside that subtree only:
+     --color-red/bone/black/off-black/card/line → new palette
+     --font-fraunces → Archivo (display face)
+   Every existing `var(--color-red)`, `font-[family-name:var(--font-fraunces)]`
+   inside /runitback resolves against these overrides, so the rest of the
+   site (nav, hero, columns, pod, games) is untouched. */
+.runitback-brand {
+  --color-black: #0B0B0C;        /* ink */
+  --color-off-black: #151517;    /* surface */
+  --color-card: #1E1E21;         /* surface2 */
+  --color-red: #E11D2E;          /* accent */
+  --color-red-bright: #FF2D3D;
+  --color-red-deep: #B8202D;
+  --color-bone: #F7F7F8;         /* paper */
+  --color-mute: #9CA3AF;         /* steel */
+  --color-line: #2A2A2E;
+  --color-line-strong: #3A3A40;
+  --color-line-hover: #52525A;
+  --color-rib-win: #4ADE80;
+  --color-rib-loss: #F97316;
+  --font-fraunces: var(--font-archivo);
+  --radius-rib-card: 18px;
+  --radius-rib-button: 14px;
+  --radius-rib-sheet: 28px;
+}
+
 /* Sportsbook broadcast crawl. The content is doubled, so -50% loops seamlessly. */
 @keyframes sb-ticker {
   from { transform: translateX(0); }
