@@ -5,6 +5,7 @@ import { listWeeks } from "@/lib/sportsbook/data";
 import { loadSeason, loadWeekView } from "@/lib/sportsbook/view";
 import { currentWeekNumber, weekRangeLabel, weekSlug } from "@/lib/sportsbook/weeks";
 import { FanVote } from "./fan-bits";
+import { LastWeekBanner } from "./last-week";
 import { PublicCard, SeasonStandings } from "./public-week";
 import PlayerBoard from "./player-board";
 import VideoPopout from "@/components/site/video-popout";
@@ -76,6 +77,17 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
     <main className="px-4 py-[clamp(40px,6vw,80px)] min-[760px]:px-10">
       <div className="mx-auto max-w-[1240px]">
         {n === 1 && currentWeekNumber(new Date(now)) === 1 ? <OpeningWeekBanner /> : null}
+        {(() => {
+          // The latest finalized week prior to this one — what people landing
+          // Sunday morning for the new week should see at the top.
+          const prior = season?.summary.weekly.filter((w) => w.week < n).sort((a, b) => b.week - a.week)[0];
+          return prior ? (
+            <LastWeekBanner
+              prior={{ week: prior.week, jaiye: prior.jaiye, remi: prior.remi, winnerName: prior.winner }}
+              className="mb-4"
+            />
+          ) : null;
+        })()}
         <SportsbookHero
           jaiye={view.board.find((b) => b.player.kind === "jaiye")?.score.points ?? 0}
           remi={view.board.find((b) => b.player.kind === "remi")?.score.points ?? 0}
