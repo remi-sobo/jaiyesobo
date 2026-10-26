@@ -19,6 +19,9 @@ import {
   updateItem,
 } from "@/lib/sportsbook/actions";
 import { checkDisplayName, getHousePlayers } from "@/lib/sportsbook/players";
+import { archiveLeague, createLeague } from "@/lib/sportsbook/leagues";
+import { resolveReports } from "@/lib/sportsbook/safety";
+import { SB_SEASON } from "@/lib/sportsbook/weeks";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -30,9 +33,10 @@ const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : u
 /**
  * POST /api/admin/sportsbook { action, ... }
  *
- * Every admin move for the Sobo Sportsbook goes through here: drafting the
+ * Every admin move for Run It Back Picks goes through here: drafting the
  * slate, editing it, opening the week, Jaiye's and Remi's picks on the
- * shared screen, hand grading, recaps, finalizing, and challenger moderation.
+ * shared screen, hand grading, recaps, finalizing, challenger moderation,
+ * leagues, reports and Season Pass grants for beta testers.
  */
 export async function POST(req: Request) {
   await requireAdmin();
@@ -120,6 +124,30 @@ export async function POST(req: Request) {
           patch.display_name = check.name;
         }
         const { error } = await createServiceClient().from("sb_players").update(patch).eq("id", id).eq("kind", "challenger");
+        if (error) throw error;
+        return NextResponse.json({ ok: true });
+      }
+      case "league_create": {
+        // Until the Season Pass ships, leagues are made here. Remi or Jaiye runs it.
+        const house = await getHousePlayers();
+        const owner = body.as === "jaiye" ? house.jaiye : house.remi;
+        const league = await createLeague(owner.id, body.name, { admin: true });
+        return NextResponse.json({ ok: true, league_id: league.id, code: league.code });
+      }
+      case "league_archive":
+        await archiveLeague("", str(body.league_id), true);
+        return NextResponse.json({ ok: true });
+      case "reports_resolve":
+        await resolveReports(str(body.player_id), body.unhide === true);
+        return NextResponse.json({ ok: true });
+      case "pass": {
+        // Beta testers: turn the Season Pass on or off by hand.
+        const on = body.on === true;
+        const { error } = await createServiceClient()
+          .from("sb_players")
+          .update({ has_pass: on, pass_season: on ? SB_SEASON : null, pass_purchased_at: on ? new Date().toISOString() : null })
+          .eq("id", str(body.player_id))
+          .eq("kind", "challenger");
         if (error) throw error;
         return NextResponse.json({ ok: true });
       }

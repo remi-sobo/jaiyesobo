@@ -1,6 +1,6 @@
 # Run It Back Picks: iPhone app and growth spec
 
-Draft, Oct 25 2026. Builds on `docs/SOBO-SPORTSBOOK-SPEC.md`, which still describes the
+Phase 1 built Oct 25 2026 (branch phase-1-growth). Builds on `docs/SOBO-SPORTSBOOK-SPEC.md`, which still describes the
 weekly loop, pick types, grading and the existing tables. Nothing in that loop changes.
 
 ## 1. What we're building
@@ -44,10 +44,6 @@ New tables:
   `commissioner_id uuid → sb_players`, `season text`, `created_at`, `archived boolean default false`.
 - `sb_league_members`: `league_id`, `player_id`, `joined_at`, `invited_by uuid null → sb_players`,
   `removed boolean default false`; primary key `(league_id, player_id)`. Max 50 members per league.
-- `sb_week_scores`: `week_id`, `player_id`, `points int`, `picks_right int`, `picks_graded int`,
-  `lock_result text null` (`hit` | `miss` | `void`), `rank int`; primary key `(week_id, player_id)`.
-  Written when a week is finalized. Backfill for every week already final. The source of truth for
-  season totals, rivalries and rank changes. Live weeks still compute on the fly like today.
 - `sb_trash_talk`: `id`, `item_id`, `player_id`, `line_key text`, `created_at`; unique `(item_id, player_id)`.
   Only allowed after the item locks. `line_key` must be one of the preset lines in code.
 - `sb_reports`: `id`, `reporter_id`, `target_player_id`, `context text` (`name` | `talk` | `league_name`),
@@ -70,22 +66,23 @@ service client, same as today.
 - **Headline league** is not a row. Everyone who isn't hidden or deleted is in it.
 - **Rivalry:** two players are rivals once both have scores in the same final week. Record = weeks
   where one scored more than the other (ties counted separately). Show the 8 players you share the
-  most weeks with, plus Jaiye and Remi always first. Computed from `sb_week_scores`.
+  most weeks with, plus Jaiye and Remi always first. Computed from picks in final weeks, the same
+  way season standings are (built: no separate score table, so nothing can drift).
 - **Closest rival this week:** the player in any of your leagues whose live total is nearest yours.
 - **Creating a league** requires `has_pass` for the current season. Until Phase 3, only admin can
   create leagues (so the website and the beta can test them). Joining is always free.
 - **Invite links:** `jaiyesobo.com/runitback/l/{code}?from={player_code}`. Opening it shows who
-  challenged you, the league, its size and the week. "Make your picks" goes straight to the slate.
-  A new visitor is asked for a display name only after the first pick (keep the pick in the
-  browser until then). On iPhone with the app installed, the same URL opens the app (Phase 2 adds
+  challenged you, the league, its size and the week. On the website a new visitor fills one form
+  (name and age) that joins the game and the league, then lands on the picks. The app does pick
+  first, name after. On iPhone with the app installed, the same URL opens the app (Phase 2 adds
   the Associated Domains file at `/.well-known/apple-app-site-association`).
 - **Preset trash talk:** 16 lines in `lib/sportsbook/talk.ts`, one per player per revealed pick.
   No free text anywhere. Starting list: "Somebody check on Remi." "Called it. Again." "Y'all aren't
   ready." "Respect the upset." "I'm running it back." "That one hurt." "Never doubt me." "Lucky.
   That's all." "Jaiye knew." "Told you." "Not my best work." "See you Monday." "Ice cold."
   "Who had this?" "Wrong side, right heart." "Bench me."
-- **Reports:** report a display name, a league name or a trash talk line. Three open reports on a
-  player auto-hide their name to "Player" until Remi reviews it in admin.
+- **Reports:** report a display name, a league name or a trash talk line. Open reports from three
+  different people hide that player from every board until Remi reviews it in admin.
 - **Age band:** asked once at join: "Are you 13 or older?" Under 13 can still play with a nickname
   (same as today) but can't post trash talk, can't create leagues, and the app gets no push token for
   them. Final rule waits on the lawyer (see open decisions).

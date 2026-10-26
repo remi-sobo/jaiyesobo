@@ -164,7 +164,7 @@ AVOID REPEATING THESE (recent prompts):
 ${avoid.join("\n") || "none"}`;
 }
 
-const SYSTEM = `You build the weekly slate for the Run It Back Picks, a no-money NBA pick'em between Jaiye and his dad Remi (plus friends). Always call them Jaiye and Remi. Make it fun, varied and fair, like the best prop menus on real betting apps, but kid friendly.
+const SYSTEM = `You build the weekly slate for Run It Back Picks, a no-money NBA pick'em where people try to beat Jaiye and his dad Remi (plus their friends). Always call them Jaiye and Remi. Make it fun, varied and fair, with a big menu of different kinds of picks, and kid friendly. Never use betting words anywhere: bet, odds, wager, sportsbook, parlay, payout, pays, cash, juice, line movement, favorite to cover. Points are worth something, they never pay.
 
 Item types you can use:
 - winner: who wins a game. Needs game_id.
@@ -475,7 +475,7 @@ export async function writeRecap(input: {
   items: Array<{ prompt: string; result: string; jaiye: string; remi: string; jaiyeRight: boolean | null; remiRight: boolean | null }>;
   challengers: number;
 }): Promise<string> {
-  const prompt = `Week ${input.week} of the Run It Back Picks is done. Write the recap.
+  const prompt = `Week ${input.week} of Run It Back Picks is done. Write the recap.
 
 LEADERBOARD:
 ${input.board.map((b) => `${b.name}: ${b.points} pts (${b.correct} right, ${b.wrong} wrong, lock ${b.lockHit === null ? "none" : b.lockHit ? "hit" : "missed"})`).join("\n")}
@@ -489,7 +489,7 @@ ${input.challengers} challengers played this week.`;
     try {
       const { text } = await generateText({
         model: anthropic(model),
-        system: `You write the Monday recap for the Run It Back Picks, a no-money NBA pick'em between Jaiye and his dad Remi, plus friends. Write it as Jaiye, in first person ("I", "me", "my dad"). VOICE: You are writing as Jaiye, a confident 9 year old Black kid from East Palo Alto who loves hoops. Short sentences. Simple words a 4th grader uses. Swagger and confidence, playful trash talk, but never mean and never a caricature: no forced slang, at most one slang word. Sounds like a kid texting his friends, not a TV announcer or a grown up. No words like slate, matchup narrative, storyline, compelling, showdown, clash, or poised. 4 to 6 short sentences: who won the week and by how much, my best call, my worst miss, one fun stat, and a line about next week. If I lost, own it and talk a little trash about next week. Name challengers only if one of them won. No money talk. Plain text, no markdown, no em dashes, en dashes or double hyphens.`,
+        system: `You write the Monday recap for Run It Back Picks, a no-money NBA pick'em where people try to beat Jaiye and his dad Remi. Write it as Jaiye, in first person ("I", "me", "my dad"). VOICE: You are writing as Jaiye, a confident 9 year old Black kid from East Palo Alto who loves hoops. Short sentences. Simple words a 4th grader uses. Swagger and confidence, playful trash talk, but never mean and never a caricature: no forced slang, at most one slang word. Sounds like a kid texting his friends, not a TV announcer or a grown up. No words like slate, matchup narrative, storyline, compelling, showdown, clash, or poised. 4 to 6 short sentences: who won the week and by how much, my best call, my worst miss, one fun stat, and a line about next week. If I lost, own it and talk a little trash about next week. Name challengers only if one of them won. No money talk and no betting words (bet, odds, wager, sportsbook, parlay, payout, pays, cash). Plain text, no markdown, no em dashes, en dashes or double hyphens.`,
         prompt,
       });
       return cleanCopy(text);

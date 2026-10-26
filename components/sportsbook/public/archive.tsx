@@ -67,7 +67,7 @@ export function Archive({ view }: { view: ArchiveView }) {
             <StatTile label="Weeks played" value={weeks.length} />
             <StatTile label="Weeks final" value={totals.finals} />
             <StatTile label="Challengers all season" value={totals.challengers} />
-            <StatTile label="Beat both Sobos" value={totals.beatBoth} />
+            <StatTile label="Beat Jaiye &amp; Remi" value={totals.beatBoth} />
           </div>
           <div className="flex flex-wrap items-center gap-3 pt-2 font-[family-name:var(--font-jetbrains)] text-[0.72rem] uppercase tracking-[0.2em]">
             <Link
@@ -140,7 +140,7 @@ export function Archive({ view }: { view: ArchiveView }) {
                           <span className="font-medium">{w.topChallenger.name}</span>
                           <span className="ml-2 text-[var(--color-mute)]">{w.topChallenger.points} pts</span>
                           {w.topChallenger.beatJaiye && w.topChallenger.beatRemi ? (
-                            <span className="ml-2 text-[var(--color-games-yellow)]">beat both Sobos</span>
+                            <span className="ml-2 text-[var(--color-games-yellow)]">beat Jaiye &amp; Remi</span>
                           ) : w.topChallenger.beatJaiye ? (
                             <span className="ml-2 text-[var(--color-games-yellow)]">beat Jaiye</span>
                           ) : w.topChallenger.beatRemi ? (

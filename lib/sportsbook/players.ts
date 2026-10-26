@@ -52,6 +52,7 @@ export async function getChallenger(): Promise<SbPlayer | null> {
     .select("id, kind, display_name, code, hidden")
     .eq("id", id)
     .eq("kind", "challenger")
+    .is("deleted_at", null)
     .maybeSingle();
   return (data as SbPlayer | null) ?? null;
 }
@@ -93,6 +94,13 @@ function squash(v: string): string {
     .replace(/[^a-z]/g, "");
 }
 
+/** True when the text has none of the blocked words, even spelled with numbers or symbols. */
+export function isClean(text: string): boolean {
+  const s = squash(text);
+  const words = text.toLowerCase().split(/[\s._'-]+/).map(squash);
+  return !BLOCKED.some((w) => s.includes(w)) && !words.some((w) => BLOCKED_WORDS.includes(w));
+}
+
 export type NameCheck = { ok: true; name: string } | { ok: false; error: string };
 
 export function checkDisplayName(raw: unknown): NameCheck {
@@ -101,11 +109,7 @@ export function checkDisplayName(raw: unknown): NameCheck {
   if (name.length < 2) return { ok: false, error: "Name needs at least 2 letters." };
   if (name.length > 20) return { ok: false, error: "Keep it to 20 characters." };
   if (!/^[\p{L}\p{N} .'_-]+$/u.test(name)) return { ok: false, error: "Letters, numbers and spaces only." };
-  const s = squash(name);
-  const words = name.toLowerCase().split(/[\s._'-]+/).map(squash);
-  if (BLOCKED.some((w) => s.includes(w)) || words.some((w) => BLOCKED_WORDS.includes(w))) {
-    return { ok: false, error: "Pick a different name." };
-  }
+  if (!isClean(name)) return { ok: false, error: "Pick a different name." };
   const lower = name.toLowerCase();
   if (["remi", "jaiye", "jai", "jay", "dad", "daddy", "admin", "sobo"].includes(lower)) return { ok: false, error: "That name is taken." };
   return { ok: true, name };
@@ -141,4 +145,37 @@ export async function getHousePlayers(): Promise<Record<"remi" | "jaiye", SbPlay
     }
   }
   return { remi: found.get("remi")!, jaiye: found.get("jaiye")! };
+}
+
+export type AgeBand = "13_plus" | "under_13";
+
+export function isAgeBand(v: unknown): v is AgeBand {
+  return v === "13_plus" || v === "under_13";
+}
+
+/** Makes a new challenger with a fresh player code. Retries if the code is taken. */
+export async function createChallenger(name: string, ageBand: AgeBand | null): Promise<{ id: string; code: string }> {
+  const supa = createServiceClient();
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const { data, error } = await supa
+      .from("sb_players")
+      .insert({ kind: "challenger", display_name: name, code: newPlayerCode(), age_band: ageBand })
+      .select("id, code")
+      .single();
+    if (!error && data) return { id: data.id as string, code: data.code as string };
+    if (error && error.code !== "23505") throw error;
+  }
+  throw new Error("Couldn't make a player code.");
+}
+
+/** A challenger by player code, if the account is live. */
+export async function challengerByCode(raw: string): Promise<string | null> {
+  const { data } = await createServiceClient()
+    .from("sb_players")
+    .select("id")
+    .eq("code", normalizeCode(raw))
+    .eq("kind", "challenger")
+    .is("deleted_at", null)
+    .maybeSingle();
+  return (data?.id as string | undefined) ?? null;
 }

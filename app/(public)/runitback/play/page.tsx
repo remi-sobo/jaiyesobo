@@ -35,7 +35,7 @@ export default async function PlayPage() {
           </div>
           <div className="font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.3em] text-[var(--color-red)]">Run It Back Picks</div>
           <h1 className="mt-4 font-[family-name:var(--font-fraunces)] text-[clamp(2.4rem,7vw,4.6rem)] font-black leading-[0.9] tracking-[-0.04em]">
-            Beat the <em className="font-normal italic text-[var(--color-red)]">Sobos.</em>
+            Beat Jaiye <em className="font-normal italic text-[var(--color-red)]">&amp; Remi.</em>
           </h1>
           <p className="mx-auto mt-4 max-w-[50ch] text-[1rem] leading-relaxed text-[var(--color-mute)]">
             Pick the same games as me and my dad. Most points by Sunday night wins the week. No money, just bragging rights.
@@ -43,6 +43,11 @@ export default async function PlayPage() {
           <Link href="/runitback" className="mt-4 inline-block font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)] hover:text-[var(--color-red)]">
             See who&apos;s winning
           </Link>
+          {me ? (
+            <Link href="/runitback/leagues" className="ml-5 mt-4 inline-block font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)] hover:text-[var(--color-red)]">
+              Leagues and rivals
+            </Link>
+          ) : null}
         </header>
         {!me ? (
           <JoinForm />
