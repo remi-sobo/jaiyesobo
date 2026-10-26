@@ -11,6 +11,8 @@ import VideoPopout from "@/components/site/video-popout";
 import { sportsbookEpisode } from "@/lib/content/episodes";
 import { pad } from "@/lib/content/format";
 import { scheduleLiveSync } from "@/lib/sportsbook/live";
+import { canPostTalk, loadTalk, playerFlags } from "@/lib/sportsbook/safety";
+import { myLeagues } from "@/lib/sportsbook/leagues";
 import { OpeningWeekBanner, PlayButton, SportsbookHero, Ticker } from "./hero";
 
 function Label({ children }: { children: React.ReactNode }) {
@@ -51,6 +53,18 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
     featured ? loadSeason() : Promise.resolve(null),
     listWeeks(),
   ]);
+  const lockedIds = view.items.filter((i) => Date.parse(i.locks_at) <= view.now || view.week.status !== "open").map((i) => i.id);
+  const [talkLines, meFlags, leagues] = await Promise.all([
+    loadTalk(lockedIds, me?.id ?? null),
+    me ? playerFlags(me.id) : Promise.resolve(null),
+    me ? myLeagues(me.id) : Promise.resolve([]),
+  ]);
+  const nameOf = new Map(view.players.map((p) => [p.id, p.display_name]));
+  const talkFor = (itemId: string) => {
+    const lines = talkLines.filter((t) => t.item_id === itemId).map((t) => ({ player_id: t.player_id, name: nameOf.get(t.player_id) ?? "Player", text: t.text }));
+    const iPicked = !!me && view.picks.some((p) => p.item_id === itemId && p.player_id === me.id);
+    return { lines, meId: me?.id ?? null, canTalk: iPicked && canPostTalk(meFlags), myLine: lines.find((l) => l.player_id === me?.id)?.text ?? null };
+  };
   const house = { jaiye: view.players.find((p) => p.kind === "jaiye"), remi: view.players.find((p) => p.kind === "remi") };
   const now = view.now;
   const published = weeks.filter((w) => w.status !== "draft").sort((a, b) => b.week_number - a.week_number);
@@ -76,13 +90,27 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
           }
         />
         <Ticker items={view.items} />
+        {me ? (
+          <nav aria-label="Your leagues" className="mt-6 flex flex-wrap items-center gap-2">
+            <span className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">Your leagues</span>
+            <span className="inline-flex min-h-9 items-center border border-[var(--color-red)] px-3 text-[0.82rem]">Beat Jaiye &amp; Remi</span>
+            {leagues.map((l) => (
+              <Link key={l.id} href={`/runitback/leagues/${l.id}`} className="inline-flex min-h-9 items-center border border-[var(--color-line-strong)] px-3 text-[0.82rem] hover:border-[var(--color-red)]">
+                {l.name}
+              </Link>
+            ))}
+            <Link href="/runitback/leagues" className="inline-flex min-h-9 items-center px-2 text-[0.82rem] text-[var(--color-mute)] underline-offset-4 hover:underline">
+              {leagues.length ? "Leagues and rivals" : "Join a league"}
+            </Link>
+          </nav>
+        ) : null}
 
         <div className="mt-[clamp(40px,6vw,72px)] grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
           <section>
             <Label>This week&apos;s picks</Label>
             <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
               {view.items.map((item) => (
-                <PublicCard key={item.id} item={item} picks={view.picks} players={view.players} house={house} reactions={reactions} now={now} />
+                <PublicCard key={item.id} item={item} picks={view.picks} players={view.players} house={house} reactions={reactions} now={now} talk={talkFor(item.id)} />
               ))}
             </div>
           </section>

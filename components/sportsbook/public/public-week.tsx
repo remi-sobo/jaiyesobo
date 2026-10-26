@@ -3,6 +3,9 @@ import type { ReactionMap } from "@/lib/sportsbook/fans";
 import type { SbItem, SbPick, SbPlayer } from "@/lib/sportsbook/types";
 import { CardHead, CardPrompt, ResultLine, TeamDot, Who, isLocked, isWinningOption } from "../card-parts";
 import { ReactionBar } from "./fan-bits";
+import { TalkBox, type TalkView } from "./talk-box";
+
+export type CardTalk = { lines: TalkView[]; meId: string | null; canTalk: boolean; myLine: string | null };
 
 type House = { jaiye: SbPlayer | undefined; remi: SbPlayer | undefined };
 
@@ -74,6 +77,7 @@ export function PublicCard({
   house,
   reactions,
   now,
+  talk,
 }: {
   item: SbItem;
   picks: SbPick[];
@@ -81,6 +85,8 @@ export function PublicCard({
   house: House;
   reactions: ReactionMap;
   now: number;
+  /** Trash talk under the pick, once it locks. */
+  talk?: CardTalk;
 }) {
   const locked = isLocked(item, now) || item.status !== "open";
   const mine = picks.filter((p) => p.item_id === item.id);
@@ -117,7 +123,7 @@ export function PublicCard({
           })}
         </ul>
       ) : null}
-      {/* Perforated tear line, like a betting slip. */}
+      {/* Perforated tear line, like a ticket stub. */}
       <div aria-hidden className="relative -mx-4 mt-4 border-t border-dashed border-[var(--color-line-strong)]">
         <span className="absolute -left-2 -top-2 h-4 w-4 rounded-full border border-[var(--color-line-strong)] bg-[var(--color-black)]" />
         <span className="absolute -right-2 -top-2 h-4 w-4 rounded-full border border-[var(--color-line-strong)] bg-[var(--color-black)]" />
@@ -138,6 +144,7 @@ export function PublicCard({
             Me and my dad are still picking this one.
           </div>
         )}
+        {locked && talk ? <TalkBox itemId={item.id} lines={talk.lines} meId={talk.meId} canTalk={talk.canTalk} myLine={talk.myLine} /> : null}
       </div>
       <ResultLine item={item} />
     </div>

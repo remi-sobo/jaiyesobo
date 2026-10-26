@@ -8,6 +8,9 @@ import SharedPicks from "@/components/sportsbook/admin/shared-picks";
 import SlateEditor, { AddPropInline } from "@/components/sportsbook/admin/slate-editor-entry";
 import ResultsPanel, { BoardTable, ChallengersPanel, SettingsPanel } from "@/components/sportsbook/admin/results-panel";
 import RefreshButton from "@/components/sportsbook/admin/refresh-button";
+import { LeaguesPanel, ReportsPanel } from "@/components/sportsbook/admin/growth-panel";
+import { allLeagues } from "@/lib/sportsbook/leagues";
+import { openReports } from "@/lib/sportsbook/safety";
 
 export const dynamic = "force-dynamic";
 
@@ -34,8 +37,9 @@ export default async function AdminSportsbookPage(props: { searchParams: Promise
     [view, house, settings] = await Promise.all([loadWeekView(n, { admin: true }), getHousePlayers(), getSettings()]);
   } catch (e) {
     console.error(JSON.stringify({ scope: "sportsbook.admin.load", err: String(e) }));
-    loadError = "Couldn't load the Sportsbook. The tables may not exist yet (migration 025).";
+    loadError = "Couldn't load Run It Back Picks. The tables may not exist yet (migration 025).";
   }
+  const [reports, leagues] = await Promise.all([openReports().catch(() => []), allLeagues().catch(() => [])]);
   const w = weekWindow(n);
   const status = view?.week.status ?? "none";
 
@@ -105,6 +109,12 @@ export default async function AdminSportsbookPage(props: { searchParams: Promise
             <ResultsPanel week={n} status={view.week.status} items={view.items} board={view.board} recap={view.week.recap} />
           ) : null}
 
+          <Section title="Reports">
+            <ReportsPanel reports={reports} />
+          </Section>
+          <Section title="Leagues">
+            <LeaguesPanel leagues={leagues} />
+          </Section>
           <Section title="Challengers">
             <ChallengersPanel players={view?.players ?? []} />
           </Section>

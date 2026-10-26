@@ -18,9 +18,10 @@ async function post(body: Record<string, unknown>): Promise<{ ok: boolean; error
 const input = "h-12 w-full border border-[var(--color-line-strong)] bg-[var(--color-off-black)] px-3 text-[1rem] text-[var(--color-bone)] placeholder:text-[var(--color-mute)] focus:border-[var(--color-red)] focus:outline-none";
 const cta = "min-h-12 bg-[var(--color-red)] px-6 font-[family-name:var(--font-jetbrains)] text-[0.72rem] uppercase tracking-[0.2em] text-[var(--color-black)] hover:bg-[var(--color-bone)] disabled:opacity-50";
 
-export function JoinForm() {
+export function JoinForm({ league, from, onJoined }: { league?: string; from?: string; onJoined?: () => void } = {}) {
   const router = useRouter();
   const [name, setName] = useState("");
+  const [age, setAge] = useState<"13_plus" | "under_13" | null>(null);
   const [code, setCode] = useState("");
   const [mode, setMode] = useState<"join" | "restore">("join");
   const [error, setError] = useState<string | null>(null);
@@ -30,9 +31,19 @@ export function JoinForm() {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const res = mode === "join" ? await post({ action: "join", name }) : await post({ action: "restore", code });
+    if (mode === "join" && !age) {
+      setBusy(false);
+      setError("Tell us if you're 13 or older.");
+      return;
+    }
+    const res =
+      mode === "join"
+        ? await post({ action: "join", name, age_band: age, league: league ?? null, from: from ?? null })
+        : await post({ action: "restore", code });
+    if (res.ok && mode === "restore" && league) await post({ action: "league_join", code: league, from: from ?? null });
     setBusy(false);
     if (!res.ok) setError(res.error ?? "Something went wrong.");
+    else if (onJoined) onJoined();
     else router.refresh();
   }
 
@@ -45,6 +56,26 @@ export function JoinForm() {
           </label>
           <input id="sb-name" className={input} value={name} maxLength={20} autoComplete="nickname" placeholder="Big Ticket" onChange={(e) => setName(e.target.value)} />
           <p className="text-[0.8rem] text-[var(--color-mute)]">Everybody can see this name. Just your first name or a nickname.</p>
+          <fieldset className="mt-2 flex flex-col gap-2">
+            <legend className="mb-2 font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">Are you 13 or older?</legend>
+            <div className="flex gap-2">
+              {([
+                ["13_plus", "Yes"],
+                ["under_13", "No"],
+              ] as const).map(([v, label]) => (
+                <label
+                  key={v}
+                  className={`flex min-h-12 flex-1 cursor-pointer items-center justify-center border text-[0.95rem] ${age === v ? "border-[var(--color-red)] bg-[var(--color-red)]/15" : "border-[var(--color-line-strong)]"}`}
+                >
+                  <input type="radio" name="sb-age" value={v} checked={age === v} onChange={() => setAge(v)} className="sr-only" />
+                  {label}
+                </label>
+              ))}
+            </div>
+            {age === "under_13" ? (
+              <p className="text-[0.8rem] text-[var(--color-mute)]">You can play and react. Trash talk and starting leagues are for 13 and up.</p>
+            ) : null}
+          </fieldset>
         </>
       ) : (
         <>
