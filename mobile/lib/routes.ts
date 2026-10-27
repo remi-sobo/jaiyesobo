@@ -11,6 +11,7 @@ import type {
   JoinLeagueRequest,
   JoinRequest,
   LeaguePatch,
+  MePatch,
   MeResponse,
   PickRequest,
   RecapResponse,
@@ -41,6 +42,16 @@ export async function restoreSession(req: RestoreRequest): Promise<SessionRespon
 /** GET /me — current player, their leagues, the active season. 401 if signed out. */
 export function getMe(signal?: AbortSignal): Promise<MeResponse> {
   return appApi<MeResponse>("/me", { signal });
+}
+
+/** PATCH /me — change name, push settings, or push token. Returns the fresh /me payload. */
+export function patchMe(req: MePatch): Promise<MeResponse> {
+  return appApi<MeResponse>("/me", { method: "PATCH", body: req });
+}
+
+/** DELETE /me — delete the account. */
+export function deleteMe(): Promise<ApiOk> {
+  return appApi<ApiOk>("/me", { method: "DELETE" });
 }
 
 /** GET /week/current — this week's slate with the viewer's picks + scoreboard. 401 if signed out. */
