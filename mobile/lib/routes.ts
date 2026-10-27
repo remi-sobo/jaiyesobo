@@ -13,6 +13,7 @@ import type {
   LeaguePatch,
   MeResponse,
   PickRequest,
+  RecapResponse,
   RestoreRequest,
   SessionResponse,
   SubmitRequest,
@@ -45,6 +46,11 @@ export function getMe(signal?: AbortSignal): Promise<MeResponse> {
 /** GET /week/current — this week's slate with the viewer's picks + scoreboard. 401 if signed out. */
 export function getCurrentWeek(signal?: AbortSignal): Promise<ApiWeek> {
   return appApi<ApiWeek>("/week/current", { signal });
+}
+
+/** GET /recap/current — Jaiye's recap for this week, or last week's while this one is still being written. */
+export function getRecap(signal?: AbortSignal): Promise<RecapResponse> {
+  return appApi<RecapResponse>("/recap/current", { signal });
 }
 
 /** GET /board — the Beat Jaiye & Remi board. Omit league for the headline board, omit week for the current one. */
