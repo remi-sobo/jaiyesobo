@@ -15,7 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Lockup } from "@/components/Lockup";
 import { ApiError, clearToken, getToken } from "@/lib/api";
 import { colors, fonts, radius } from "@/lib/brand";
-import { getCurrentWeek, getMe, getTalkLines, postTalk, savePick, submitPicks } from "@/lib/routes";
+import { getCurrentWeek, getMe, getRecap, getTalkLines, postTalk, savePick, submitPicks } from "@/lib/routes";
 import type { ApiCrowd, ApiHousePick, ApiItem, ApiOption, ApiWeek, TalkLinesResponse } from "@shared/types";
 
 /**
@@ -117,6 +117,14 @@ function ThisWeekBody({
   const total = items.length;
   const canSubmit = picked === total && total > 0 && !week.submitted && week.status === "open";
 
+  // Entry strip only: never blocks render, falls back to the short label.
+  const recap = useQuery({
+    queryKey: ["recap", "current"],
+    queryFn: ({ signal }) => getRecap(signal),
+    staleTime: 60_000,
+  });
+  const recapWeek = recap.data?.text ? recap.data.week : null;
+
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -143,6 +151,11 @@ function ThisWeekBody({
         <Pressable onPress={() => router.push("/leagues")} style={[styles.boardLink, styles.leagueLink]}>
           <Text style={styles.boardLinkText}>{leagueCount > 0 ? `Leagues · ${leagueCount}` : "Leagues"}</Text>
           <Text style={styles.boardLinkCta}>{leagueCount > 0 ? "Open →" : "Start or join one →"}</Text>
+        </Pressable>
+
+        <Pressable onPress={() => router.push("/corner")} style={[styles.boardLink, styles.cornerLink]}>
+          <Text style={styles.boardLinkText}>{recapWeek ? `Jaiye's Corner · Week ${recapWeek} recap` : "Jaiye's Corner"}</Text>
+          <Text style={styles.boardLinkCta}>Read →</Text>
         </Pressable>
 
         <Text style={styles.progress}>
@@ -708,6 +721,7 @@ const styles = StyleSheet.create({
   boardLinkText: { flexShrink: 1, color: colors.paper, fontSize: 14 },
   boardLinkCta: { marginLeft: "auto", color: colors.accent, fontFamily: fonts.label, fontSize: 12, letterSpacing: 2, textTransform: "uppercase" },
   leagueLink: { marginTop: 8 },
+  cornerLink: { marginTop: 8, minHeight: 44 },
   progress: { color: colors.paper, fontSize: 15, marginTop: 18 },
   nextLock: { color: colors.steel, fontSize: 13, marginTop: 4 },
   cards: { marginTop: 20, gap: 12 },
