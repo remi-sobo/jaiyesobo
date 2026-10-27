@@ -6,8 +6,10 @@ import type {
   ApiWeek,
   JoinRequest,
   MeResponse,
+  PickRequest,
   RestoreRequest,
   SessionResponse,
+  SubmitRequest,
   TalkLinesResponse,
 } from "@shared/types";
 import { appApi, setToken } from "@/lib/api";
@@ -41,4 +43,18 @@ export function getCurrentWeek(signal?: AbortSignal): Promise<ApiWeek> {
 /** GET /talk/lines — the preset trash-talk list. Public, no auth needed. */
 export function getTalkLines(signal?: AbortSignal): Promise<TalkLinesResponse> {
   return appApi<TalkLinesResponse>("/talk/lines", { anonymous: true, signal });
+}
+
+/**
+ * POST /picks — save or clear one pick. `undefined` leaves a field alone;
+ * `null` clears it. Returns {ok:true} on success; 400 for closed/locked
+ * weeks or invalid options.
+ */
+export function savePick(req: PickRequest): Promise<ApiOk> {
+  return appApi<ApiOk>("/picks", { method: "POST", body: req });
+}
+
+/** POST /picks/submit — lock in every pick for the week. */
+export function submitPicks(req: SubmitRequest): Promise<ApiOk> {
+  return appApi<ApiOk>("/picks/submit", { method: "POST", body: req });
 }
