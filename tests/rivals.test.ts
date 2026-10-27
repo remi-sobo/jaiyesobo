@@ -34,7 +34,7 @@ const winner = (id: string, weekId: string, win: "a" | "b", points = 1): SbItem 
 
 const pick = (item: string, player: string, choice: string, is_lock = false): SbPick => ({ item_id: item, player_id: player, choice, guess: null, is_lock });
 
-const player = (id: string, kind: SbPlayer["kind"] = "challenger", hidden = false): SbPlayer => ({ id, kind, display_name: id, code: null, hidden });
+const player = (id: string, kind: SbPlayer["kind"] = "challenger", hidden = false): SbPlayer => ({ id, kind, display_name: id, hidden });
 
 describe("rivalries", () => {
   // Week 1: me right (+1), dele wrong (-1). Week 2: me wrong, dele right. Week 3: both right (tie). Week 4: me right.

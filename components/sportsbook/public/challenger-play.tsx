@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { SbItem, SbPick, SbPlayer } from "@/lib/sportsbook/types";
+import type { SbItem, SbPick, SbPlayerWithCode } from "@/lib/sportsbook/types";
 import { CardHead, CardPrompt, ResultLine, TeamDot, isLocked, isWinningOption } from "../card-parts";
 
 async function post(body: Record<string, unknown>): Promise<{ ok: boolean; error?: string; code?: string }> {
@@ -112,7 +112,7 @@ export function PlayBoard({
   submitted,
   newCode,
 }: {
-  me: SbPlayer;
+  me: SbPlayerWithCode;
   items: SbItem[];
   picks: SbPick[];
   now: number;

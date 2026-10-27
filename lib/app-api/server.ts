@@ -5,7 +5,7 @@ import { pickPoints } from "@/lib/sportsbook/grade";
 import { HEADLINE, HEADLINE_NAME, memberIds, myLeagues, type LeagueWithCount } from "@/lib/sportsbook/leagues";
 import { closestRival, topRivals, weekTotals, type Rival } from "@/lib/sportsbook/rivals";
 import { canPostTalk, loadTalk, playerFlags } from "@/lib/sportsbook/safety";
-import { ITEM_TYPE_LABEL, type SbItem, type SbPick, type SbPlayer, type SbWeek } from "@/lib/sportsbook/types";
+import { ITEM_TYPE_LABEL, type SbItem, type SbPick, type SbPlayerWithCode, type SbWeek } from "@/lib/sportsbook/types";
 import { loadWeekView, type WeekView } from "@/lib/sportsbook/view";
 import { SB_SEASON, weekRangeLabel } from "@/lib/sportsbook/weeks";
 import { rankAt } from "./rank";
@@ -30,7 +30,7 @@ import type {
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://jaiyesobo.com";
 
-export type PlayerRow = SbPlayer & {
+export type PlayerRow = SbPlayerWithCode & {
   age_band: AgeBand | null;
   has_pass: boolean;
   pass_season: string | null;
@@ -66,7 +66,8 @@ export function inviteUrl(code: string, fromCode?: string | null): string {
 }
 
 export function apiLeague(l: LeagueWithCount, me: PlayerRow): ApiLeague {
-  return { id: l.id, name: l.name, code: l.code, members: l.members, is_commissioner: l.commissioner_id === me.id, invite_url: inviteUrl(l.code, me.code) };
+  // No ?from=: the player code is a login credential, so it must never ride on a shareable link.
+  return { id: l.id, name: l.name, code: l.code, members: l.members, is_commissioner: l.commissioner_id === me.id, invite_url: inviteUrl(l.code) };
 }
 
 export async function apiLeagues(me: PlayerRow): Promise<ApiLeague[]> {
