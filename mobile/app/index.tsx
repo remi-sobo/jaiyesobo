@@ -91,6 +91,7 @@ export default function ThisWeek() {
       meName={me.data.player.display_name}
       meCode={me.data.player.code}
       canTalk={me.data.player.can_talk}
+      leagueCount={me.data.leagues.length}
     />
   );
 }
@@ -101,12 +102,14 @@ function ThisWeekBody({
   meName,
   meCode,
   canTalk,
+  leagueCount,
 }: {
   week: ApiWeek;
   meId: string;
   meName: string;
   meCode: string | null;
   canTalk: boolean;
+  leagueCount: number;
 }) {
   const scoreboard = week.scores;
   const items = week.items;
@@ -135,6 +138,11 @@ function ThisWeekBody({
             <Text style={styles.boardLinkText}>{`You're #${week.rank.position} of ${week.rank.of} this week`}</Text>
           ) : null}
           <Text style={styles.boardLinkCta}>See the board →</Text>
+        </Pressable>
+
+        <Pressable onPress={() => router.push("/leagues")} style={[styles.boardLink, styles.leagueLink]}>
+          <Text style={styles.boardLinkText}>{leagueCount > 0 ? `Leagues · ${leagueCount}` : "Leagues"}</Text>
+          <Text style={styles.boardLinkCta}>{leagueCount > 0 ? "Open →" : "Start or join one →"}</Text>
         </Pressable>
 
         <Text style={styles.progress}>
@@ -699,6 +707,7 @@ const styles = StyleSheet.create({
   },
   boardLinkText: { flexShrink: 1, color: colors.paper, fontSize: 14 },
   boardLinkCta: { marginLeft: "auto", color: colors.accent, fontFamily: fonts.label, fontSize: 12, letterSpacing: 2, textTransform: "uppercase" },
+  leagueLink: { marginTop: 8 },
   progress: { color: colors.paper, fontSize: 15, marginTop: 18 },
   nextLock: { color: colors.steel, fontSize: 13, marginTop: 4 },
   cards: { marginTop: 20, gap: 12 },
