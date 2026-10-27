@@ -1,19 +1,29 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Redirect, router } from "expo-router";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Keyboard,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Lockup } from "@/components/Lockup";
 import { ApiError, clearToken, getToken } from "@/lib/api";
 import { colors, fonts, radius } from "@/lib/brand";
-import { getCurrentWeek, getMe } from "@/lib/routes";
-import type { ApiItem } from "@shared/types";
+import { getCurrentWeek, getMe, savePick, submitPicks } from "@/lib/routes";
+import type { ApiCrowd, ApiHousePick, ApiItem, ApiOption, ApiWeek } from "@shared/types";
 
 /**
  * This Week — the home of the signed-in app. Loads /me and /week/current,
- * shows the Beat Jaiye & Remi scoreboard, the next lock, and read-only
- * pick cards for the active slate. Tap-to-pick, Lock-of-the-Week, Reveal
- * and the trash-talk strip land in follow-up PRs that each replace a
- * slice of this view.
+ * shows the Beat Jaiye & Remi scoreboard, next lock, and interactive pick
+ * cards. Tap an option to pick (or tap your selected option to clear);
+ * closest-guess items get a numeric input that commits on blur. Lock of
+ * the Week, Reveal and trash talk land in follow-up PRs.
  *
  * Auth gate: if no token is in the Keychain, we redirect to /join
  * immediately. If the token exists but /me returns 401 (revoked, deleted
@@ -74,10 +84,23 @@ export default function ThisWeek() {
     );
   }
 
-  const scoreboard = week.data.scores;
-  const items = week.data.items;
-  const picked = items.filter((i) => i.my_pick?.choice || i.my_pick?.guess != null).length;
+  return <ThisWeekBody week={week.data} meName={me.data.player.display_name} meCode={me.data.player.code} />;
+}
+
+function ThisWeekBody({
+  week,
+  meName,
+  meCode,
+}: {
+  week: ApiWeek;
+  meName: string;
+  meCode: string | null;
+}) {
+  const scoreboard = week.scores;
+  const items = week.items;
+  const picked = items.filter((i) => isPicked(i.my_pick)).length;
   const total = items.length;
+  const canSubmit = picked === total && total > 0 && !week.submitted && week.status === "open";
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
@@ -86,33 +109,37 @@ export default function ThisWeek() {
           <Lockup h={44} />
         </View>
 
-        <Text style={styles.eyebrow}>Week {week.data.number} · {week.data.label}</Text>
+        <Text style={styles.eyebrow}>Week {week.number} · {week.label}</Text>
         <Text style={styles.title}>Beat Jaiye & Remi.</Text>
 
         <View style={styles.scoreRow}>
           <ScoreBox name="Jaiye" value={scoreboard.jaiye} tone="accent" />
           <ScoreBox name="Remi" value={scoreboard.remi} tone="paper" />
-          <ScoreBox name={me.data.player.display_name} value={scoreboard.me ?? 0} tone="paper" />
+          <ScoreBox name={meName} value={scoreboard.me ?? 0} tone="paper" />
         </View>
 
         <Text style={styles.progress}>
-          {picked} of {total} picked. {picked === total ? "Hit Submit when you're ready." : "Pick them all, then submit."}
+          {week.submitted
+            ? "Submitted. Sit back."
+            : `${picked} of ${total} picked. ${picked === total ? "Hit Submit when you're ready." : "Pick them all, then submit."}`}
         </Text>
-        {week.data.next_lock_at ? (
-          <Text style={styles.nextLock}>Next lock: {new Date(week.data.next_lock_at).toLocaleString()}</Text>
+        {week.next_lock_at ? (
+          <Text style={styles.nextLock}>Next lock: {new Date(week.next_lock_at).toLocaleString()}</Text>
         ) : null}
 
         <View style={styles.cards}>
           {items.map((item) => (
-            <PickCard key={item.id} item={item} />
+            <PickCard key={item.id} item={item} disabled={week.submitted || week.status !== "open"} />
           ))}
         </View>
 
+        {canSubmit ? <SubmitButton week={week.number} /> : null}
+
         <View style={styles.account}>
           <Text style={styles.accountLabel}>Playing as</Text>
-          <Text style={styles.accountName}>{me.data.player.display_name}</Text>
-          {me.data.player.code ? (
-            <Text style={styles.accountCode}>Your code: <Text style={styles.codeMono}>{me.data.player.code}</Text></Text>
+          <Text style={styles.accountName}>{meName}</Text>
+          {meCode ? (
+            <Text style={styles.accountCode}>Your code: <Text style={styles.codeMono}>{meCode}</Text></Text>
           ) : null}
           <Text style={styles.accountHint}>Save it so you can play on another phone.</Text>
           <Pressable
@@ -125,6 +152,11 @@ export default function ThisWeek() {
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+function isPicked(p: ApiItem["my_pick"]): boolean {
+  if (!p) return false;
+  return p.choice !== null || p.guess !== null;
 }
 
 function describeError(err: ApiError): string {
@@ -145,30 +177,315 @@ function ScoreBox({ name, value, tone }: { name: string; value: number; tone: "a
   );
 }
 
-/** Read-only summary of a pick card. Tap-to-pick lands in the next PR. */
-function PickCard({ item }: { item: ApiItem }) {
-  const myChoiceLabel = item.my_pick?.choice
-    ? item.options.find((o) => o.key === item.my_pick!.choice)?.label ?? item.my_pick.choice
-    : null;
-  const myGuessLabel = item.my_pick?.guess != null ? String(item.my_pick.guess) : null;
-  const picked = myChoiceLabel ?? myGuessLabel;
+/**
+ * One pick card. Tap an option to send the pick; tap the chosen option
+ * again to clear it. "Closest" items get a numeric input that commits on
+ * submit/blur. The lock toggle appears once the card has a pick — the
+ * locked pick scores 2x, and locking one card clears the lock from any
+ * other card this week (server handles the move; the optimistic patch
+ * mirrors it so the UI stays consistent). All updates are optimistic:
+ * the week cache is patched immediately and rolled back on error.
+ */
+function PickCard({ item, disabled }: { item: ApiItem; disabled: boolean }) {
+  const qc = useQueryClient();
+  const [errorText, setErrorText] = useState<string | null>(null);
+  const locked = item.locked || disabled;
+
+  const mutation = useMutation({
+    mutationFn: (next: PickPatch) => savePick({ item_id: item.id, ...next }),
+    onMutate: async (next) => {
+      setErrorText(null);
+      await qc.cancelQueries({ queryKey: ["week", "current"] });
+      const previous = qc.getQueryData<ApiWeek>(["week", "current"]);
+      if (previous) {
+        qc.setQueryData<ApiWeek>(["week", "current"], patchItemPick(previous, item.id, next));
+      }
+      return { previous };
+    },
+    onError: (err, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(["week", "current"], ctx.previous);
+      setErrorText(err instanceof ApiError ? describeError(err) : "Couldn't save that pick.");
+    },
+    onSuccess: () => {
+      // Server may have adjusted other items (lock reassignment). Pull the fresh week.
+      qc.invalidateQueries({ queryKey: ["week", "current"] });
+    },
+  });
+
+  const isClosest = item.type === "closest";
+  const hasPick = isPicked(item.my_pick);
+  const isLocked = item.my_pick?.is_lock === true;
+
   return (
-    <View style={[styles.card, item.locked && styles.cardLocked]}>
+    <View style={[styles.card, isLocked && styles.cardIsLock]}>
       <View style={styles.cardTop}>
-        <Text style={styles.cardType}>{item.points} pt · {item.type_label}</Text>
-        {item.my_pick?.is_lock ? <Text style={styles.cardLockBadge}>LOCK</Text> : null}
+        <Text style={styles.cardType}>{item.points} pt · {item.type_label}{isLocked ? " · 2× LOCK" : ""}</Text>
       </View>
       <Text style={styles.cardPrompt}>{item.prompt}</Text>
-      {picked ? (
-        <Text style={styles.cardPicked}>Your pick: <Text style={styles.cardPickedValue}>{picked}</Text></Text>
+      {item.note ? <Text style={styles.cardNote}>{item.note}</Text> : null}
+
+      {isClosest ? (
+        <ClosestInput
+          current={item.my_pick?.guess ?? null}
+          disabled={locked || mutation.isPending}
+          onCommit={(n) => mutation.mutate(n === null && isLocked ? { guess: null, is_lock: false } : { guess: n })}
+        />
       ) : (
-        <Text style={styles.cardUnpicked}>Not picked yet. Tap-to-pick lands next PR.</Text>
+        <View style={styles.optionsRow}>
+          {item.options.map((o) => {
+            const selected = item.my_pick?.choice === o.key;
+            return (
+              <Pressable
+                key={o.key}
+                disabled={locked || mutation.isPending}
+                onPress={() => {
+                  // Clearing a locked pick must also release the lock — server
+                  // rejects a lock on an empty pick, so send both.
+                  if (selected && isLocked) mutation.mutate({ choice: null, is_lock: false });
+                  else mutation.mutate({ choice: selected ? null : o.key });
+                }}
+                style={[styles.optionBtn, selected && styles.optionBtnSelected, locked && styles.optionBtnLocked]}
+              >
+                <Text style={[styles.optionText, selected && styles.optionTextSelected]} numberOfLines={2}>
+                  {o.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
       )}
+
+      {hasPick && !locked ? (
+        <Pressable
+          onPress={() => mutation.mutate({ is_lock: !isLocked })}
+          disabled={mutation.isPending}
+          style={[styles.lockBtn, isLocked && styles.lockBtnActive]}
+        >
+          <Text style={[styles.lockBtnText, isLocked && styles.lockBtnTextActive]}>
+            {isLocked ? "LOCKED · 2× POINTS" : "Lock this pick (2×)"}
+          </Text>
+        </Pressable>
+      ) : null}
+
+      {errorText ? <Text style={styles.cardError}>{errorText}</Text> : null}
+
+      {item.locked ? <PickReveal item={item} /> : null}
       {item.locked && item.result?.display ? (
         <Text style={styles.cardResult}>{item.result.display}</Text>
       ) : null}
     </View>
   );
+}
+
+function PickReveal({ item }: { item: ApiItem }) {
+  const isClosest = item.type === "closest";
+  const pick = item.my_pick;
+  const points = item.my_points ?? 0;
+  const result = item.status === "graded" ? item.result : null;
+  const showVerdict = result !== null && isPicked(pick);
+  // Closest winners are player ids we can't match here, so fall back to points.
+  const called = isClosest
+    ? points > 0
+    : pick?.choice != null && !!result?.winners.includes(pick.choice);
+  const pointsText = `${points < 0 ? points : `+${points}`} pt${pick?.is_lock ? " · 2× LOCK" : ""}`;
+
+  return (
+    <View style={styles.reveal}>
+      {showVerdict ? (
+        <View>
+          {called ? (
+            <View style={styles.verdictStamp}>
+              <Text style={styles.verdictStampText}>CALLED IT ✓</Text>
+            </View>
+          ) : (
+            <Text style={styles.verdictMiss}>Missed.</Text>
+          )}
+          <Text
+            style={[
+              styles.verdictPoints,
+              points > 0 ? styles.pointsWin : points < 0 ? styles.pointsLoss : styles.pointsFlat,
+            ]}
+          >
+            {pointsText}
+          </Text>
+        </View>
+      ) : null}
+
+      <Text style={[styles.houseHeader, showVerdict && styles.houseHeaderSpaced]}>The House</Text>
+      <View style={styles.houseRow}>
+        <HouseCell name="Jaiye" pick={item.house.jaiye} item={item} />
+        <HouseCell name="Remi" pick={item.house.remi} item={item} />
+      </View>
+
+      {item.crowd ? <CrowdSummary crowd={item.crowd} options={item.options} isClosest={isClosest} /> : null}
+    </View>
+  );
+}
+
+function HouseCell({ name, pick, item }: { name: string; pick: ApiHousePick | null; item: ApiItem }) {
+  const isClosest = item.type === "closest";
+  const choice = pick?.choice ?? null;
+  const guess = pick?.guess ?? null;
+  const winners = item.status === "graded" ? item.result?.winners : undefined;
+
+  let pickText: string | null = null;
+  if (isClosest) {
+    if (guess !== null) pickText = String(guess);
+  } else if (choice !== null) {
+    pickText = item.options.find((o) => o.key === choice)?.label ?? choice;
+  }
+
+  const outcomeStyle =
+    !isClosest && winners && choice !== null
+      ? winners.includes(choice) ? styles.houseCellWin : styles.houseCellLoss
+      : null;
+
+  return (
+    <View style={[styles.houseCell, outcomeStyle]}>
+      <Text style={styles.houseName}>{name}</Text>
+      <Text style={[styles.housePick, pickText === null && styles.housePickEmpty]} numberOfLines={2}>
+        {pickText ?? "—"}
+      </Text>
+    </View>
+  );
+}
+
+function CrowdSummary({
+  crowd,
+  options,
+  isClosest,
+}: {
+  crowd: ApiCrowd;
+  options: ApiOption[];
+  isClosest: boolean;
+}) {
+  return (
+    <View>
+      <Text style={styles.crowdCount}>
+        {crowd.total} {crowd.total === 1 ? "player" : "players"} picked
+      </Text>
+      {isClosest ? (
+        crowd.avg !== null ? <Text style={styles.crowdLine}>Crowd average: {Math.round(crowd.avg)}</Text> : null
+      ) : (
+        <Text style={styles.crowdLine}>
+          {options.map((o) => `${o.label}: ${crowd.split[o.key] ?? 0}%`).join(", ")}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+/** Numeric input for closest-guess items. Commits on submit/blur if the value changed. */
+function ClosestInput({
+  current,
+  disabled,
+  onCommit,
+}: {
+  current: number | null;
+  disabled: boolean;
+  onCommit: (n: number | null) => void;
+}) {
+  const [draft, setDraft] = useState<string>(current == null ? "" : String(current));
+  // Reset local draft when server value changes (e.g. after invalidate).
+  useEffect(() => {
+    setDraft(current == null ? "" : String(current));
+  }, [current]);
+
+  const commit = () => {
+    const trimmed = draft.trim();
+    if (trimmed === "") {
+      if (current != null) onCommit(null);
+      return;
+    }
+    const n = Number(trimmed);
+    if (!Number.isFinite(n) || n < 0 || n > 999) {
+      // Snap back to last saved value — server validation would reject anyway.
+      setDraft(current == null ? "" : String(current));
+      return;
+    }
+    const rounded = Math.round(n);
+    if (rounded !== current) onCommit(rounded);
+  };
+
+  return (
+    <View style={styles.guessRow}>
+      <TextInput
+        value={draft}
+        onChangeText={setDraft}
+        onSubmitEditing={() => { commit(); Keyboard.dismiss(); }}
+        onBlur={commit}
+        editable={!disabled}
+        placeholder="—"
+        placeholderTextColor={colors.steel}
+        keyboardType="number-pad"
+        maxLength={3}
+        returnKeyType="done"
+        style={[styles.guessInput, disabled && styles.guessInputDisabled]}
+      />
+      <Text style={styles.guessHint}>Enter a number 0–999.</Text>
+    </View>
+  );
+}
+
+function SubmitButton({ week }: { week: number }) {
+  const qc = useQueryClient();
+  const [errorText, setErrorText] = useState<string | null>(null);
+  const submit = useMutation({
+    mutationFn: () => submitPicks({ week }),
+    onSuccess: () => {
+      setErrorText(null);
+      qc.invalidateQueries({ queryKey: ["week", "current"] });
+    },
+    onError: (err) => {
+      setErrorText(err instanceof ApiError ? describeError(err) : "Couldn't submit. Try again.");
+    },
+  });
+
+  return (
+    <View style={styles.submitBox}>
+      <Pressable
+        onPress={() => submit.mutate()}
+        disabled={submit.isPending}
+        style={({ pressed }) => [styles.submitBtn, pressed && styles.submitBtnPressed, submit.isPending && styles.submitBtnDisabled]}
+      >
+        {submit.isPending
+          ? <ActivityIndicator color={colors.ink} />
+          : <Text style={styles.submitBtnText}>Lock in my picks</Text>}
+      </Pressable>
+      {errorText ? <Text style={styles.submitError}>{errorText}</Text> : null}
+    </View>
+  );
+}
+
+type PickPatch = { choice?: string | null; guess?: number | null; is_lock?: boolean };
+
+/**
+ * Pure helper: patch a cached ApiWeek with a new choice/guess/is_lock on
+ * one item. If next.is_lock is true, every OTHER item in the week has its
+ * is_lock cleared — the server does the same thing when a lock moves.
+ */
+function patchItemPick(prev: ApiWeek, itemId: string, next: PickPatch): ApiWeek {
+  const movingLock = next.is_lock === true;
+  return {
+    ...prev,
+    items: prev.items.map((it) => {
+      if (it.id !== itemId) {
+        if (movingLock && it.my_pick?.is_lock) {
+          return { ...it, my_pick: { ...it.my_pick, is_lock: false } };
+        }
+        return it;
+      }
+      const curr = it.my_pick ?? { choice: null, guess: null, is_lock: false };
+      return {
+        ...it,
+        my_pick: {
+          choice: next.choice !== undefined ? next.choice : curr.choice,
+          guess: next.guess !== undefined ? next.guess : curr.guess,
+          is_lock: next.is_lock !== undefined ? next.is_lock : curr.is_lock,
+        },
+      };
+    }),
+  };
 }
 
 const styles = StyleSheet.create({
@@ -209,24 +526,85 @@ const styles = StyleSheet.create({
     borderRadius: radius.card,
     padding: 14,
   },
-  cardLocked: { opacity: 0.75 },
+  cardIsLock: { borderColor: colors.accent, borderWidth: 2 },
   cardTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   cardType: { color: colors.accent, fontFamily: fonts.label, fontSize: 11, letterSpacing: 2 },
-  cardLockBadge: {
-    color: colors.ink,
-    backgroundColor: colors.accent,
+  cardPrompt: { color: colors.paper, fontSize: 16, lineHeight: 22, marginTop: 8 },
+  cardNote: { color: colors.steel, fontSize: 13, marginTop: 4, fontStyle: "italic" },
+  optionsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
+  optionBtn: {
+    flexGrow: 1,
+    flexBasis: "45%",
+    minHeight: 48,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radius.button,
+    backgroundColor: colors.ink,
+  },
+  optionBtnSelected: { borderColor: colors.accent, backgroundColor: colors.surface2 },
+  optionBtnLocked: { opacity: 0.6 },
+  optionText: { color: colors.paper, fontSize: 15, textAlign: "center" },
+  optionTextSelected: { color: colors.accent, fontFamily: fonts.label, letterSpacing: 1 },
+  guessRow: { marginTop: 12 },
+  guessInput: {
+    height: 48,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.ink,
+    color: colors.paper,
+    paddingHorizontal: 12,
+    fontSize: 20,
+    fontFamily: fonts.label,
+    letterSpacing: 2,
+    borderRadius: radius.button,
+    textAlign: "center",
+  },
+  guessInputDisabled: { opacity: 0.5 },
+  guessHint: { color: colors.steel, fontSize: 12, marginTop: 6 },
+  lockBtn: {
+    marginTop: 12,
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radius.button,
+    backgroundColor: colors.ink,
+  },
+  lockBtnActive: { backgroundColor: colors.accent, borderColor: colors.accent },
+  lockBtnText: {
+    color: colors.steel,
     fontFamily: fonts.label,
     fontSize: 11,
     letterSpacing: 2,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    textTransform: "uppercase",
   },
-  cardPrompt: { color: colors.paper, fontSize: 16, lineHeight: 22, marginTop: 8 },
-  cardPicked: { color: colors.steel, fontSize: 14, marginTop: 10 },
-  cardPickedValue: { color: colors.paper, fontFamily: fonts.label },
-  cardUnpicked: { color: colors.steel, fontSize: 13, fontStyle: "italic", marginTop: 10 },
+  lockBtnTextActive: { color: colors.ink },
+  cardError: { color: colors.loss, fontSize: 13, marginTop: 8 },
   cardResult: { color: colors.steel, fontSize: 13, marginTop: 6 },
+  submitBox: { marginTop: 24 },
+  submitBtn: {
+    minHeight: 56,
+    paddingHorizontal: 24,
+    backgroundColor: colors.accent,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radius.button,
+  },
+  submitBtnPressed: { backgroundColor: colors.paper },
+  submitBtnDisabled: { opacity: 0.6 },
+  submitBtnText: {
+    color: colors.ink,
+    fontFamily: fonts.label,
+    fontSize: 14,
+    letterSpacing: 2,
+    textTransform: "uppercase",
+  },
+  submitError: { color: colors.loss, fontSize: 14, marginTop: 10, textAlign: "center" },
   account: {
     marginTop: 32,
     padding: 14,
@@ -246,4 +624,39 @@ const styles = StyleSheet.create({
   errorText: { color: colors.paper, fontSize: 15, textAlign: "center" },
   retryBtn: { marginTop: 12, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 16, paddingVertical: 10, borderRadius: radius.button },
   retryText: { color: colors.paper, fontSize: 14 },
+  reveal: { marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.line },
+  verdictStamp: {
+    alignSelf: "flex-start",
+    borderWidth: 2,
+    borderColor: colors.accent,
+    borderRadius: radius.button,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  verdictStampText: { color: colors.accent, fontFamily: fonts.displayItalic, fontSize: 20, lineHeight: 24, letterSpacing: 1 },
+  verdictMiss: { color: colors.steel, fontSize: 15 },
+  verdictPoints: { fontFamily: fonts.label, fontSize: 14, letterSpacing: 1, marginTop: 6 },
+  pointsWin: { color: colors.win },
+  pointsLoss: { color: colors.loss },
+  pointsFlat: { color: colors.steel },
+  houseHeader: { color: colors.steel, fontFamily: fonts.label, fontSize: 11, letterSpacing: 2, textTransform: "uppercase" },
+  houseHeaderSpaced: { marginTop: 14 },
+  houseRow: { flexDirection: "row", gap: 8, marginTop: 6 },
+  houseCell: {
+    flex: 1,
+    minWidth: 0,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radius.button,
+    backgroundColor: colors.ink,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  houseCellWin: { borderColor: colors.win },
+  houseCellLoss: { borderColor: colors.loss },
+  houseName: { color: colors.steel, fontFamily: fonts.label, fontSize: 11, letterSpacing: 2, textTransform: "uppercase" },
+  housePick: { color: colors.paper, fontSize: 15, marginTop: 4 },
+  housePickEmpty: { color: colors.steel },
+  crowdCount: { color: colors.steel, fontSize: 12, marginTop: 12 },
+  crowdLine: { color: colors.paper, fontSize: 13, lineHeight: 18, marginTop: 2 },
 });
