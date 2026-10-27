@@ -16,7 +16,7 @@ import { Lockup } from "@/components/Lockup";
 import { ApiError, clearToken, getToken } from "@/lib/api";
 import { colors, fonts, radius } from "@/lib/brand";
 import { getCurrentWeek, getMe, savePick, submitPicks } from "@/lib/routes";
-import type { ApiItem, ApiWeek } from "@shared/types";
+import type { ApiCrowd, ApiHousePick, ApiItem, ApiOption, ApiWeek } from "@shared/types";
 
 /**
  * This Week — the home of the signed-in app. Loads /me and /week/current,
@@ -213,14 +213,11 @@ function PickCard({ item, disabled }: { item: ApiItem; disabled: boolean }) {
   });
 
   const isClosest = item.type === "closest";
-  const choiceLabel = item.my_pick?.choice
-    ? item.options.find((o) => o.key === item.my_pick!.choice)?.label ?? item.my_pick.choice
-    : null;
   const hasPick = isPicked(item.my_pick);
   const isLocked = item.my_pick?.is_lock === true;
 
   return (
-    <View style={[styles.card, locked && styles.cardLocked, isLocked && styles.cardIsLock]}>
+    <View style={[styles.card, isLocked && styles.cardIsLock]}>
       <View style={styles.cardTop}>
         <Text style={styles.cardType}>{item.points} pt · {item.type_label}{isLocked ? " · 2× LOCK" : ""}</Text>
       </View>
@@ -272,12 +269,108 @@ function PickCard({ item, disabled }: { item: ApiItem; disabled: boolean }) {
 
       {errorText ? <Text style={styles.cardError}>{errorText}</Text> : null}
 
-      {locked && !isClosest && choiceLabel ? (
-        <Text style={styles.cardPicked}>Your pick: <Text style={styles.cardPickedValue}>{choiceLabel}</Text></Text>
-      ) : null}
+      {item.locked ? <PickReveal item={item} /> : null}
       {item.locked && item.result?.display ? (
         <Text style={styles.cardResult}>{item.result.display}</Text>
       ) : null}
+    </View>
+  );
+}
+
+function PickReveal({ item }: { item: ApiItem }) {
+  const isClosest = item.type === "closest";
+  const pick = item.my_pick;
+  const points = item.my_points ?? 0;
+  const result = item.status === "graded" ? item.result : null;
+  const showVerdict = result !== null && isPicked(pick);
+  // Closest winners are player ids we can't match here, so fall back to points.
+  const called = isClosest
+    ? points > 0
+    : pick?.choice != null && !!result?.winners.includes(pick.choice);
+  const pointsText = `${points < 0 ? points : `+${points}`} pt${pick?.is_lock ? " · 2× LOCK" : ""}`;
+
+  return (
+    <View style={styles.reveal}>
+      {showVerdict ? (
+        <View>
+          {called ? (
+            <View style={styles.verdictStamp}>
+              <Text style={styles.verdictStampText}>CALLED IT ✓</Text>
+            </View>
+          ) : (
+            <Text style={styles.verdictMiss}>Missed.</Text>
+          )}
+          <Text
+            style={[
+              styles.verdictPoints,
+              points > 0 ? styles.pointsWin : points < 0 ? styles.pointsLoss : styles.pointsFlat,
+            ]}
+          >
+            {pointsText}
+          </Text>
+        </View>
+      ) : null}
+
+      <Text style={[styles.houseHeader, showVerdict && styles.houseHeaderSpaced]}>The House</Text>
+      <View style={styles.houseRow}>
+        <HouseCell name="Jaiye" pick={item.house.jaiye} item={item} />
+        <HouseCell name="Remi" pick={item.house.remi} item={item} />
+      </View>
+
+      {item.crowd ? <CrowdSummary crowd={item.crowd} options={item.options} isClosest={isClosest} /> : null}
+    </View>
+  );
+}
+
+function HouseCell({ name, pick, item }: { name: string; pick: ApiHousePick | null; item: ApiItem }) {
+  const isClosest = item.type === "closest";
+  const choice = pick?.choice ?? null;
+  const guess = pick?.guess ?? null;
+  const winners = item.status === "graded" ? item.result?.winners : undefined;
+
+  let pickText: string | null = null;
+  if (isClosest) {
+    if (guess !== null) pickText = String(guess);
+  } else if (choice !== null) {
+    pickText = item.options.find((o) => o.key === choice)?.label ?? choice;
+  }
+
+  const outcomeStyle =
+    !isClosest && winners && choice !== null
+      ? winners.includes(choice) ? styles.houseCellWin : styles.houseCellLoss
+      : null;
+
+  return (
+    <View style={[styles.houseCell, outcomeStyle]}>
+      <Text style={styles.houseName}>{name}</Text>
+      <Text style={[styles.housePick, pickText === null && styles.housePickEmpty]} numberOfLines={2}>
+        {pickText ?? "—"}
+      </Text>
+    </View>
+  );
+}
+
+function CrowdSummary({
+  crowd,
+  options,
+  isClosest,
+}: {
+  crowd: ApiCrowd;
+  options: ApiOption[];
+  isClosest: boolean;
+}) {
+  return (
+    <View>
+      <Text style={styles.crowdCount}>
+        {crowd.total} {crowd.total === 1 ? "player" : "players"} picked
+      </Text>
+      {isClosest ? (
+        crowd.avg !== null ? <Text style={styles.crowdLine}>Crowd average: {Math.round(crowd.avg)}</Text> : null
+      ) : (
+        <Text style={styles.crowdLine}>
+          {options.map((o) => `${o.label}: ${crowd.split[o.key] ?? 0}%`).join(", ")}
+        </Text>
+      )}
     </View>
   );
 }
@@ -433,7 +526,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.card,
     padding: 14,
   },
-  cardLocked: { opacity: 0.75 },
   cardIsLock: { borderColor: colors.accent, borderWidth: 2 },
   cardTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   cardType: { color: colors.accent, fontFamily: fonts.label, fontSize: 11, letterSpacing: 2 },
@@ -493,8 +585,6 @@ const styles = StyleSheet.create({
   },
   lockBtnTextActive: { color: colors.ink },
   cardError: { color: colors.loss, fontSize: 13, marginTop: 8 },
-  cardPicked: { color: colors.steel, fontSize: 14, marginTop: 10 },
-  cardPickedValue: { color: colors.paper, fontFamily: fonts.label },
   cardResult: { color: colors.steel, fontSize: 13, marginTop: 6 },
   submitBox: { marginTop: 24 },
   submitBtn: {
@@ -534,4 +624,39 @@ const styles = StyleSheet.create({
   errorText: { color: colors.paper, fontSize: 15, textAlign: "center" },
   retryBtn: { marginTop: 12, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 16, paddingVertical: 10, borderRadius: radius.button },
   retryText: { color: colors.paper, fontSize: 14 },
+  reveal: { marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.line },
+  verdictStamp: {
+    alignSelf: "flex-start",
+    borderWidth: 2,
+    borderColor: colors.accent,
+    borderRadius: radius.button,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  verdictStampText: { color: colors.accent, fontFamily: fonts.displayItalic, fontSize: 20, lineHeight: 24, letterSpacing: 1 },
+  verdictMiss: { color: colors.steel, fontSize: 15 },
+  verdictPoints: { fontFamily: fonts.label, fontSize: 14, letterSpacing: 1, marginTop: 6 },
+  pointsWin: { color: colors.win },
+  pointsLoss: { color: colors.loss },
+  pointsFlat: { color: colors.steel },
+  houseHeader: { color: colors.steel, fontFamily: fonts.label, fontSize: 11, letterSpacing: 2, textTransform: "uppercase" },
+  houseHeaderSpaced: { marginTop: 14 },
+  houseRow: { flexDirection: "row", gap: 8, marginTop: 6 },
+  houseCell: {
+    flex: 1,
+    minWidth: 0,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radius.button,
+    backgroundColor: colors.ink,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  houseCellWin: { borderColor: colors.win },
+  houseCellLoss: { borderColor: colors.loss },
+  houseName: { color: colors.steel, fontFamily: fonts.label, fontSize: 11, letterSpacing: 2, textTransform: "uppercase" },
+  housePick: { color: colors.paper, fontSize: 15, marginTop: 4 },
+  housePickEmpty: { color: colors.steel },
+  crowdCount: { color: colors.steel, fontSize: 12, marginTop: 12 },
+  crowdLine: { color: colors.paper, fontSize: 13, lineHeight: 18, marginTop: 2 },
 });
