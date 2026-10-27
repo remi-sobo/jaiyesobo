@@ -1,89 +1,103 @@
-# Run It Back Picks · iPhone app
+# Run It Back — mobile app
 
-The Expo project for the Phase 2 iOS app. The website in the repo root is a
-separate install with a separate `package.json` and lockfile — this folder
-has its own.
+Expo (React Native) app for Run It Back Picks. Pairs with the Next.js
+web app at `../` — same database, same `/api/app/v1` backend.
 
-## Stack
+## Running it on your phone (quickest path)
 
-| | |
-|---|---|
-| Runtime | Expo SDK 58 (managed workflow), React Native 0.88, React 19 |
-| Language | TypeScript strict, `noUncheckedIndexedAccess` |
-| Routing | Expo Router (file-based under `app/`, typed routes on) |
-| Data | TanStack Query 5 over a fetch wrapper (`lib/api.ts`); Zod for response validation |
-| Shared types | Imported through `@shared/*` → `../lib/app-api/*` (Metro `watchFolders`) |
-| Brand | Imported through `@brand/*` → `../public/runitback-brand/*` (same mechanism) |
-| Session storage | `expo-secure-store` (iPhone Keychain) |
-| Push | `expo-notifications` (wired in `app.json`, used starting Phase 3) |
-| Fonts | `expo-font` loads Archivo 900 italic semi-expanded + 600 from `assets/fonts/` |
-| Images | `expo-image` for the brand symbol SVG |
-| Build & submit | EAS Build + EAS Submit (`eas.json`), bundle id `com.sobo.runitback` |
-| Testing | Jest + jest-expo + `@testing-library/react-native` |
+No Mac needed, no Xcode. Takes about two minutes.
 
-Why these:
+1. Install **Expo Go** from the App Store (iOS) or Google Play (Android).
+2. On your laptop:
 
-- **Expo managed** over bare — the only phone build we care about is the
-  iPhone one, Apple-signed. EAS Build does that in the cloud so nobody
-  needs Xcode locally during the TestFlight loop.
-- **Expo Router** over React Navigation calls — file-based routing mirrors
-  the Next.js mental model Jaiye and Remi already use on the web, and the
-  typed-routes experiment catches broken links at build time.
-- **TanStack Query** over hand-rolled fetches — the spec calls for
-  optimistic pick saves with retry and an offline banner; both land as a
-  mutation and a query status subscription instead of custom plumbing.
-- **StyleSheet** over NativeWind — one less thing to configure for a kid's
-  side project; the brand tokens come straight from the shared JSON, so
-  colors and radii don't drift. Swap to NativeWind later if the inline
-  style blocks start to hurt.
-- **expo-secure-store** over MMKV — Keychain-backed, matches the spec, and
-  the one-token session doesn't need MMKV's throughput.
+   ```bash
+   cd mobile
+   npm install
+   npx expo start
+   ```
 
-## Dev loop
+3. A QR code prints in the terminal. Open the iPhone **Camera** app,
+   point it at the QR code, tap the banner that appears — it hands off
+   to Expo Go and the app loads. On Android, use the "Scan QR code"
+   button inside Expo Go itself.
+4. Shake the phone to open the dev menu (reload, element inspector,
+   performance monitor).
 
-```
+Hot-reload is on — saving a file in `mobile/` reloads the phone within a
+second or two.
+
+## Running it on the iOS simulator
+
+Requires Xcode and macOS.
+
+```bash
 cd mobile
-npm install
-# Points the fetch client at prod by default (app.json extra.apiBaseUrl).
-# Override to the Vercel preview or your local Next.js dev server with:
-#   EXPO_PUBLIC_API_BASE_URL=https://<preview>.vercel.app npm run start
-npm run start                 # Metro + Expo dev client
-npm run ios                   # build + launch on simulator (needs Xcode)
+npm run ios
 ```
 
-TypeScript and tests:
+First run compiles a native shell and is slow (~5 min). After that it's
+fast. The simulator opens automatically.
 
-```
-npm run typecheck
-npm test
-```
+## Browser
 
-The website build at the repo root ignores this folder — `tsconfig.json`
-excludes `mobile`, and `vercel.json` has an `ignoreCommand` that skips the
-Next.js build when a commit only touches `mobile/`.
+Not supported right now. We haven't installed `react-native-web` or
+`@expo/metro-runtime`, so `expo start --web` won't work. If you want a
+laptop fallback for quick UI tweaks, let us know and we'll add it in a
+follow-up — it comes with its own quirks (SecureStore, keyboard
+behavior, haptics all diverge from the phone, so you still need to test
+on a device before shipping).
 
-## Build + submit (EAS)
+## Which backend does it talk to?
 
-```
-npx eas-cli build --platform ios --profile production
-npx eas-cli submit --platform ios --profile production
-```
+`app.json` → `expo.extra.apiBaseUrl` is set to `https://jaiyesobo.com`,
+so by default the app hits **production**. Any pick you make with Expo
+Go is a real pick on the real leaderboard. Options:
 
-Fill the submit creds in `eas.json` first (`appleTeamId`, `ascAppId`) and
-make sure the Apple Developer account for SOBO Consulting is set up.
+- **Just test with a throwaway account.** Join as "Phone test" or
+  similar and ignore it. (We can delete test accounts server-side if
+  they pile up.)
+- **Point at a Vercel preview** when a PR touches the backend:
 
-## Brand assets
+   ```bash
+   EXPO_PUBLIC_API_BASE_URL=https://<preview-url>.vercel.app \
+     npx expo start --clear
+   ```
 
-The authoritative brand files live in `../public/runitback-brand/`.
-Symbols load through the `@brand/*` alias (no copying). Fonts in
-`assets/fonts/` and the app icon in `assets/icon.png` are copies because
-Expo expects fonts and icons under the project root; keep them in sync
-with the brand folder when the brand updates (there's no script for that
-yet — it's two `cp` commands).
+   `EXPO_PUBLIC_API_BASE_URL` overrides `app.json`'s `apiBaseUrl`.
 
-## Status
+## PR review loop
 
-Phase 2 scaffold only. One starter screen that renders the lockup and
-fetches `/api/app/v1/talk/lines` as a smoke test. Flows (Join, This Week,
-Pick cards, Lock, Reveal, Trash talk, Leagues, Jaiye's Corner, Profile)
-land in follow-up PRs, each replacing a slice of this screen.
+For a mobile-only PR:
+
+1. `git fetch origin && git checkout <branch>`
+2. `cd mobile && npm install` (installs any new deps the PR adds)
+3. `npx expo start` → scan QR with Expo Go
+4. Walk the flows the PR touches. Shake → "Reload" to restart cleanly.
+
+Vercel preview URLs don't apply here: `vercel.json`'s `ignoreCommand`
+skips the web build on mobile-only commits. Pure mobile PRs test
+locally, not on a preview URL.
+
+## Scripts
+
+| Command | What it does |
+| --- | --- |
+| `npm start` / `npx expo start` | Dev server + QR code. |
+| `npm run ios` | iOS simulator (Mac + Xcode only). |
+| `npm run android` | Android emulator or attached device. |
+| `npm run typecheck` | `tsc --noEmit`. Runs clean. |
+| `npm test` | Jest. No specs yet; a passing suite will land with the integration slice. |
+| `npm run lint` | `expo lint`. (Config is still a work-in-progress — ignore for now.) |
+
+## Where things live
+
+- `app/` — Expo Router screens. `app/index.tsx` is This Week.
+- `lib/api.ts` — `fetch` wrapper, Keychain token storage, `ApiError`.
+- `lib/routes.ts` — typed route helpers, one per `/api/app/v1` endpoint.
+- `lib/brand.ts` — colors, fonts, radii.
+- `components/` — shared pieces (e.g. `Lockup`).
+- `assets/fonts/` — Archivo faces (loaded in `app/_layout.tsx`).
+
+Server-side request and response shapes are reused through the
+`@shared/*` alias (configured in `metro.config.js`), so a route's shape
+is only written once — in `../lib/app-api/types.ts`.
