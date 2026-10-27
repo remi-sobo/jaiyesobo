@@ -180,8 +180,11 @@ function ScoreBox({ name, value, tone }: { name: string; value: number; tone: "a
 /**
  * One pick card. Tap an option to send the pick; tap the chosen option
  * again to clear it. "Closest" items get a numeric input that commits on
- * submit/blur. Updates are optimistic — the week cache is patched
- * immediately so the UI feels instant, and rolled back if the save fails.
+ * submit/blur. The lock toggle appears once the card has a pick — the
+ * locked pick scores 2x, and locking one card clears the lock from any
+ * other card this week (server handles the move; the optimistic patch
+ * mirrors it so the UI stays consistent). All updates are optimistic:
+ * the week cache is patched immediately and rolled back on error.
  */
 function PickCard({ item, disabled }: { item: ApiItem; disabled: boolean }) {
   const qc = useQueryClient();
@@ -189,8 +192,7 @@ function PickCard({ item, disabled }: { item: ApiItem; disabled: boolean }) {
   const locked = item.locked || disabled;
 
   const mutation = useMutation({
-    mutationFn: (next: { choice?: string | null; guess?: number | null }) =>
-      savePick({ item_id: item.id, ...next }),
+    mutationFn: (next: PickPatch) => savePick({ item_id: item.id, ...next }),
     onMutate: async (next) => {
       setErrorText(null);
       await qc.cancelQueries({ queryKey: ["week", "current"] });
@@ -214,12 +216,13 @@ function PickCard({ item, disabled }: { item: ApiItem; disabled: boolean }) {
   const choiceLabel = item.my_pick?.choice
     ? item.options.find((o) => o.key === item.my_pick!.choice)?.label ?? item.my_pick.choice
     : null;
+  const hasPick = isPicked(item.my_pick);
+  const isLocked = item.my_pick?.is_lock === true;
 
   return (
-    <View style={[styles.card, locked && styles.cardLocked]}>
+    <View style={[styles.card, locked && styles.cardLocked, isLocked && styles.cardIsLock]}>
       <View style={styles.cardTop}>
-        <Text style={styles.cardType}>{item.points} pt · {item.type_label}</Text>
-        {item.my_pick?.is_lock ? <Text style={styles.cardLockBadge}>LOCK</Text> : null}
+        <Text style={styles.cardType}>{item.points} pt · {item.type_label}{isLocked ? " · 2× LOCK" : ""}</Text>
       </View>
       <Text style={styles.cardPrompt}>{item.prompt}</Text>
       {item.note ? <Text style={styles.cardNote}>{item.note}</Text> : null}
@@ -228,7 +231,7 @@ function PickCard({ item, disabled }: { item: ApiItem; disabled: boolean }) {
         <ClosestInput
           current={item.my_pick?.guess ?? null}
           disabled={locked || mutation.isPending}
-          onCommit={(n) => mutation.mutate({ guess: n })}
+          onCommit={(n) => mutation.mutate(n === null && isLocked ? { guess: null, is_lock: false } : { guess: n })}
         />
       ) : (
         <View style={styles.optionsRow}>
@@ -238,7 +241,12 @@ function PickCard({ item, disabled }: { item: ApiItem; disabled: boolean }) {
               <Pressable
                 key={o.key}
                 disabled={locked || mutation.isPending}
-                onPress={() => mutation.mutate({ choice: selected ? null : o.key })}
+                onPress={() => {
+                  // Clearing a locked pick must also release the lock — server
+                  // rejects a lock on an empty pick, so send both.
+                  if (selected && isLocked) mutation.mutate({ choice: null, is_lock: false });
+                  else mutation.mutate({ choice: selected ? null : o.key });
+                }}
                 style={[styles.optionBtn, selected && styles.optionBtnSelected, locked && styles.optionBtnLocked]}
               >
                 <Text style={[styles.optionText, selected && styles.optionTextSelected]} numberOfLines={2}>
@@ -249,6 +257,18 @@ function PickCard({ item, disabled }: { item: ApiItem; disabled: boolean }) {
           })}
         </View>
       )}
+
+      {hasPick && !locked ? (
+        <Pressable
+          onPress={() => mutation.mutate({ is_lock: !isLocked })}
+          disabled={mutation.isPending}
+          style={[styles.lockBtn, isLocked && styles.lockBtnActive]}
+        >
+          <Text style={[styles.lockBtnText, isLocked && styles.lockBtnTextActive]}>
+            {isLocked ? "LOCKED · 2× POINTS" : "Lock this pick (2×)"}
+          </Text>
+        </Pressable>
+      ) : null}
 
       {errorText ? <Text style={styles.cardError}>{errorText}</Text> : null}
 
@@ -344,23 +364,31 @@ function SubmitButton({ week }: { week: number }) {
   );
 }
 
-/** Pure helper: patch a cached ApiWeek with a new choice/guess on one item. */
-function patchItemPick(
-  prev: ApiWeek,
-  itemId: string,
-  next: { choice?: string | null; guess?: number | null },
-): ApiWeek {
+type PickPatch = { choice?: string | null; guess?: number | null; is_lock?: boolean };
+
+/**
+ * Pure helper: patch a cached ApiWeek with a new choice/guess/is_lock on
+ * one item. If next.is_lock is true, every OTHER item in the week has its
+ * is_lock cleared — the server does the same thing when a lock moves.
+ */
+function patchItemPick(prev: ApiWeek, itemId: string, next: PickPatch): ApiWeek {
+  const movingLock = next.is_lock === true;
   return {
     ...prev,
     items: prev.items.map((it) => {
-      if (it.id !== itemId) return it;
+      if (it.id !== itemId) {
+        if (movingLock && it.my_pick?.is_lock) {
+          return { ...it, my_pick: { ...it.my_pick, is_lock: false } };
+        }
+        return it;
+      }
       const curr = it.my_pick ?? { choice: null, guess: null, is_lock: false };
       return {
         ...it,
         my_pick: {
           choice: next.choice !== undefined ? next.choice : curr.choice,
           guess: next.guess !== undefined ? next.guess : curr.guess,
-          is_lock: curr.is_lock,
+          is_lock: next.is_lock !== undefined ? next.is_lock : curr.is_lock,
         },
       };
     }),
@@ -406,18 +434,9 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   cardLocked: { opacity: 0.75 },
+  cardIsLock: { borderColor: colors.accent, borderWidth: 2 },
   cardTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   cardType: { color: colors.accent, fontFamily: fonts.label, fontSize: 11, letterSpacing: 2 },
-  cardLockBadge: {
-    color: colors.ink,
-    backgroundColor: colors.accent,
-    fontFamily: fonts.label,
-    fontSize: 11,
-    letterSpacing: 2,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
   cardPrompt: { color: colors.paper, fontSize: 16, lineHeight: 22, marginTop: 8 },
   cardNote: { color: colors.steel, fontSize: 13, marginTop: 4, fontStyle: "italic" },
   optionsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
@@ -454,6 +473,25 @@ const styles = StyleSheet.create({
   },
   guessInputDisabled: { opacity: 0.5 },
   guessHint: { color: colors.steel, fontSize: 12, marginTop: 6 },
+  lockBtn: {
+    marginTop: 12,
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radius.button,
+    backgroundColor: colors.ink,
+  },
+  lockBtnActive: { backgroundColor: colors.accent, borderColor: colors.accent },
+  lockBtnText: {
+    color: colors.steel,
+    fontFamily: fonts.label,
+    fontSize: 11,
+    letterSpacing: 2,
+    textTransform: "uppercase",
+  },
+  lockBtnTextActive: { color: colors.ink },
   cardError: { color: colors.loss, fontSize: 13, marginTop: 8 },
   cardPicked: { color: colors.steel, fontSize: 14, marginTop: 10 },
   cardPickedValue: { color: colors.paper, fontFamily: fonts.label },
