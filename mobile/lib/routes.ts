@@ -1,0 +1,44 @@
+// Typed route helpers for /api/app/v1. The server-side types are imported
+// through the @shared alias (../lib/app-api/types.ts), so a request and
+// response shape only needs to be written once.
+import type {
+  ApiOk,
+  ApiWeek,
+  JoinRequest,
+  MeResponse,
+  RestoreRequest,
+  SessionResponse,
+  TalkLinesResponse,
+} from "@shared/types";
+import { appApi, setToken } from "@/lib/api";
+
+export type { ApiOk, ApiWeek, MeResponse, SessionResponse, TalkLinesResponse };
+
+/** POST /session/join — fresh account from name + age. Stores the token. */
+export async function joinSession(req: JoinRequest): Promise<SessionResponse> {
+  const res = await appApi<SessionResponse>("/session/join", { method: "POST", body: req, anonymous: true });
+  await setToken(res.token);
+  return res;
+}
+
+/** POST /session/restore — bring an existing account onto this phone with its code. */
+export async function restoreSession(req: RestoreRequest): Promise<SessionResponse> {
+  const res = await appApi<SessionResponse>("/session/restore", { method: "POST", body: req, anonymous: true });
+  await setToken(res.token);
+  return res;
+}
+
+/** GET /me — current player, their leagues, the active season. 401 if signed out. */
+export function getMe(signal?: AbortSignal): Promise<MeResponse> {
+  return appApi<MeResponse>("/me", { signal });
+}
+
+/** GET /week/current — this week's slate with the viewer's picks + scoreboard. 401 if signed out. */
+export function getCurrentWeek(signal?: AbortSignal): Promise<ApiWeek> {
+  return appApi<ApiWeek>("/week/current", { signal });
+}
+
+/** GET /talk/lines — the preset trash-talk list. Public, no auth needed. */
+export function getTalkLines(signal?: AbortSignal): Promise<TalkLinesResponse> {
+  return appApi<TalkLinesResponse>("/talk/lines", { anonymous: true, signal });
+}
