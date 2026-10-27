@@ -15,15 +15,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Lockup } from "@/components/Lockup";
 import { ApiError, clearToken, getToken } from "@/lib/api";
 import { colors, fonts, radius } from "@/lib/brand";
-import { getCurrentWeek, getMe, savePick, submitPicks } from "@/lib/routes";
-import type { ApiCrowd, ApiHousePick, ApiItem, ApiOption, ApiWeek } from "@shared/types";
+import { getCurrentWeek, getMe, getTalkLines, postTalk, savePick, submitPicks } from "@/lib/routes";
+import type { ApiCrowd, ApiHousePick, ApiItem, ApiOption, ApiWeek, TalkLinesResponse } from "@shared/types";
 
 /**
  * This Week — the home of the signed-in app. Loads /me and /week/current,
  * shows the Beat Jaiye & Remi scoreboard, next lock, and interactive pick
  * cards. Tap an option to pick (or tap your selected option to clear);
- * closest-guess items get a numeric input that commits on blur. Lock of
- * the Week, Reveal and trash talk land in follow-up PRs.
+ * closest-guess items get a numeric input that commits on blur. Locked
+ * cards reveal the house picks, crowd split, verdict, and trash talk.
  *
  * Auth gate: if no token is in the Keychain, we redirect to /join
  * immediately. If the token exists but /me returns 401 (revoked, deleted
@@ -84,17 +84,29 @@ export default function ThisWeek() {
     );
   }
 
-  return <ThisWeekBody week={week.data} meName={me.data.player.display_name} meCode={me.data.player.code} />;
+  return (
+    <ThisWeekBody
+      week={week.data}
+      meId={me.data.player.id}
+      meName={me.data.player.display_name}
+      meCode={me.data.player.code}
+      canTalk={me.data.player.can_talk}
+    />
+  );
 }
 
 function ThisWeekBody({
   week,
+  meId,
   meName,
   meCode,
+  canTalk,
 }: {
   week: ApiWeek;
+  meId: string;
   meName: string;
   meCode: string | null;
+  canTalk: boolean;
 }) {
   const scoreboard = week.scores;
   const items = week.items;
@@ -129,7 +141,13 @@ function ThisWeekBody({
 
         <View style={styles.cards}>
           {items.map((item) => (
-            <PickCard key={item.id} item={item} disabled={week.submitted || week.status !== "open"} />
+            <PickCard
+              key={item.id}
+              item={item}
+              disabled={week.submitted || week.status !== "open"}
+              meId={meId}
+              canTalk={canTalk}
+            />
           ))}
         </View>
 
@@ -186,7 +204,17 @@ function ScoreBox({ name, value, tone }: { name: string; value: number; tone: "a
  * mirrors it so the UI stays consistent). All updates are optimistic:
  * the week cache is patched immediately and rolled back on error.
  */
-function PickCard({ item, disabled }: { item: ApiItem; disabled: boolean }) {
+function PickCard({
+  item,
+  disabled,
+  meId,
+  canTalk,
+}: {
+  item: ApiItem;
+  disabled: boolean;
+  meId: string;
+  canTalk: boolean;
+}) {
   const qc = useQueryClient();
   const [errorText, setErrorText] = useState<string | null>(null);
   const locked = item.locked || disabled;
@@ -269,7 +297,7 @@ function PickCard({ item, disabled }: { item: ApiItem; disabled: boolean }) {
 
       {errorText ? <Text style={styles.cardError}>{errorText}</Text> : null}
 
-      {item.locked ? <PickReveal item={item} /> : null}
+      {item.locked ? <PickReveal item={item} meId={meId} canTalk={canTalk} /> : null}
       {item.locked && item.result?.display ? (
         <Text style={styles.cardResult}>{item.result.display}</Text>
       ) : null}
@@ -277,7 +305,7 @@ function PickCard({ item, disabled }: { item: ApiItem; disabled: boolean }) {
   );
 }
 
-function PickReveal({ item }: { item: ApiItem }) {
+function PickReveal({ item, meId, canTalk }: { item: ApiItem; meId: string; canTalk: boolean }) {
   const isClosest = item.type === "closest";
   const pick = item.my_pick;
   const points = item.my_points ?? 0;
@@ -318,6 +346,8 @@ function PickReveal({ item }: { item: ApiItem }) {
       </View>
 
       {item.crowd ? <CrowdSummary crowd={item.crowd} options={item.options} isClosest={isClosest} /> : null}
+
+      <TalkBlock item={item} meId={meId} canTalk={canTalk} />
     </View>
   );
 }
@@ -346,6 +376,9 @@ function HouseCell({ name, pick, item }: { name: string; pick: ApiHousePick | nu
       <Text style={[styles.housePick, pickText === null && styles.housePickEmpty]} numberOfLines={2}>
         {pickText ?? "—"}
       </Text>
+      {pick?.talk ? (
+        <Text style={styles.houseQuote} numberOfLines={2}>{`"${pick.talk}"`}</Text>
+      ) : null}
     </View>
   );
 }
@@ -371,6 +404,117 @@ function CrowdSummary({
           {options.map((o) => `${o.label}: ${crowd.split[o.key] ?? 0}%`).join(", ")}
         </Text>
       )}
+    </View>
+  );
+}
+
+type TalkLine = TalkLinesResponse["lines"][number];
+
+/** Locked-item trash talk: the feed (includes my own line) plus a preset-only composer. */
+function TalkBlock({ item, meId, canTalk }: { item: ApiItem; meId: string; canTalk: boolean }) {
+  const showComposer = canTalk && item.locked && isPicked(item.my_pick);
+  const hasFeed = item.talk.length > 0;
+  if (!hasFeed && !showComposer) return null;
+
+  const myKey = item.talk.find((t) => t.player_id === meId)?.key ?? null;
+
+  return (
+    <View>
+      {hasFeed ? (
+        <>
+          <Text style={[styles.houseHeader, styles.talkHeaderSpaced]}>Talk</Text>
+          {item.talk.map((t) => {
+            const mine = t.player_id === meId;
+            return (
+              <Text key={t.player_id} style={styles.talkLine}>
+                <Text style={styles.talkName}>{mine ? "You" : t.display_name}</Text>
+                {"  "}
+                <Text style={[styles.talkText, mine && styles.talkTextMine]}>{t.text}</Text>
+              </Text>
+            );
+          })}
+        </>
+      ) : null}
+      {showComposer ? <TalkComposer item={item} meId={meId} myKey={myKey} /> : null}
+    </View>
+  );
+}
+
+function TalkComposer({ item, meId, myKey }: { item: ApiItem; meId: string; myKey: string | null }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [errorText, setErrorText] = useState<string | null>(null);
+
+  const lines = useQuery({
+    queryKey: ["talk", "lines"],
+    queryFn: ({ signal }) => getTalkLines(signal),
+    staleTime: Infinity,
+  });
+
+  const mutation = useMutation({
+    mutationFn: (line: TalkLine | null) => postTalk({ item_id: item.id, key: line?.key ?? null }),
+    onMutate: async (line) => {
+      setErrorText(null);
+      await qc.cancelQueries({ queryKey: ["week", "current"] });
+      const previous = qc.getQueryData<ApiWeek>(["week", "current"]);
+      if (previous) {
+        qc.setQueryData<ApiWeek>(["week", "current"], patchItemTalk(previous, item.id, meId, line));
+      }
+      return { previous };
+    },
+    onError: (err, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(["week", "current"], ctx.previous);
+      setErrorText(err instanceof ApiError ? describeError(err) : "Couldn't save that line.");
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["week", "current"] });
+    },
+  });
+
+  // No preset list means nothing to pick from; the feed above still renders.
+  if (lines.isError && !lines.data) return null;
+
+  return (
+    <View style={styles.talkComposer}>
+      {!open ? (
+        <Pressable onPress={() => setOpen(true)} style={styles.talkBtn}>
+          <Text style={styles.talkBtnText}>{myKey ? "Change my line" : "Talk your talk"}</Text>
+        </Pressable>
+      ) : lines.data ? (
+        <>
+          <View style={styles.talkChips}>
+            {lines.data.lines.map((l) => {
+              const selected = l.key === myKey;
+              return (
+                <Pressable
+                  key={l.key}
+                  disabled={mutation.isPending}
+                  onPress={() => {
+                    setOpen(false);
+                    mutation.mutate(selected ? null : l);
+                  }}
+                  style={[
+                    styles.optionBtn,
+                    styles.talkChip,
+                    selected && styles.optionBtnSelected,
+                    mutation.isPending && styles.optionBtnLocked,
+                  ]}
+                >
+                  <Text style={[styles.optionText, styles.talkChipText, selected && styles.optionTextSelected]}>
+                    {l.text}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Pressable onPress={() => setOpen(false)} hitSlop={8} style={styles.talkCancel}>
+            <Text style={styles.talkCancelText}>Never mind</Text>
+          </Pressable>
+        </>
+      ) : (
+        <ActivityIndicator color={colors.steel} size="small" style={styles.talkSpinner} />
+      )}
+      {errorText ? <Text style={styles.cardError}>{errorText}</Text> : null}
     </View>
   );
 }
@@ -483,6 +627,23 @@ function patchItemPick(prev: ApiWeek, itemId: string, next: PickPatch): ApiWeek 
           guess: next.guess !== undefined ? next.guess : curr.guess,
           is_lock: next.is_lock !== undefined ? next.is_lock : curr.is_lock,
         },
+      };
+    }),
+  };
+}
+
+/** Pure helper: replace the viewer's line in one item's talk feed. A null line removes it. */
+function patchItemTalk(prev: ApiWeek, itemId: string, meId: string, line: TalkLine | null): ApiWeek {
+  return {
+    ...prev,
+    items: prev.items.map((it) => {
+      if (it.id !== itemId) return it;
+      const others = it.talk.filter((t) => t.player_id !== meId);
+      return {
+        ...it,
+        talk: line
+          ? [...others, { player_id: meId, display_name: "You", key: line.key, text: line.text }]
+          : others,
       };
     }),
   };
@@ -659,4 +820,27 @@ const styles = StyleSheet.create({
   housePickEmpty: { color: colors.steel },
   crowdCount: { color: colors.steel, fontSize: 12, marginTop: 12 },
   crowdLine: { color: colors.paper, fontSize: 13, lineHeight: 18, marginTop: 2 },
+  houseQuote: { color: colors.steel, fontSize: 12, fontStyle: "italic", marginTop: 4 },
+  talkHeaderSpaced: { marginTop: 14 },
+  talkLine: { marginTop: 6, lineHeight: 20 },
+  talkName: { color: colors.paper, fontFamily: fonts.label, fontSize: 12, letterSpacing: 1 },
+  talkText: { color: colors.paper, fontSize: 14 },
+  talkTextMine: { color: colors.accent },
+  talkComposer: { marginTop: 10 },
+  talkBtn: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radius.button,
+    backgroundColor: colors.ink,
+  },
+  talkBtnText: { color: colors.paper, fontFamily: fonts.label, fontSize: 12, letterSpacing: 1 },
+  talkChips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  talkChip: { flexGrow: 0, flexBasis: "auto", maxWidth: "100%", minHeight: 0, paddingVertical: 8 },
+  talkChipText: { fontSize: 13 },
+  talkCancel: { alignSelf: "flex-start", marginTop: 10 },
+  talkCancelText: { color: colors.steel, fontSize: 13, textDecorationLine: "underline" },
+  talkSpinner: { alignSelf: "flex-start" },
 });
