@@ -130,6 +130,13 @@ function ThisWeekBody({
           <ScoreBox name={meName} value={scoreboard.me ?? 0} tone="paper" />
         </View>
 
+        <Pressable onPress={() => router.push("/board")} style={styles.boardLink}>
+          {week.rank ? (
+            <Text style={styles.boardLinkText}>{`You're #${week.rank.position} of ${week.rank.of} this week`}</Text>
+          ) : null}
+          <Text style={styles.boardLinkCta}>See the board →</Text>
+        </Pressable>
+
         <Text style={styles.progress}>
           {week.submitted
             ? "Submitted. Sit back."
@@ -677,6 +684,21 @@ const styles = StyleSheet.create({
   scoreValue: { fontFamily: fonts.label, fontSize: 28, lineHeight: 32, marginTop: 4 },
   scoreAccent: { color: colors.accent },
   scorePaper: { color: colors.paper },
+  boardLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    marginTop: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.surface,
+    borderRadius: radius.button,
+  },
+  boardLinkText: { flexShrink: 1, color: colors.paper, fontSize: 14 },
+  boardLinkCta: { marginLeft: "auto", color: colors.accent, fontFamily: fonts.label, fontSize: 12, letterSpacing: 2, textTransform: "uppercase" },
   progress: { color: colors.paper, fontSize: 15, marginTop: 18 },
   nextLock: { color: colors.steel, fontSize: 13, marginTop: 4 },
   cards: { marginTop: 20, gap: 12 },

@@ -2,6 +2,7 @@
 // through the @shared alias (../lib/app-api/types.ts), so a request and
 // response shape only needs to be written once.
 import type {
+  ApiBoard,
   ApiOk,
   ApiWeek,
   JoinRequest,
@@ -39,6 +40,17 @@ export function getMe(signal?: AbortSignal): Promise<MeResponse> {
 /** GET /week/current — this week's slate with the viewer's picks + scoreboard. 401 if signed out. */
 export function getCurrentWeek(signal?: AbortSignal): Promise<ApiWeek> {
   return appApi<ApiWeek>("/week/current", { signal });
+}
+
+/** GET /board — the Beat Jaiye & Remi board. Omit league for the headline board, omit week for the current one. */
+export function getBoard(
+  q: { span: "week" | "season"; week?: number; league?: string },
+  signal?: AbortSignal,
+): Promise<ApiBoard> {
+  const params = new URLSearchParams({ span: q.span });
+  if (q.week !== undefined) params.set("week", String(q.week));
+  if (q.league !== undefined) params.set("league", q.league);
+  return appApi<ApiBoard>(`/board?${params.toString()}`, { signal });
 }
 
 /** GET /talk/lines — the preset trash-talk list. Public, no auth needed. */
