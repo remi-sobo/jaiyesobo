@@ -11,6 +11,7 @@ import type {
   SessionResponse,
   SubmitRequest,
   TalkLinesResponse,
+  TalkRequest,
 } from "@shared/types";
 import { appApi, setToken } from "@/lib/api";
 
@@ -57,4 +58,9 @@ export function savePick(req: PickRequest): Promise<ApiOk> {
 /** POST /picks/submit — lock in every pick for the week. */
 export function submitPicks(req: SubmitRequest): Promise<ApiOk> {
   return appApi<ApiOk>("/picks/submit", { method: "POST", body: req });
+}
+
+/** POST /talk — set or clear my preset line on a locked item. key null removes it. */
+export function postTalk(req: TalkRequest): Promise<ApiOk> {
+  return appApi<ApiOk>("/talk", { method: "POST", body: req });
 }
