@@ -3,9 +3,14 @@
 // response shape only needs to be written once.
 import type {
   ApiBoard,
+  ApiLeague,
+  ApiLeagueDetail,
   ApiOk,
   ApiWeek,
+  CreateLeagueRequest,
+  JoinLeagueRequest,
   JoinRequest,
+  LeaguePatch,
   MeResponse,
   PickRequest,
   RestoreRequest,
@@ -75,4 +80,46 @@ export function submitPicks(req: SubmitRequest): Promise<ApiOk> {
 /** POST /talk — set or clear my preset line on a locked item. key null removes it. */
 export function postTalk(req: TalkRequest): Promise<ApiOk> {
   return appApi<ApiOk>("/talk", { method: "POST", body: req });
+}
+
+/** GET /leagues — leagues the viewer belongs to. */
+export function getLeagues(signal?: AbortSignal): Promise<{ leagues: ApiLeague[] }> {
+  return appApi<{ leagues: ApiLeague[] }>("/leagues", { signal });
+}
+
+/** POST /leagues — start a league. Needs the Season Pass; 400 with a message otherwise. */
+export function createLeague(req: CreateLeagueRequest): Promise<{ league: ApiLeague }> {
+  return appApi<{ league: ApiLeague }>("/leagues", { method: "POST", body: req });
+}
+
+/** POST /leagues/join — join with a league code like WORD-1234. */
+export function joinLeague(req: JoinLeagueRequest): Promise<{ league: ApiLeague }> {
+  return appApi<{ league: ApiLeague }>("/leagues/join", { method: "POST", body: req });
+}
+
+/** GET /leagues/:id — league, its week and season boards, and members. */
+export function getLeague(id: string, signal?: AbortSignal): Promise<ApiLeagueDetail> {
+  return appApi<ApiLeagueDetail>(`/leagues/${encodeURIComponent(id)}`, { signal });
+}
+
+/** PATCH /leagues/:id — rename. Commissioner only. */
+export function renameLeague(id: string, req: LeaguePatch): Promise<ApiOk> {
+  return appApi<ApiOk>(`/leagues/${encodeURIComponent(id)}`, { method: "PATCH", body: req });
+}
+
+/** DELETE /leagues/:id — archive for everyone. Commissioner only. */
+export function archiveLeague(id: string): Promise<ApiOk> {
+  return appApi<ApiOk>(`/leagues/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+/** POST /leagues/:id/leave — members only; commissioners get a 400. */
+export function leaveLeague(id: string): Promise<ApiOk> {
+  return appApi<ApiOk>(`/leagues/${encodeURIComponent(id)}/leave`, { method: "POST" });
+}
+
+/** DELETE /leagues/:id/members/:playerId — remove a member. Commissioner only. */
+export function removeMember(id: string, playerId: string): Promise<ApiOk> {
+  return appApi<ApiOk>(`/leagues/${encodeURIComponent(id)}/members/${encodeURIComponent(playerId)}`, {
+    method: "DELETE",
+  });
 }

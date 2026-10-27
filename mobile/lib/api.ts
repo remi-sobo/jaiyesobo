@@ -37,7 +37,7 @@ export class ApiError extends Error {
 }
 
 type RequestOpts = {
-  method?: "GET" | "POST" | "DELETE";
+  method?: "GET" | "POST" | "PATCH" | "DELETE";
   body?: unknown;
   /** When true, don't send the session token even if we have one. */
   anonymous?: boolean;
