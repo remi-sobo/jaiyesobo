@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
+import { MoreButton, usePlayerActions } from "@/components/PlayerActions";
 import { colors, fonts, radius } from "@/lib/brand";
 import type { ApiBoard, ApiBoardRow } from "@shared/types";
 
@@ -34,6 +35,7 @@ export function BoardList({ board, span }: { board: ApiBoard; span: Span }) {
 }
 
 function BoardRow({ row, span }: { row: ApiBoardRow; span: Span }) {
+  const { open } = usePlayerActions();
   const isHouse = row.kind !== "challenger";
   const stat = span === "week" ? `${row.correct}-${row.wrong}` : `${row.weeks_won} won · ${row.correct} played`;
 
@@ -55,6 +57,12 @@ function BoardRow({ row, span }: { row: ApiBoardRow; span: Span }) {
         <Text style={styles.points}>{row.points}</Text>
         <Text style={styles.stat}>{stat}</Text>
       </View>
+      {!isHouse && !row.is_me ? (
+        <MoreButton
+          onPress={() => open({ player_id: row.player_id, display_name: row.display_name, context: "name" })}
+          label={`Options for ${row.display_name}`}
+        />
+      ) : null}
     </View>
   );
 }

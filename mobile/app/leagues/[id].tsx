@@ -16,9 +16,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BoardList } from "@/components/BoardList";
 import { Lockup } from "@/components/Lockup";
+import { MoreButton, usePlayerActions } from "@/components/PlayerActions";
 import { ApiError, clearToken } from "@/lib/api";
 import { colors, fonts, radius } from "@/lib/brand";
-import { archiveLeague, getLeague, leaveLeague, removeMember, renameLeague } from "@/lib/routes";
+import { archiveLeague, getLeague, getMe, leaveLeague, removeMember, renameLeague } from "@/lib/routes";
 import type { ApiLeagueDetail, ApiLeagueMember } from "@shared/types";
 
 type Span = "week" | "season";
@@ -95,6 +96,13 @@ function LeagueBody({ id, detail }: { id: string; detail: ApiLeagueDetail }) {
   const [span, setSpan] = useState<Span>("week");
   const [renaming, setRenaming] = useState(false);
   const [draft, setDraft] = useState("");
+  const { open } = usePlayerActions();
+
+  // Members carry no is_me, so the viewer comes from /me (cached), or their own board row.
+  const meQuery = useQuery({ queryKey: ["me"], queryFn: ({ signal }) => getMe(signal) });
+  const meId = meQuery.data?.player.id ?? detail.season.me?.player_id;
+  // Non-commissioners can report the league name, which is the commissioner's.
+  const commissioner = league.is_commissioner ? undefined : members.find((m) => m.is_commissioner);
 
   const refreshLeague = () => {
     qc.invalidateQueries({ queryKey: ["league", id] });
@@ -157,7 +165,22 @@ function LeagueBody({ id, detail }: { id: string; detail: ApiLeagueDetail }) {
   return (
     <View>
       <Text style={styles.eyebrow}>Private league</Text>
-      <Text style={styles.title} numberOfLines={2}>{league.name}</Text>
+      <View style={styles.titleRow}>
+        <Text style={[styles.title, styles.titleText]} numberOfLines={2}>{league.name}</Text>
+        {commissioner ? (
+          <MoreButton
+            onPress={() =>
+              open({
+                player_id: commissioner.player_id,
+                display_name: commissioner.display_name,
+                context: "league_name",
+                ref_id: league.id,
+              })
+            }
+            label="Options for this league name"
+          />
+        ) : null}
+      </View>
 
       <View style={styles.codeRow}>
         <Text style={styles.codeLine}>Code: <Text style={styles.codeMono}>{league.code}</Text></Text>
@@ -202,6 +225,12 @@ function LeagueBody({ id, detail }: { id: string; detail: ApiLeagueDetail }) {
                 <Text style={[styles.marker, m.picked_this_week ? styles.markerPicked : styles.markerNotYet]}>
                   {m.picked_this_week ? "Picked" : "Not yet"}
                 </Text>
+              ) : null}
+              {meId && m.player_id !== meId ? (
+                <MoreButton
+                  onPress={() => open({ player_id: m.player_id, display_name: m.display_name, context: "name" })}
+                  label={`Options for ${m.display_name}`}
+                />
               ) : null}
               {league.is_commissioner && !m.is_commissioner ? (
                 <Pressable
@@ -318,6 +347,8 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   title: { color: colors.paper, fontFamily: fonts.displayItalic, fontSize: 32, lineHeight: 34 },
+  titleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  titleText: { flex: 1, minWidth: 0 },
   codeRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 12, marginTop: 12 },
   codeLine: { color: colors.steel, fontSize: 14 },
   codeMono: { color: colors.paper, fontFamily: "Courier" },

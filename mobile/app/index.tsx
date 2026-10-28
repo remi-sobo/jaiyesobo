@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Lockup } from "@/components/Lockup";
+import { MoreButton, usePlayerActions } from "@/components/PlayerActions";
 import { ApiError, clearToken, getToken } from "@/lib/api";
 import { colors, fonts, radius } from "@/lib/brand";
 import { getCurrentWeek, getMe, getRecap, getTalkLines, postTalk, savePick, submitPicks } from "@/lib/routes";
@@ -427,6 +428,7 @@ type TalkLine = TalkLinesResponse["lines"][number];
 
 /** Locked-item trash talk: the feed (includes my own line) plus a preset-only composer. */
 function TalkBlock({ item, meId, canTalk }: { item: ApiItem; meId: string; canTalk: boolean }) {
+  const { open } = usePlayerActions();
   const showComposer = canTalk && item.locked && isPicked(item.my_pick);
   const hasFeed = item.talk.length > 0;
   if (!hasFeed && !showComposer) return null;
@@ -440,12 +442,30 @@ function TalkBlock({ item, meId, canTalk }: { item: ApiItem; meId: string; canTa
           <Text style={[styles.houseHeader, styles.talkHeaderSpaced]}>Talk</Text>
           {item.talk.map((t) => {
             const mine = t.player_id === meId;
-            return (
-              <Text key={t.player_id} style={styles.talkLine}>
+            const body = (
+              <>
                 <Text style={styles.talkName}>{mine ? "You" : t.display_name}</Text>
                 {"  "}
                 <Text style={[styles.talkText, mine && styles.talkTextMine]}>{t.text}</Text>
-              </Text>
+              </>
+            );
+            if (mine) return <Text key={t.player_id} style={styles.talkLine}>{body}</Text>;
+
+            const openSheet = () =>
+              open({ player_id: t.player_id, display_name: t.display_name, context: "talk", ref_id: item.id });
+            return (
+              <Pressable
+                key={t.player_id}
+                onLongPress={openSheet}
+                delayLongPress={350}
+                accessibilityHint="Long press for options"
+                accessibilityActions={[{ name: "options", label: "Report or mute" }]}
+                onAccessibilityAction={(e) => { if (e.nativeEvent.actionName === "options") openSheet(); }}
+                style={styles.talkRow}
+              >
+                <Text style={styles.talkBody}>{body}</Text>
+                <MoreButton onPress={openSheet} label={`Options for ${t.display_name}`} />
+              </Pressable>
             );
           })}
         </>
@@ -841,6 +861,8 @@ const styles = StyleSheet.create({
   houseQuote: { color: colors.steel, fontSize: 12, fontStyle: "italic", marginTop: 4 },
   talkHeaderSpaced: { marginTop: 14 },
   talkLine: { marginTop: 6, lineHeight: 20 },
+  talkRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 6 },
+  talkBody: { flex: 1, minWidth: 0, lineHeight: 20 },
   talkName: { color: colors.paper, fontFamily: fonts.label, fontSize: 12, letterSpacing: 1 },
   talkText: { color: colors.paper, fontSize: 14 },
   talkTextMine: { color: colors.accent },

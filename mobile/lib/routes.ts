@@ -13,8 +13,10 @@ import type {
   LeaguePatch,
   MePatch,
   MeResponse,
+  MuteRequest,
   PickRequest,
   RecapResponse,
+  ReportRequest,
   RestoreRequest,
   SessionResponse,
   SubmitRequest,
@@ -37,6 +39,11 @@ export async function restoreSession(req: RestoreRequest): Promise<SessionRespon
   const res = await appApi<SessionResponse>("/session/restore", { method: "POST", body: req, anonymous: true });
   await setToken(res.token);
   return res;
+}
+
+/** DELETE /session — revoke this phone's token server-side. Call before clearing it locally. */
+export function signOut(): Promise<ApiOk> {
+  return appApi<ApiOk>("/session", { method: "DELETE" });
 }
 
 /** GET /me — current player, their leagues, the active season. 401 if signed out. */
@@ -97,6 +104,16 @@ export function submitPicks(req: SubmitRequest): Promise<ApiOk> {
 /** POST /talk — set or clear my preset line on a locked item. key null removes it. */
 export function postTalk(req: TalkRequest): Promise<ApiOk> {
   return appApi<ApiOk>("/talk", { method: "POST", body: req });
+}
+
+/** POST /report — flag a player's name, a talk line, or a league name. 429 when rate-limited. */
+export function reportPlayer(req: ReportRequest): Promise<ApiOk> {
+  return appApi<ApiOk>("/report", { method: "POST", body: req });
+}
+
+/** POST /mute — hide (or unhide) a player's name and talk lines for the viewer. */
+export function mutePlayer(req: MuteRequest): Promise<ApiOk> {
+  return appApi<ApiOk>("/mute", { method: "POST", body: req });
 }
 
 /** GET /leagues — leagues the viewer belongs to. */
