@@ -40,12 +40,39 @@ fast. The simulator opens automatically.
 
 ## Browser
 
-Not supported right now. We haven't installed `react-native-web` or
-`@expo/metro-runtime`, so `expo start --web` won't work. If you want a
-laptop fallback for quick UI tweaks, let us know and we'll add it in a
-follow-up — it comes with its own quirks (SecureStore, keyboard
-behavior, haptics all diverge from the phone, so you still need to test
-on a device before shipping).
+```bash
+cd mobile
+npx expo start --web
+```
+
+Opens `http://localhost:8081` (Expo's default). It's the same app, handy for
+quick UI checks and for driving the flows headlessly with Chrome.
+
+**What works:** every screen: join and restore, This Week picks and submit,
+the boards, leagues (create, join, rename, share), rivals, results, and
+settings.
+
+**What's phone-only or different in the browser:**
+
+- **Sign-in token** lives in the browser's storage (`localStorage`) instead of
+  the Keychain. Clearing site data signs you out. If the browser blocks
+  storage (some private windows), the token is kept in memory and you'll
+  sign in again after a reload.
+- **No local reminders and no push.** The tip-off reminder never schedules and
+  there is no permission prompt; the alert toggles in Settings save but no push
+  token is requested.
+- **Share** uses the system share sheet only where the browser supports it
+  (`navigator.share`); elsewhere it quietly does nothing.
+- **Confirm dialogs are plain browser dialogs.** Submit, sign out, delete
+  account, leave / archive / remove all use `window.confirm`, and the
+  report / mute sheets use a numbered `window.prompt` (type 1, 2, ...).
+  See `lib/dialog.ts`.
+
+**The API only allows the localhost origins.** `app/api/app/v1` sends CORS
+headers just for `http://localhost:8081`, `http://127.0.0.1:8081` and
+`http://localhost:19006`. Serve the web build from anywhere else and the
+browser will block its calls. As on the phone, the default backend is
+production, so picks made in the browser are real picks.
 
 ## Which backend does it talk to?
 
@@ -151,7 +178,7 @@ app registers tokens but nothing is sent.
 ## Where things live
 
 - `app/` — Expo Router screens. `app/index.tsx` is This Week.
-- `lib/api.ts` — `fetch` wrapper, Keychain token storage, `ApiError`.
+- `lib/api.ts` — `fetch` wrapper, token storage (Keychain; `localStorage` in the browser), `ApiError`.
 - `lib/routes.ts` — typed route helpers, one per `/api/app/v1` endpoint.
 - `lib/brand.ts` — colors, fonts, radii.
 - `components/` — shared pieces (e.g. `Lockup`).

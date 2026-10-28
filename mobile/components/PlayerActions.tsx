@@ -1,8 +1,9 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
-import { Alert, Pressable, StyleSheet, Text } from "react-native";
+import { Pressable, StyleSheet, Text } from "react-native";
 import { ApiError } from "@/lib/api";
 import { colors, fonts } from "@/lib/brand";
+import { showDialog } from "@/lib/dialog";
 import { mutePlayer, reportPlayer } from "@/lib/routes";
 import type { MeResponse, ReportRequest } from "@shared/types";
 
@@ -28,8 +29,8 @@ const REASONS: Record<Context, string[]> = {
 const MUTE_REFRESH_KEYS = ["me", "week", "board", "league", "leagues"];
 
 /**
- * Report / mute sheet for another player, built on Alert.alert (three buttons
- * at most, so it also fits Android). Callers attach it only to other
+ * Report / mute sheet for another player, built on showDialog (Alert.alert on the
+ * phone, three buttons at most so it also fits Android; a numbered prompt in the browser). Callers attach it only to other
  * challengers, never to the viewer or the house.
  */
 export function usePlayerActions() {
@@ -47,11 +48,11 @@ export function usePlayerActions() {
           await mutePlayer({ player_id, muted: !muted });
           for (const key of MUTE_REFRESH_KEYS) qc.invalidateQueries({ queryKey: [key] });
         } catch (err) {
-          Alert.alert("Couldn't do that.", describeError(err));
+          showDialog("Couldn't do that.", describeError(err));
         }
       };
 
-      Alert.alert(display_name, undefined, [
+      showDialog(display_name, undefined, [
         { text: "Report", onPress: () => chooseReason(target) },
         { text: muted ? "Unmute" : "Mute", onPress: toggleMute },
         { text: "Cancel", style: "cancel" },
@@ -76,14 +77,14 @@ function chooseReason({ player_id, display_name, context, ref_id }: PlayerAction
   const send = async () => {
     try {
       await reportPlayer({ player_id, context, ref_id });
-      Alert.alert("Thanks.", "We'll take a look.");
+      showDialog("Thanks.", "We'll take a look.");
     } catch (err) {
-      Alert.alert("Couldn't send that.", describeError(err));
+      showDialog("Couldn't send that.", describeError(err));
     }
   };
 
   // The reason is only for the reporter; the server takes the context alone.
-  Alert.alert(`Report ${display_name}?`, "Tell us what's wrong.", [
+  showDialog(`Report ${display_name}?`, "Tell us what's wrong.", [
     ...REASONS[context].map((text) => ({ text, onPress: send })),
     { text: "Cancel", style: "cancel" },
   ]);

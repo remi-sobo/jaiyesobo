@@ -3,7 +3,6 @@ import { Redirect, router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Keyboard,
   Pressable,
   RefreshControl,
@@ -18,6 +17,7 @@ import { Lockup } from "@/components/Lockup";
 import { MoreButton, usePlayerActions } from "@/components/PlayerActions";
 import { ApiError, clearToken, getToken } from "@/lib/api";
 import { colors, fonts, radius } from "@/lib/brand";
+import { showDialog } from "@/lib/dialog";
 import { getBoard, getCurrentWeek, getMe, getRecap, getResults, getTalkLines, patchMe, postTalk, react, savePick, submitPicks } from "@/lib/routes";
 import { syncLockReminder } from "@/lib/reminders";
 import type { AgeBand, ApiCrowd, ApiHousePick, ApiItem, ApiOption, ApiResults, ApiWeek, ReactionKey, TalkLinesResponse } from "@shared/types";
@@ -1084,7 +1084,7 @@ function SubmitFooter({
   });
 
   const confirm = () =>
-    Alert.alert("Submit your picks?", "They're final once submitted. Jaiye and Remi's picks show at tip-off.", [
+    showDialog("Submit your picks?", "They're final once submitted. Jaiye and Remi's picks show at tip-off.", [
       { text: "Cancel", style: "cancel" },
       { text: "Submit", onPress: () => submit.mutate() },
     ]);
