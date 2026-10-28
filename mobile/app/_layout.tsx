@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider, focusManager } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
+import * as Notifications from "expo-notifications";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
@@ -12,6 +13,16 @@ import { colors } from "@/lib/brand";
 // brand lockup doesn't flash in a system font first.
 SplashScreen.preventAutoHideAsync().catch(() => {
   /* already hidden on cold starts after a reload — fine. */
+});
+
+// Local reminders (see lib/reminders.ts) should still show as a banner while the app is open.
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
 });
 
 // One client for the whole app. The spec calls for optimistic pick saves
