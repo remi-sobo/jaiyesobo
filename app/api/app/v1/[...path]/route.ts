@@ -20,6 +20,7 @@ import { overLimit } from "@/lib/sportsbook/limits";
 import { challengerByCode, checkDisplayName, createChallenger, isAgeBand } from "@/lib/sportsbook/players";
 import { rivalRecord, topRivals } from "@/lib/sportsbook/rivals";
 import { deleteAccount, deleteTalk, fileReport, isReportContext, mutedBy, playerFlags, postTalk, setMute } from "@/lib/sportsbook/safety";
+import { scheduleLiveSync } from "@/lib/sportsbook/live";
 import { bearerToken, createSession, playerForToken, revokeSession } from "@/lib/sportsbook/sessions";
 import { TALK_KEYS, TALK_LINES } from "@/lib/sportsbook/talk";
 import { featuredWeekNumber, loadWeekView } from "@/lib/sportsbook/view";
@@ -109,6 +110,20 @@ async function leagueFor(me: PlayerRow, id: string) {
   return league;
 }
 
+/**
+ * Grade live picks for app-only players, the way web page renders do. Fire and
+ * forget: scheduleLiveSync runs after the response and is throttled by a
+ * 10 minute DB slot in lib/sportsbook/live.ts, so this is safe on every read.
+ * It must never be able to break a request, hence the catch.
+ */
+function kickLiveSync() {
+  try {
+    scheduleLiveSync();
+  } catch (e) {
+    console.error(JSON.stringify({ scope: "app.v1.live_sync", err: String(e) }));
+  }
+}
+
 async function handle(method: string, path: string[], req: Request): Promise<Response> {
   const [a, b, c, d] = path;
   const route = `${method} /${path.map((p, i) => (i > 0 && /^[0-9a-f-]{36}$/i.test(p) ? ":id" : p)).join("/")}`;
@@ -158,6 +173,9 @@ async function handle(method: string, path: string[], req: Request): Promise<Res
 
   /* Everything below needs a signed in player. */
   const me = await auth(req);
+
+  // Reads that show results or standings: week, board, results, a league.
+  if (method === "GET" && (a === "week" || a === "board" || a === "results" || route === "GET /leagues/:id")) kickLiveSync();
 
   switch (true) {
     case route === "GET /me":

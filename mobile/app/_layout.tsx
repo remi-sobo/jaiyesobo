@@ -1,10 +1,10 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, focusManager } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { View } from "react-native";
+import { AppState, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { colors } from "@/lib/brand";
 
@@ -18,7 +18,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {
 // with retry and an offline banner; this is where that behavior will land.
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { retry: 2, staleTime: 15_000, refetchOnWindowFocus: false },
+    queries: { retry: 2, staleTime: 15_000, refetchOnWindowFocus: true },
   },
 });
 
@@ -33,6 +33,12 @@ export default function RootLayout() {
       SplashScreen.hideAsync().catch(() => {});
     }
   }, [fontsLoaded, fontError]);
+
+  // RN has no window focus events; map app foregrounding onto TanStack's focus.
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (s) => focusManager.setFocused(s === "active"));
+    return () => sub.remove();
+  }, []);
 
   if (!fontsLoaded && !fontError) return null;
 

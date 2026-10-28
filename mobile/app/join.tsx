@@ -24,6 +24,8 @@ export default function Join() {
     onSuccess: () => {
       // Replace instead of push so the back gesture doesn't return here
       // after signing in.
+      // Seed the cached gate so Home doesn't bounce back here on a stale `false`.
+      qc.setQueryData(["session", "has-token"], true);
       qc.invalidateQueries();
       router.replace("/");
     },
@@ -80,7 +82,7 @@ export default function Join() {
         {join.isPending ? <ActivityIndicator color={colors.ink} /> : <Text style={styles.primaryText}>I&apos;m in</Text>}
       </Pressable>
 
-      <Link href="/restore" style={styles.restoreLink}>
+      <Link replace href="/restore" style={styles.restoreLink}>
         <Text style={styles.restoreLinkText}>Already playing? Use your code</Text>
       </Link>
     </SafeAreaView>
