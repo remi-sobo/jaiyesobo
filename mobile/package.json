@@ -11,11 +11,15 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@expo/metro-runtime": "~58.0.15",
     "@tanstack/react-query": "^5.104.0",
     "expo": "~58.0.19",
+    "expo-asset": "~58.0.18",
     "expo-constants": "~58.0.13",
+    "expo-file-system": "~58.0.12",
     "expo-font": "~58.0.10",
     "expo-image": "~58.0.17",
+    "expo-keep-awake": "~58.0.3",
     "expo-linking": "~58.0.14",
     "expo-notifications": "~58.1.6",
     "expo-router": "~58.0.26",
