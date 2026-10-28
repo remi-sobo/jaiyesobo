@@ -73,6 +73,15 @@ export default async function InvitePage(props: PageProps<"/runitback/l/[code]">
           ) : (
             <InviteJoin code={league.code} from={from} />
           )}
+          {/* A plain anchor, not next/link: the app is a separate single-page build, and typed routes don't know it. */}
+          <div className="mt-4 text-center">
+            <a
+              href={`/runitback/app/l/${league.code}`}
+              className={`${mono} inline-flex min-h-11 items-center text-[0.72rem] uppercase tracking-[0.2em] text-[var(--color-mute)] underline-offset-4 hover:underline`}
+            >
+              Open in the app
+            </a>
+          </div>
         </div>
       </div>
     </main>

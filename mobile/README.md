@@ -191,6 +191,7 @@ app registers tokens but nothing is sent.
 ## Where things live
 
 - `app/` — Expo Router screens. `app/index.tsx` is This Week.
+- `app/l/[code].tsx` — the league invite screen ("You've been challenged"). Reached from `/runitback/app/l/<code>` on the site and from the website invite page's "Open in the app" link.
 - `lib/api.ts` — `fetch` wrapper, token storage (Keychain; `localStorage` in the browser), `ApiError`.
 - `lib/routes.ts` — typed route helpers, one per `/api/app/v1` endpoint.
 - `lib/brand.ts` — colors, fonts, radii.
