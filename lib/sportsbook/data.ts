@@ -139,7 +139,7 @@ export async function getSubmissions(weekId: string): Promise<string[]> {
 }
 
 export async function getPlayers(): Promise<SbPlayer[]> {
-  const { data, error } = await supa().from("sb_players").select("id, kind, display_name, code, hidden").order("created_at");
+  const { data, error } = await supa().from("sb_players").select("id, kind, display_name, hidden").order("created_at");
   if (error) throw error;
   return (data ?? []) as SbPlayer[];
 }

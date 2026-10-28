@@ -145,16 +145,8 @@ async function handle(method: string, path: string[], req: Request): Promise<Res
     case method === "GET" && a === "invite" && !!b: {
       const league = await getLeagueByCode(b);
       if (!league) throw new HttpError(404, "That invite doesn't work anymore.");
-      const url = new URL(req.url);
-      const from = url.searchParams.get("from");
-      let inviter: InviteResponse["inviter"] = null;
-      if (from) {
-        const id = await challengerByCode(from);
-        if (id) {
-          const p = await loadPlayer(id);
-          if (p && !p.hidden) inviter = { display_name: p.display_name };
-        }
-      }
+      // ?from= used to resolve a player code to a name, which let anyone test codes for free. Codes are login credentials; inviter attribution needs a non-secret id first.
+      const inviter: InviteResponse["inviter"] = null;
       return json({ league: { name: league.name, code: league.code, members: (await memberIds(league.id)).length }, inviter, week: await featuredWeekNumber() } satisfies InviteResponse);
     }
     case route === "GET /talk/lines":

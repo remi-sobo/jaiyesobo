@@ -173,7 +173,6 @@ export function ChallengersPanel({ players }: { players: SbPlayer[] }) {
           {challengers.map((p) => (
             <li key={p.id} className="flex flex-wrap items-center gap-3 border-t border-[var(--color-line)] py-2">
               <span className={`flex-1 ${p.hidden ? "text-[var(--color-warm-dim)] line-through" : ""}`}>{p.display_name}</span>
-              <span className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] text-[var(--color-warm-mute)]">{p.code}</span>
               <button
                 type="button"
                 disabled={!!busy}

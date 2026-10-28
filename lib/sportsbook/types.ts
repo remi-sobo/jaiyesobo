@@ -117,9 +117,11 @@ export type SbPlayer = {
   id: string;
   kind: PlayerKind;
   display_name: string;
-  code: string | null;
   hidden: boolean;
 };
+
+/** Only for admin screens. The code is a login credential: never pass this shape to a client component. */
+export type SbPlayerWithCode = SbPlayer & { code: string | null };
 
 export type WeekStatus = "draft" | "open" | "graded" | "final";
 

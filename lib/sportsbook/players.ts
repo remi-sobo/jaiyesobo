@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/server";
-import type { PlayerKind, SbPlayer } from "./types";
+import type { PlayerKind, SbPlayer, SbPlayerWithCode } from "./types";
 
 /**
  * Challenger identity. No accounts: the browser keeps a signed cookie with
@@ -38,8 +38,8 @@ export async function clearChallengerCookie() {
   c.delete(COOKIE);
 }
 
-/** The challenger this browser belongs to, if any. */
-export async function getChallenger(): Promise<SbPlayer | null> {
+/** The challenger this browser belongs to, if any. Includes their own code: it's theirs to see, and never anyone else's. */
+export async function getChallenger(): Promise<SbPlayerWithCode | null> {
   const c = await cookies();
   const raw = c.get(COOKIE)?.value;
   if (!raw) return null;
@@ -54,7 +54,7 @@ export async function getChallenger(): Promise<SbPlayer | null> {
     .eq("kind", "challenger")
     .is("deleted_at", null)
     .maybeSingle();
-  return (data as SbPlayer | null) ?? null;
+  return (data as SbPlayerWithCode | null) ?? null;
 }
 
 const CODE_WORDS = [

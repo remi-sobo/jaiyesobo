@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getChallenger, challengerByCode } from "@/lib/sportsbook/players";
+import { getChallenger } from "@/lib/sportsbook/players";
 import { getLeagueByCode, isMember, memberIds } from "@/lib/sportsbook/leagues";
-import { loadPlayer } from "@/lib/app-api/server";
 import { featuredWeekNumber } from "@/lib/sportsbook/view";
 import { InviteJoin, JoinLeagueButton } from "@/components/sportsbook/public/league-bits";
 
@@ -37,9 +36,9 @@ export default async function InvitePage(props: PageProps<"/runitback/l/[code]">
     );
   }
 
-  const [me, members, week, inviterId] = await Promise.all([getChallenger(), memberIds(league.id), featuredWeekNumber(), from ? challengerByCode(from) : Promise.resolve(null)]);
-  const inviter = inviterId ? await loadPlayer(inviterId) : null;
-  const inviterName = inviter && !inviter.hidden ? inviter.display_name : null;
+  const [me, members, week] = await Promise.all([getChallenger(), memberIds(league.id), featuredWeekNumber()]);
+  // ?from= is no longer resolved to a name: player codes are login credentials, and this lookup let anyone test them.
+  const inviterName: string | null = null;
   const already = me ? await isMember(league.id, me.id) : false;
 
   return (
