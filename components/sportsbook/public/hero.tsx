@@ -134,6 +134,25 @@ export function PlayButton({ href, children }: { href: string; children: ReactNo
 }
 
 /**
+ * Secondary call to action that sits beside PlayButton. A plain anchor, not
+ * next/link: the app is a separate single-page build served by a rewrite in
+ * next.config.ts, so it is not a Next route and typed routes don't know it.
+ * Same tab, full page load.
+ */
+export function OpenAppLink() {
+  return (
+    // The lint rule matches /runitback/app against runitback/[season]; it is served by a rewrite, not a page.
+    // eslint-disable-next-line @next/next/no-html-link-for-pages
+    <a
+      href="/runitback/app"
+      className="mt-0.5 inline-flex min-h-11 items-center border border-[var(--color-line-strong)] px-[22px] font-[family-name:var(--font-jetbrains)] text-[0.75rem] uppercase tracking-[0.2em] text-[var(--color-bone)] transition-colors hover:border-[var(--color-red)]"
+    >
+      Open the app
+    </a>
+  );
+}
+
+/**
  * Season kickoff banner. Only renders during Week 1, then disappears on its
  * own; the caller decides with the week number, so there's nothing to remove.
  */

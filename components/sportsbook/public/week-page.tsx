@@ -14,7 +14,7 @@ import { pad } from "@/lib/content/format";
 import { scheduleLiveSync } from "@/lib/sportsbook/live";
 import { canPostTalk, loadTalk, playerFlags } from "@/lib/sportsbook/safety";
 import { myLeagues } from "@/lib/sportsbook/leagues";
-import { OpeningWeekBanner, PlayButton, SportsbookHero, Ticker } from "./hero";
+import { OpeningWeekBanner, OpenAppLink, PlayButton, SportsbookHero, Ticker } from "./hero";
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
@@ -94,11 +94,16 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
           weekLabel={`Week ${n} · ${weekRangeLabel(view.week)}${view.week.status === "final" ? " · Final" : ""}`}
           cta={
             isOpen ? (
-              <div className="flex flex-col items-start gap-2">
-                <PlayButton href="/runitback/play">{me ? `Make your picks, ${me.display_name}` : "Think you can beat us?"}</PlayButton>
-                <span className="text-[0.8rem] text-[var(--color-mute)]">Same picks as us. Just type your name. No sign up.</span>
+              <div className="flex flex-wrap items-start gap-x-3 gap-y-3">
+                <div className="flex flex-col items-start gap-2">
+                  <PlayButton href="/runitback/play">{me ? `Make your picks, ${me.display_name}` : "Think you can beat us?"}</PlayButton>
+                  <span className="text-[0.8rem] text-[var(--color-mute)]">Same picks as us. Just type your name. No sign up.</span>
+                </div>
+                <OpenAppLink />
               </div>
-            ) : null
+            ) : (
+              <OpenAppLink />
+            )
           }
         />
         <Ticker items={view.items} />
