@@ -82,9 +82,25 @@ const BLOCKED = [
 /** Words that only count on their own, so "Sexton", "Hancock" and "Shoemaker" still work. */
 const BLOCKED_WORDS = ["sex", "cum", "anal", "hoe", "ass", "tit", "tits", "damn", "crap", "fu", "wtf", "stfu", "dick", "cock", "fag", "rape"];
 
+/** Cyrillic and Greek letters that pass for Latin ones (written as escapes so they can't be mistaken for the Latin letters). */
+const LOOKALIKES: Record<string, string> = {
+  // Cyrillic: а е о р с у х і ѕ ј һ к м т в н
+  "\u0430": "a", "\u0435": "e", "\u043E": "o", "\u0440": "p", "\u0441": "c", "\u0443": "y", "\u0445": "x", "\u0456": "i", "\u0455": "s", "\u0458": "j", "\u04BB": "h", "\u043A": "k", "\u043C": "m", "\u0442": "t", "\u0432": "b", "\u043D": "h",
+  // Greek: α ο ρ ν ι τ
+  "\u03B1": "a", "\u03BF": "o", "\u03C1": "p", "\u03BD": "v", "\u03B9": "i", "\u03C4": "t",
+};
+const LOOKALIKE_RE = new RegExp(`[${Object.keys(LOOKALIKES).join("")}]`, "g");
+
+/**
+ * Folds a name down to plain a to z: fullwidth to ASCII, accents off, Cyrillic
+ * and Greek lookalikes to Latin, then the usual digit and symbol swaps.
+ */
 function squash(v: string): string {
   return v
+    .normalize("NFKD")
     .toLowerCase()
+    .replace(/\p{M}/gu, "")
+    .replace(LOOKALIKE_RE, (c) => LOOKALIKES[c])
     .replace(/[@4]/g, "a")
     .replace(/3/g, "e")
     .replace(/[1!|]/g, "i")
@@ -94,11 +110,48 @@ function squash(v: string): string {
     .replace(/[^a-z]/g, "");
 }
 
-/** True when the text has none of the blocked words, even spelled with numbers or symbols. */
-export function isClean(text: string): boolean {
+/**
+ * The ways a name can read once squashed: as is, and with v standing in for u
+ * ("fvck"). Only used for substring checks, where a stray v can't make a
+ * blocked word out of an innocent one.
+ */
+function readings(text: string): string[] {
   const s = squash(text);
-  const words = text.toLowerCase().split(/[\s._'-]+/).map(squash);
-  return !BLOCKED.some((w) => s.includes(w)) && !words.some((w) => BLOCKED_WORDS.includes(w));
+  return [s, s.replace(/v/g, "u")];
+}
+
+/**
+ * Matches a blocked word with any of its letters repeated, so "fuuuck" and
+ * "niiigg" are caught. A word's own double letters are still required, so "Bob"
+ * isn't "boob" and "Knight" isn't "nigg". (Collapsing runs of letters and
+ * comparing against the blocklist can't do that: "kkk" would shrink to "k".)
+ */
+const stretch = (w: string) => [...w].map((c) => `${c}+`).join("");
+const BLOCKED_RE = BLOCKED.map((w) => new RegExp(stretch(w)));
+const BLOCKED_WORD_RE = BLOCKED_WORDS.map((w) => new RegExp(`^${stretch(w)}$`));
+
+/** True when the text has none of the blocked words, even spelled with numbers, symbols, accents or lookalike letters. */
+export function isClean(text: string): boolean {
+  if (readings(text).some((s) => BLOCKED_RE.some((re) => re.test(s)))) return false;
+  const words = text.normalize("NFKC").toLowerCase().split(/[\s._'-]+/).map(squash);
+  return !words.some((w) => BLOCKED_WORD_RE.some((re) => re.test(w)));
+}
+
+/**
+ * Names that read as Remi, Jaiye or the site. Challengers only: Remi and
+ * Jaiye's own rows never go through the name check. "remi" and "jaiye" must be
+ * a whole word ("Real Remi", "remi2", "R3mi"), so Jaiyeola, Remington and
+ * Jeremiah pass. "admin"/"official" match as a word prefix, so Badminton
+ * passes but "Administrator" doesn't. The site names match anywhere.
+ */
+const RESERVED_WORDS = ["remi", "jaiye"];
+const RESERVED_PREFIXES = ["admin", "official"];
+const RESERVED_ANYWHERE = ["jaiyesobo", "runitback"];
+
+function impersonates(text: string): boolean {
+  const tokens = text.normalize("NFKC").toLowerCase().split(/[\s._'-]+/).map(squash).filter(Boolean);
+  if (tokens.some((t) => RESERVED_WORDS.includes(t) || RESERVED_PREFIXES.some((p) => t.startsWith(p)))) return true;
+  return readings(text).some((s) => RESERVED_ANYWHERE.some((r) => s.includes(r)));
 }
 
 export type NameCheck = { ok: true; name: string } | { ok: false; error: string };
@@ -112,6 +165,7 @@ export function checkDisplayName(raw: unknown): NameCheck {
   if (!isClean(name)) return { ok: false, error: "Pick a different name." };
   const lower = name.toLowerCase();
   if (["remi", "jaiye", "jai", "jay", "dad", "daddy", "admin", "sobo"].includes(lower)) return { ok: false, error: "That name is taken." };
+  if (impersonates(name)) return { ok: false, error: "Pick a different name." };
   return { ok: true, name };
 }
 

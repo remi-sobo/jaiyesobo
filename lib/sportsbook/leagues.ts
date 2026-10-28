@@ -112,7 +112,7 @@ export async function leagueMateIds(playerId: string): Promise<Set<string>> {
 async function canCreate(playerId: string): Promise<boolean> {
   const { data } = await db().from("sb_players").select("has_pass, pass_season, deleted_at, age_band").eq("id", playerId).maybeSingle();
   if (!data || data.deleted_at) return false;
-  if (data.age_band === "under_13") return false;
+  if (data.age_band !== "13_plus") return false;
   return !!data.has_pass && data.pass_season === SB_SEASON;
 }
 
@@ -174,7 +174,16 @@ export async function leaveLeague(playerId: string, leagueId: string): Promise<v
   const league = await getLeague(leagueId);
   if (!league) throw new ActionError("League not found.");
   if (league.commissioner_id === playerId) throw new ActionError("Commissioners can't leave. Hand it off or archive the league.");
-  await db().from("sb_league_members").delete().eq("league_id", leagueId).eq("player_id", playerId);
+  // Only active members can leave. A removed member's row stays so they can't rejoin by themselves.
+  const { data, error } = await db()
+    .from("sb_league_members")
+    .delete()
+    .eq("league_id", leagueId)
+    .eq("player_id", playerId)
+    .eq("removed", false)
+    .select("player_id");
+  if (error) throw error;
+  if (!data?.length) throw new ActionError("You're not in this league.");
 }
 
 async function requireCommissioner(playerId: string, leagueId: string, admin = false): Promise<League> {

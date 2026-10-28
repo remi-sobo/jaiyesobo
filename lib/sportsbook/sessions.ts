@@ -9,6 +9,11 @@ import { createServiceClient } from "@/lib/supabase/server";
 
 const db = () => createServiceClient();
 
+/** A session nobody has used for this long is dead. */
+const SESSION_TTL_MS = 90 * 24 * 3_600_000;
+/** Most live sessions one player keeps. Signing in again past this retires the oldest. */
+const MAX_SESSIONS = 5;
+
 export function newToken(): string {
   return crypto.randomBytes(32).toString("base64url");
 }
@@ -26,8 +31,22 @@ export function bearerToken(req: Request): string | null {
 
 export async function createSession(playerId: string): Promise<string> {
   const token = newToken();
-  const { error } = await db().from("sb_app_sessions").insert({ player_id: playerId, token_hash: hashToken(token) });
+  const { data: created, error } = await db()
+    .from("sb_app_sessions")
+    .insert({ player_id: playerId, token_hash: hashToken(token) })
+    .select("id")
+    .single();
   if (error) throw error;
+  // Keep the newest MAX_SESSIONS live sessions (this one always counts) and revoke the rest.
+  const { data: others } = await db()
+    .from("sb_app_sessions")
+    .select("id")
+    .eq("player_id", playerId)
+    .eq("revoked", false)
+    .neq("id", created.id)
+    .order("last_used_at", { ascending: false });
+  const excess = (others ?? []).slice(MAX_SESSIONS - 1).map((s) => s.id as string);
+  if (excess.length) await db().from("sb_app_sessions").update({ revoked: true }).in("id", excess);
   await db().from("sb_players").update({ platform: "ios", last_seen_at: new Date().toISOString() }).eq("id", playerId);
   return token;
 }
@@ -41,10 +60,16 @@ export async function playerForToken(token: string): Promise<string | null> {
     .eq("token_hash", hashToken(token))
     .maybeSingle();
   if (!data || data.revoked) return null;
+  const idleMs = Date.now() - Date.parse(data.last_used_at as string);
+  if (!(idleMs <= SESSION_TTL_MS)) {
+    // Unused for 90 days (or an unreadable timestamp): retire it.
+    await supa.from("sb_app_sessions").update({ revoked: true }).eq("id", data.id);
+    return null;
+  }
   const { data: p } = await supa.from("sb_players").select("id, deleted_at").eq("id", data.player_id).maybeSingle();
   if (!p || p.deleted_at) return null;
   // Touch at most once an hour so reads stay cheap.
-  if (Date.now() - Date.parse(data.last_used_at as string) > 3_600_000) {
+  if (idleMs > 3_600_000) {
     const now = new Date().toISOString();
     await supa.from("sb_app_sessions").update({ last_used_at: now }).eq("id", data.id);
     await supa.from("sb_players").update({ last_seen_at: now }).eq("id", data.player_id);
