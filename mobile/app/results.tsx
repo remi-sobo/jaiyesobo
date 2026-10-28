@@ -203,7 +203,12 @@ function ResultsBody({ r }: { r: ApiResults }) {
           <Text style={styles.label}>Head to head</Text>
           <View style={styles.list}>
             {r.rivals.map((rv, i) => (
-              <View key={rv.player_id} style={[styles.row, i > 0 && styles.rowDivider]}>
+              <Pressable
+                key={rv.player_id}
+                onPress={() => router.push({ pathname: "/rivals/[id]", params: { id: rv.player_id } })}
+                accessibilityRole="button"
+                style={({ pressed }) => [styles.row, i > 0 && styles.rowDivider, pressed && styles.rowPressed]}
+              >
                 <Text style={styles.rowName} numberOfLines={1}>{rv.display_name}</Text>
                 <Text style={styles.rowValue}>{`${rv.me}–${rv.them}`}</Text>
                 <View
@@ -213,7 +218,8 @@ function ResultsBody({ r }: { r: ApiResults }) {
                 >
                   <Text style={[styles.chipText, { color: CHIP[rv.result].color }]}>{rv.result}</Text>
                 </View>
-              </View>
+                <Text style={styles.rowArrow}>→</Text>
+              </Pressable>
             ))}
           </View>
         </View>
@@ -329,6 +335,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   rowDivider: { borderTopWidth: 1, borderTopColor: colors.line },
+  rowPressed: { backgroundColor: colors.surface2 },
+  rowArrow: { color: colors.steel, fontSize: 14 },
   rowName: { flex: 1, minWidth: 0, color: colors.paper, fontSize: 15 },
   rowValue: { color: colors.paper, fontFamily: fonts.label, fontSize: 14 },
   chip: {

@@ -154,7 +154,7 @@ function PickRow({ item }: { item: ApiItem }) {
         </View>
         <View style={styles.pickRight}>
           {pick === null ? (
-            <Text style={styles.pickHidden}>Hidden until tip-off</Text>
+            <Text style={styles.pickHidden}>Shows at tip-off</Text>
           ) : (
             <JaiyePick item={item} pick={pick} />
           )}

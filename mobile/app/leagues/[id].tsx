@@ -20,7 +20,7 @@ import { MoreButton, usePlayerActions } from "@/components/PlayerActions";
 import { ApiError, clearToken } from "@/lib/api";
 import { colors, fonts, radius } from "@/lib/brand";
 import { archiveLeague, getLeague, getMe, leaveLeague, removeMember, renameLeague } from "@/lib/routes";
-import type { ApiLeagueDetail, ApiLeagueMember } from "@shared/types";
+import type { ApiLeagueDetail, ApiLeagueMember, ApiWeek } from "@shared/types";
 
 type Span = "week" | "season";
 
@@ -133,8 +133,14 @@ function LeagueBody({ id, detail }: { id: string; detail: ApiLeagueDetail }) {
   const leave = useMutation({ mutationFn: () => leaveLeague(id), onSuccess: leaveScreen });
 
   const share = async () => {
+    // Brag with the live scoreboard when this week's cache has my score; stay plain otherwise.
+    const scores = qc.getQueryData<ApiWeek>(["week", "current"])?.scores;
+    const message =
+      scores && scores.me !== null
+        ? `Join my league "${league.name}" on Run It Back Picks. Jaiye's on ${scores.jaiye}, I'm on ${scores.me} — beat us: ${league.invite_url}`
+        : `Join my league "${league.name}" on Run It Back Picks: ${league.invite_url}`;
     try {
-      await Share.share({ message: `Join my league "${league.name}" on Run It Back Picks: ${league.invite_url}` });
+      await Share.share({ message });
     } catch {
       // Dismissed or unavailable; nothing to report.
     }
