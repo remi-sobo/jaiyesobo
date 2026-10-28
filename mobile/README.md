@@ -75,10 +75,8 @@ settings.
   token is requested.
 - **Share** uses the system share sheet only where the browser supports it
   (`navigator.share`); elsewhere it quietly does nothing.
-- **Confirm dialogs are plain browser dialogs.** Submit, sign out, delete
-  account, leave / archive / remove all use `window.confirm`, and the
-  report / mute sheets use a numbered `window.prompt` (type 1, 2, ...).
-  See `lib/dialog.ts`.
+- **Confirms and the report / mute sheets are an in-app bottom sheet** on the
+  web (`components/DialogHost.tsx`) and `Alert` on the phone.
 
 **Same origin, no CORS.** Served from the site itself, the calls are
 same-origin. The CORS allow-list in `app/api/app/v1` (`http://localhost:8081`,

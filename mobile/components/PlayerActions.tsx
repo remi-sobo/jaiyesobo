@@ -30,7 +30,7 @@ const MUTE_REFRESH_KEYS = ["me", "week", "board", "league", "leagues"];
 
 /**
  * Report / mute sheet for another player, built on showDialog (Alert.alert on the
- * phone, three buttons at most so it also fits Android; a numbered prompt in the browser). Callers attach it only to other
+ * phone, three buttons at most so it also fits Android; an in-app bottom sheet in the browser). Callers attach it only to other
  * challengers, never to the viewer or the house.
  */
 export function usePlayerActions() {
