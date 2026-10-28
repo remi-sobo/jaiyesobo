@@ -3,7 +3,6 @@ import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -19,6 +18,7 @@ import { Lockup } from "@/components/Lockup";
 import { MoreButton, usePlayerActions } from "@/components/PlayerActions";
 import { ApiError, clearToken } from "@/lib/api";
 import { colors, fonts, radius } from "@/lib/brand";
+import { showDialog } from "@/lib/dialog";
 import { archiveLeague, getLeague, getMe, leaveLeague, removeMember, renameLeague } from "@/lib/routes";
 import type { ApiLeagueDetail, ApiLeagueMember, ApiWeek } from "@shared/types";
 
@@ -147,19 +147,19 @@ function LeagueBody({ id, detail }: { id: string; detail: ApiLeagueDetail }) {
   };
 
   const confirmRemove = (m: ApiLeagueMember) =>
-    Alert.alert(`Remove ${m.display_name}?`, "They'll need you to add them back.", [
+    showDialog(`Remove ${m.display_name}?`, "They'll need you to add them back.", [
       { text: "Cancel", style: "cancel" },
       { text: "Remove", style: "destructive", onPress: () => remove.mutate(m.player_id) },
     ]);
 
   const confirmArchive = () =>
-    Alert.alert(`Archive ${league.name}?`, "This hides the league for everyone. You can't undo it from the app.", [
+    showDialog(`Archive ${league.name}?`, "This hides the league for everyone. You can't undo it from the app.", [
       { text: "Cancel", style: "cancel" },
       { text: "Archive", style: "destructive", onPress: () => archive.mutate() },
     ]);
 
   const confirmLeave = () =>
-    Alert.alert(`Leave ${league.name}?`, undefined, [
+    showDialog(`Leave ${league.name}?`, undefined, [
       { text: "Cancel", style: "cancel" },
       { text: "Leave", style: "destructive", onPress: () => leave.mutate() },
     ]);

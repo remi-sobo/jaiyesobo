@@ -4,6 +4,7 @@
 // pointing a build at a non-prod backend.
 import Constants from "expo-constants";
 import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
 
 const TOKEN_KEY = "runitback.session.v1";
 
@@ -17,15 +18,46 @@ if (!configuredBase) {
 
 export const API_BASE_URL = `${configuredBase.replace(/\/$/, "")}/api/app/v1`;
 
+// SecureStore (the Keychain) is phone-only. In the browser the token lives in
+// localStorage instead. Private windows and blocked site data can make it throw,
+// so the token is held in memory for the tab when that happens.
+const onWeb = Platform.OS === "web";
+let memoryToken: string | null = null;
+
 export async function getToken(): Promise<string | null> {
+  if (onWeb) {
+    try {
+      return window.localStorage.getItem(TOKEN_KEY);
+    } catch {
+      return memoryToken;
+    }
+  }
   return SecureStore.getItemAsync(TOKEN_KEY);
 }
 
 export async function setToken(token: string): Promise<void> {
+  if (onWeb) {
+    try {
+      window.localStorage.setItem(TOKEN_KEY, token);
+      memoryToken = null;
+    } catch {
+      memoryToken = token;
+    }
+    return;
+  }
   await SecureStore.setItemAsync(TOKEN_KEY, token);
 }
 
 export async function clearToken(): Promise<void> {
+  if (onWeb) {
+    memoryToken = null;
+    try {
+      window.localStorage.removeItem(TOKEN_KEY);
+    } catch {
+      // Nothing stored, nothing to clear.
+    }
+    return;
+  }
   await SecureStore.deleteItemAsync(TOKEN_KEY);
 }
 

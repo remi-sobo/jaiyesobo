@@ -3,7 +3,6 @@ import { Redirect, router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Linking,
   Pressable,
   ScrollView,
@@ -18,6 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Lockup } from "@/components/Lockup";
 import { ApiError, clearToken } from "@/lib/api";
 import { colors, fonts, radius } from "@/lib/brand";
+import { showDialog } from "@/lib/dialog";
 import { pushAvailable, registerForPush } from "@/lib/push";
 import { deleteMe, getMe, patchMe, signOut } from "@/lib/routes";
 import type { ApiPlayer, MeResponse, PushSettings } from "@shared/types";
@@ -118,13 +118,13 @@ function SettingsBody({ player }: { player: ApiPlayer }) {
   const del = useMutation({ mutationFn: () => deleteMe(), onSuccess: leaveAccount });
 
   const confirmSignOut = () =>
-    Alert.alert("Sign out?", "You'll need your player code to get back in.", [
+    showDialog("Sign out?", "You'll need your player code to get back in.", [
       { text: "Cancel", style: "cancel" },
       { text: "Sign out", onPress: () => out.mutate() },
     ]);
 
   const confirmDelete = () =>
-    Alert.alert("Delete your account?", "Your picks and your spot on every board go away. This can't be undone.", [
+    showDialog("Delete your account?", "Your picks and your spot on every board go away. This can't be undone.", [
       { text: "Cancel", style: "cancel" },
       { text: "Delete", style: "destructive", onPress: () => del.mutate() },
     ]);

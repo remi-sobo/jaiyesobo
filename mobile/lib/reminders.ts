@@ -1,4 +1,5 @@
 import * as Notifications from "expo-notifications";
+import { Platform } from "react-native";
 
 const LEAD_MS = 60 * 60 * 1000;
 
@@ -9,8 +10,9 @@ let askedThisSession = false;
 // Syncs run one at a time, so a burst of pick changes can't leave two reminders scheduled.
 let queue: Promise<void> = Promise.resolve();
 
-/** Keep exactly one local "1 hour to tip-off" reminder in sync with the week. No-op when disabled, nothing left to pick, or tip-off is under an hour away. Never throws. */
+/** Keep exactly one local "1 hour to tip-off" reminder in sync with the week. No-op when disabled, nothing left to pick, or tip-off is under an hour away. Never throws. Phone only: does nothing in the browser (no scheduling, no permission prompt). */
 export async function syncLockReminder(input: LockReminderInput): Promise<void> {
+  if (Platform.OS === "web") return;
   const run = queue.then(() => apply(input));
   queue = run;
   await run;
