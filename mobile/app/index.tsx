@@ -89,7 +89,6 @@ export default function ThisWeek() {
       week={week.data}
       meId={me.data.player.id}
       meName={me.data.player.display_name}
-      meCode={me.data.player.code}
       canTalk={me.data.player.can_talk}
       leagueCount={me.data.leagues.length}
     />
@@ -100,14 +99,12 @@ function ThisWeekBody({
   week,
   meId,
   meName,
-  meCode,
   canTalk,
   leagueCount,
 }: {
   week: ApiWeek;
   meId: string;
   meName: string;
-  meCode: string | null;
   canTalk: boolean;
   leagueCount: number;
 }) {
@@ -181,20 +178,10 @@ function ThisWeekBody({
 
         {canSubmit ? <SubmitButton week={week.number} /> : null}
 
-        <View style={styles.account}>
-          <Text style={styles.accountLabel}>Playing as</Text>
-          <Text style={styles.accountName}>{meName}</Text>
-          {meCode ? (
-            <Text style={styles.accountCode}>Your code: <Text style={styles.codeMono}>{meCode}</Text></Text>
-          ) : null}
-          <Text style={styles.accountHint}>Save it so you can play on another phone.</Text>
-          <Pressable
-            onPress={async () => { await clearToken(); router.replace("/join"); }}
-            style={styles.signOutBtn}
-          >
-            <Text style={styles.signOutText}>Sign out</Text>
-          </Pressable>
-        </View>
+        <Pressable onPress={() => router.push("/settings")} style={[styles.boardLink, styles.settingsLink]}>
+          <Text style={styles.boardLinkText} numberOfLines={1}>{`Playing as ${meName}`}</Text>
+          <Text style={styles.boardLinkCta}>Settings →</Text>
+        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
@@ -722,6 +709,7 @@ const styles = StyleSheet.create({
   boardLinkCta: { marginLeft: "auto", color: colors.accent, fontFamily: fonts.label, fontSize: 12, letterSpacing: 2, textTransform: "uppercase" },
   leagueLink: { marginTop: 8 },
   cornerLink: { marginTop: 8, minHeight: 44 },
+  settingsLink: { marginTop: 24, minHeight: 44 },
   progress: { color: colors.paper, fontSize: 15, marginTop: 18 },
   nextLock: { color: colors.steel, fontSize: 13, marginTop: 4 },
   cards: { marginTop: 20, gap: 12 },
@@ -811,21 +799,6 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   submitError: { color: colors.loss, fontSize: 14, marginTop: 10, textAlign: "center" },
-  account: {
-    marginTop: 32,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: radius.card,
-    backgroundColor: colors.surface,
-  },
-  accountLabel: { color: colors.steel, fontFamily: fonts.label, fontSize: 11, letterSpacing: 2, textTransform: "uppercase" },
-  accountName: { color: colors.paper, fontSize: 20, marginTop: 4 },
-  accountCode: { color: colors.steel, fontSize: 14, marginTop: 8 },
-  codeMono: { color: colors.paper, fontFamily: "Courier" },
-  accountHint: { color: colors.steel, fontSize: 12, marginTop: 4 },
-  signOutBtn: { alignSelf: "flex-start", marginTop: 12 },
-  signOutText: { color: colors.steel, fontSize: 14, textDecorationLine: "underline" },
   errorBox: { alignItems: "center", padding: 20 },
   errorText: { color: colors.paper, fontSize: 15, textAlign: "center" },
   retryBtn: { marginTop: 12, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 16, paddingVertical: 10, borderRadius: radius.button },
