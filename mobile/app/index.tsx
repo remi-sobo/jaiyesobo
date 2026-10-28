@@ -18,9 +18,9 @@ import { Lockup } from "@/components/Lockup";
 import { MoreButton, usePlayerActions } from "@/components/PlayerActions";
 import { ApiError, clearToken, getToken } from "@/lib/api";
 import { colors, fonts, radius } from "@/lib/brand";
-import { getBoard, getCurrentWeek, getMe, getRecap, getResults, getTalkLines, patchMe, postTalk, savePick, submitPicks } from "@/lib/routes";
+import { getBoard, getCurrentWeek, getMe, getRecap, getResults, getTalkLines, patchMe, postTalk, react, savePick, submitPicks } from "@/lib/routes";
 import { syncLockReminder } from "@/lib/reminders";
-import type { AgeBand, ApiCrowd, ApiHousePick, ApiItem, ApiOption, ApiResults, ApiWeek, TalkLinesResponse } from "@shared/types";
+import type { AgeBand, ApiCrowd, ApiHousePick, ApiItem, ApiOption, ApiResults, ApiWeek, ReactionKey, TalkLinesResponse } from "@shared/types";
 
 /**
  * This Week — the home of the signed-in app. Loads /me and /week/current,
@@ -157,9 +157,6 @@ function ThisWeekBody({
     open.length === 0 ? "live" :
     week.submitted ? "in" : "picking";
   const lockWhen = week.next_lock_at ? fmtWhen(week.next_lock_at, now) : null;
-  const nextTipoff = week.next_lock_at
-    ? `Next tip-off${minsWithinDay(week.next_lock_at, now) === null ? ":" : ""} ${lockWhen}`
-    : null;
 
   const unpickedOpenCount = open.length - pickedOpen;
   const reminderOn = pushLockEnabled && week.status === "open" && !week.submitted;
@@ -201,6 +198,18 @@ function ThisWeekBody({
           : r.you_beat.remi
             ? `Week ${r.week}: you beat Remi ✓`
             : `Week ${r.week}: Jaiye got you`;
+
+  // Reactions target Jaiye's and Remi's player ids, which only board rows carry. Same key as the board tab.
+  const houseBoard = useQuery({
+    queryKey: ["board", "week"],
+    queryFn: ({ signal }) => getBoard({ span: "week" }, signal),
+    enabled: items.some((i) => i.locked),
+    staleTime: 300_000,
+  });
+  const houseIds: HouseIds = {
+    jaiye: houseBoard.data?.rows.find((row) => row.kind === "jaiye")?.player_id ?? null,
+    remi: houseBoard.data?.rows.find((row) => row.kind === "remi")?.player_id ?? null,
+  };
 
   const pullRefresh = async () => {
     setRefreshing(true);
@@ -277,6 +286,7 @@ function ThisWeekBody({
               item={item}
               disabled={week.submitted || week.status !== "open"}
               meId={meId}
+              houseIds={houseIds}
               canTalk={canTalk}
               now={now}
             />
@@ -517,12 +527,14 @@ function PickCard({
   item,
   disabled,
   meId,
+  houseIds,
   canTalk,
   now,
 }: {
   item: ApiItem;
   disabled: boolean;
   meId: string;
+  houseIds: HouseIds;
   canTalk: boolean;
   now: number;
 }) {
@@ -614,7 +626,7 @@ function PickCard({
 
       {errorText ? <Text style={styles.cardError}>{errorText}</Text> : null}
 
-      {item.locked ? <PickReveal item={item} meId={meId} canTalk={canTalk} /> : null}
+      {item.locked ? <PickReveal item={item} meId={meId} houseIds={houseIds} canTalk={canTalk} /> : null}
       {item.locked && item.result?.display ? (
         <Text style={styles.cardResult}>{item.result.display}</Text>
       ) : null}
@@ -622,7 +634,7 @@ function PickCard({
   );
 }
 
-function PickReveal({ item, meId, canTalk }: { item: ApiItem; meId: string; canTalk: boolean }) {
+function PickReveal({ item, meId, houseIds, canTalk }: { item: ApiItem; meId: string; houseIds: HouseIds; canTalk: boolean }) {
   const isClosest = item.type === "closest";
   const pick = item.my_pick;
   const points = item.my_points ?? 0;
@@ -668,8 +680,8 @@ function PickReveal({ item, meId, canTalk }: { item: ApiItem; meId: string; canT
 
       <Text style={[styles.houseHeader, showVerdict && styles.houseHeaderSpaced]}>The House</Text>
       <View style={styles.houseRow}>
-        <HouseCell name="Jaiye" pick={item.house.jaiye} item={item} />
-        <HouseCell name="Remi" pick={item.house.remi} item={item} />
+        <HouseCell name="Jaiye" pick={item.house.jaiye} item={item} playerId={houseIds.jaiye} />
+        <HouseCell name="Remi" pick={item.house.remi} item={item} playerId={houseIds.remi} />
       </View>
 
       {fadeTone ? (
@@ -687,7 +699,7 @@ function PickReveal({ item, meId, canTalk }: { item: ApiItem; meId: string; canT
   );
 }
 
-function HouseCell({ name, pick, item }: { name: string; pick: ApiHousePick | null; item: ApiItem }) {
+function HouseCell({ name, pick, item, playerId }: { name: string; pick: ApiHousePick | null; item: ApiItem; playerId: string | null }) {
   const isClosest = item.type === "closest";
   const choice = pick?.choice ?? null;
   const guess = pick?.guess ?? null;
@@ -731,6 +743,81 @@ function HouseCell({ name, pick, item }: { name: string; pick: ApiHousePick | nu
           </View>
         </View>
       ) : null}
+      {item.locked && pick && playerId ? (
+        <ReactionRow item={item} side={isJaiye ? "jaiye" : "remi"} playerId={playerId} pick={pick} />
+      ) : null}
+    </View>
+  );
+}
+
+type HouseSide = "jaiye" | "remi";
+type HouseIds = Record<HouseSide, string | null>;
+
+// Mirrors lib/sportsbook/reactions.ts, which Metro can't reach from here. Keep keys and glyphs in sync.
+const REACTIONS: ReadonlyArray<{ key: ReactionKey; emoji: string; label: string }> = [
+  { key: "fire", emoji: "🔥", label: "Fire" },
+  { key: "laugh", emoji: "😂", label: "Funny" },
+  { key: "cold", emoji: "🥶", label: "Ice cold" },
+  { key: "clown", emoji: "🤡", label: "Clown pick" },
+  { key: "target", emoji: "🎯", label: "Called it" },
+];
+
+/** Five reaction chips under a house pick: tap to react, tap yours again to remove, tap another to swap. */
+function ReactionRow({ item, side, playerId, pick }: { item: ApiItem; side: HouseSide; playerId: string; pick: ApiHousePick }) {
+  const qc = useQueryClient();
+  const [errorText, setErrorText] = useState<string | null>(null);
+  const counts = pick.reactions ?? {};
+  const mine = pick.my_reaction ?? null;
+
+  const mutation = useMutation({
+    // The server toggles each emoji on its own, so swapping means turning the old one off first.
+    mutationFn: async (emoji: ReactionKey) => {
+      if (mine && mine !== emoji) await react({ item_id: item.id, player_id: playerId, emoji: mine });
+      return react({ item_id: item.id, player_id: playerId, emoji });
+    },
+    onMutate: async (emoji) => {
+      setErrorText(null);
+      await qc.cancelQueries({ queryKey: ["week", "current"] });
+      const previous = qc.getQueryData<ApiWeek>(["week", "current"]);
+      if (previous) {
+        qc.setQueryData<ApiWeek>(["week", "current"], patchHouseReaction(previous, item.id, side, emoji));
+      }
+      return { previous };
+    },
+    onError: (err, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(["week", "current"], ctx.previous);
+      setErrorText(err instanceof ApiError ? describeError(err) : "Couldn't save that reaction.");
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["week", "current"] });
+    },
+  });
+
+  return (
+    <View>
+      <View style={styles.reactRow}>
+        {REACTIONS.map((r) => {
+          const count = counts[r.key] ?? 0;
+          const selected = mine === r.key;
+          return (
+            <Pressable
+              key={r.key}
+              disabled={mutation.isPending}
+              onPress={() => mutation.mutate(r.key)}
+              hitSlop={4}
+              accessibilityRole="button"
+              accessibilityLabel={r.label}
+              accessibilityValue={count > 0 ? { text: String(count) } : undefined}
+              accessibilityState={{ selected, disabled: mutation.isPending }}
+              style={[styles.reactChip, selected && styles.reactChipMine, mutation.isPending && styles.optionBtnLocked]}
+            >
+              <Text style={styles.reactGlyph}>{r.emoji}</Text>
+              {count > 0 ? <Text style={[styles.reactCount, selected && styles.reactCountMine]}>{count}</Text> : null}
+            </Pressable>
+          );
+        })}
+      </View>
+      {errorText ? <Text style={styles.reactError}>{errorText}</Text> : null}
     </View>
   );
 }
@@ -1076,6 +1163,23 @@ function patchItemTalk(prev: ApiWeek, itemId: string, meId: string, line: TalkLi
   };
 }
 
+/** Pure helper: apply my reaction tap to one house pick. Same key removes it, a new key swaps it in. */
+function patchHouseReaction(prev: ApiWeek, itemId: string, side: HouseSide, emoji: ReactionKey): ApiWeek {
+  return {
+    ...prev,
+    items: prev.items.map((it) => {
+      const hp = it.house[side];
+      if (it.id !== itemId || !hp) return it;
+      const old = hp.my_reaction ?? null;
+      const reactions = { ...(hp.reactions ?? {}) };
+      const bump = (k: ReactionKey, by: number) => { reactions[k] = Math.max(0, (reactions[k] ?? 0) + by); };
+      if (old) bump(old, -1);
+      if (old !== emoji) bump(emoji, 1);
+      return { ...it, house: { ...it.house, [side]: { ...hp, reactions, my_reaction: old === emoji ? null : emoji } } };
+    }),
+  };
+}
+
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.ink, alignItems: "center", justifyContent: "center" },
   scroll: { padding: 20, paddingBottom: 48, alignItems: "stretch", alignSelf: "stretch" },
@@ -1162,7 +1266,6 @@ const styles = StyleSheet.create({
   heroBarFill: { height: 4, backgroundColor: colors.accent },
   heroLine: { color: colors.steel, fontSize: 13, lineHeight: 18, marginTop: 6 },
   heroWinner: { color: colors.paper, fontSize: 15, lineHeight: 20, marginTop: 6 },
-  nextLock: { color: colors.steel, fontSize: 13, marginTop: 16 },
   cards: { marginTop: 20, gap: 12 },
   ageCard: {
     borderWidth: 1,
@@ -1370,6 +1473,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   houseBubbleText: { color: colors.paper, fontSize: 13 },
+  reactRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 },
+  reactChip: {
+    flexGrow: 1,
+    minWidth: 36,
+    height: 36,
+    paddingHorizontal: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radius.button,
+    backgroundColor: colors.ink,
+  },
+  reactChipMine: { borderColor: colors.accent, backgroundColor: colors.surface2 },
+  reactGlyph: { fontSize: 16 },
+  reactCount: { color: colors.steel, fontFamily: fonts.label, fontSize: 12 },
+  reactCountMine: { color: colors.accent },
+  reactError: { color: colors.loss, fontSize: 12, marginTop: 6 },
   fadeChip: {
     alignSelf: "flex-start",
     marginTop: 8,

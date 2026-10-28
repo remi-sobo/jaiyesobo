@@ -18,6 +18,7 @@ import type {
   MeResponse,
   MuteRequest,
   PickRequest,
+  ReactRequest,
   RecapResponse,
   ReportRequest,
   RestoreRequest,
@@ -113,6 +114,11 @@ export function submitPicks(req: SubmitRequest): Promise<ApiOk> {
 /** POST /talk — set or clear my preset line on a locked item. key null removes it. */
 export function postTalk(req: TalkRequest): Promise<ApiOk> {
   return appApi<ApiOk>("/talk", { method: "POST", body: req });
+}
+
+/** POST /react — set, swap, or clear my reaction on Jaiye's or Remi's locked pick. 400 before lock. */
+export function react(req: ReactRequest): Promise<ApiOk> {
+  return appApi<ApiOk>("/react", { method: "POST", body: req });
 }
 
 /** POST /report — flag a player's name, a talk line, or a league name. 429 when rate-limited. */
