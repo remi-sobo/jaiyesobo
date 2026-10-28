@@ -63,7 +63,15 @@ export type ApiOption = { key: string; label: string; team?: string };
 
 export type ApiPick = { choice: string | null; guess: number | null; is_lock: boolean };
 
-export type ApiHousePick = ApiPick & { talk: string | null };
+export type ReactionKey = "fire" | "laugh" | "cold" | "clown" | "target";
+
+export type ApiHousePick = ApiPick & {
+  talk: string | null;
+  /** Reaction counts on this pick. Only after the item locks; empty before. */
+  reactions: Partial<Record<ReactionKey, number>>;
+  /** The viewer's own reaction on this pick, if any. */
+  my_reaction: ReactionKey | null;
+};
 
 export type ApiTalk = { player_id: string; display_name: string; key: string; text: string };
 

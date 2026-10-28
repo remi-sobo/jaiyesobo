@@ -1,8 +1,10 @@
 import crypto from "node:crypto";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getItemsForWeeks, getPicks, getPlayers, listWeeks, seasonSummary, type Board } from "@/lib/sportsbook/data";
+import { loadReactions, type ReactionMap } from "@/lib/sportsbook/fans";
 import { pickPoints } from "@/lib/sportsbook/grade";
 import { HEADLINE, HEADLINE_NAME, memberIds, myLeagues, type LeagueWithCount } from "@/lib/sportsbook/leagues";
+import { housePickReactions } from "@/lib/sportsbook/reactions";
 import { closestRival, topRivals, weekTotals, type Rival } from "@/lib/sportsbook/rivals";
 import { canPostTalk, loadTalk, playerFlags } from "@/lib/sportsbook/safety";
 import { ITEM_TYPE_LABEL, type SbItem, type SbPick, type SbPlayerWithCode, type SbWeek } from "@/lib/sportsbook/types";
@@ -14,6 +16,7 @@ import type {
   ApiBoard,
   ApiBoardRow,
   ApiCrowd,
+  ApiHousePick,
   ApiItem,
   ApiLeague,
   ApiPlayer,
@@ -96,10 +99,10 @@ function crowdFor(item: SbItem, picks: SbPick[]): ApiCrowd {
   return { total, split, avg: null };
 }
 
-function houseLine(picks: SbPick[], item: SbItem, playerId: string | undefined) {
+function houseLine(picks: SbPick[], item: SbItem, playerId: string | undefined, locked: boolean, reactions: ReactionMap): ApiHousePick | null {
   if (!playerId) return null;
   const p = picks.find((x) => x.item_id === item.id && x.player_id === playerId);
-  return p ? { choice: p.choice, guess: p.guess, is_lock: p.is_lock, talk: p.talk ?? null } : null;
+  return p ? { choice: p.choice, guess: p.guess, is_lock: p.is_lock, talk: p.talk ?? null, ...housePickReactions(reactions, item.id, playerId, locked) } : null;
 }
 
 /** A week as the given player sees it. Pass meId null for a signed out view. */
@@ -114,7 +117,8 @@ export async function buildWeek(view: WeekView, meId: string | null): Promise<Ap
   const jaiye = view.players.find((p) => p.kind === "jaiye");
   const remi = view.players.find((p) => p.kind === "remi");
   const lockedIds = items.filter((i) => Date.parse(i.locks_at) <= now || week.status !== "open").map((i) => i.id);
-  const talk = await loadTalk(lockedIds, meId);
+  // Reaction counts for every locked item in one query. The viewer is matched by the same anonymous id POST /react writes.
+  const [talk, reactions] = await Promise.all([loadTalk(lockedIds, meId), loadReactions(lockedIds, meId ? appVisitor(meId) : null)]);
   const names = new Map(view.players.map((p) => [p.id, p.display_name]));
 
   // Points need every pick (closest guess compares all of them), so load the full set.
@@ -137,7 +141,7 @@ export async function buildWeek(view: WeekView, meId: string | null): Promise<Ap
       result: item.result,
       my_pick: mine ? { choice: mine.choice, guess: mine.guess, is_lock: mine.is_lock } : null,
       my_points: mine ? pickPoints(item, mine, all) : null,
-      house: { jaiye: houseLine(picks, item, jaiye?.id), remi: houseLine(picks, item, remi?.id) },
+      house: { jaiye: houseLine(picks, item, jaiye?.id, locked, reactions), remi: houseLine(picks, item, remi?.id, locked, reactions) },
       crowd: locked ? crowdFor(item, all) : null,
       talk: locked
         ? talk.filter((t) => t.item_id === item.id).map((t) => ({ player_id: t.player_id, display_name: names.get(t.player_id) ?? "Player", key: t.key, text: t.text }))
