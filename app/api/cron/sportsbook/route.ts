@@ -11,6 +11,9 @@ export const maxDuration = 300;
  * Called by Vercel Cron (see vercel.json). With CRON_SECRET set, Vercel sends
  * it as a bearer token and nothing else gets in. Without it, only Vercel's
  * cron user agent is accepted. Both jobs are safe to run twice.
+ *
+ * Both also send the "graded" push (and weekly the "recap" one) through
+ * lib/sportsbook/push.ts. Those are keyed by week, so a rerun sends nothing new.
  */
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;

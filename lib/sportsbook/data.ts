@@ -2,6 +2,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import type { TeamCode } from "@/lib/nba/teams";
 import { fetchBox, fetchGames } from "./espn";
 import { gradeItem, scoreWeek, weekWinner, type GameBox, type PlayerWeekScore } from "./grade";
+import { sendPush, type PushResult } from "./push";
 import type { ItemSpec, SbItem, SbPick, SbPlayer, SbWeek } from "./types";
 import { SB_SEASON, pacificDate, weekBounds, weekWindow } from "./weeks";
 
@@ -201,6 +202,26 @@ export async function gradeWeek(week: SbWeek, now = new Date()): Promise<number>
   return changed;
 }
 
+/**
+ * Tells players the latest graded (or final) week is done. Keyed by week, so
+ * it sends once however many jobs call it. Never throws; null if nothing to announce.
+ */
+export async function pushGraded(): Promise<PushResult | null> {
+  try {
+    const done = (await listWeeks()).filter((w) => w.status === "graded" || w.status === "final");
+    if (done.length === 0) return null;
+    const n = Math.max(...done.map((w) => w.week_number));
+    return await sendPush(
+      "graded",
+      { title: `Week ${n} is graded`, body: "See how you did against Jaiye and Remi.", data: { route: "/results" } },
+      `graded:${SB_SEASON}:${n}`,
+    );
+  } catch (e) {
+    console.error(JSON.stringify({ scope: "push", kind: "graded", err: String(e) }));
+    return null;
+  }
+}
+
 /** The nightly job: refresh recent games and box scores, then grade open weeks. */
 export async function nightlySync(now = new Date()) {
   const today = pacificDate(now);
@@ -211,7 +232,8 @@ export async function nightlySync(now = new Date()) {
   const { data: weeks } = await supa().from("sb_weeks").select(WEEK_COLS).in("status", ["open", "graded"]);
   let graded = 0;
   for (const w of (weeks ?? []) as SbWeek[]) graded += await gradeWeek(w, now);
-  return { today, games, boxes, graded };
+  const push = await pushGraded();
+  return { today, games, boxes, graded, push };
 }
 
 /* Standings */

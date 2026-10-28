@@ -1,7 +1,8 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { buildContext, draftOne, draftSlate, half, writeRecap, type DraftItem } from "./draft";
-import { getItems, getPicks, getPlayers, getSubmissions, getWeek, gradeWeek, nightlySync, weekBoard } from "./data";
+import { getItems, getPicks, getPlayers, getSubmissions, getWeek, gradeWeek, nightlySync, pushGraded, weekBoard } from "./data";
 import { pickPoints } from "./grade";
+import { recapPreview, sendPush, type PushResult } from "./push";
 import type { ItemOption, SbItem, SbPick, SbWeek } from "./types";
 import { SB_SEASON, currentWeekNumber, weekWindow } from "./weeks";
 
@@ -267,8 +268,29 @@ export async function makeRecap(n: number): Promise<string> {
 export async function saveRecap(n: number, text: string): Promise<void> {
   const week = await getWeek(n);
   if (!week || week.status === "final") throw new ActionError("Can't edit that recap.");
-  const { error } = await db().from("sb_weeks").update({ recap: text.trim().slice(0, 2000) || null }).eq("id", week.id);
+  const recap = text.trim().slice(0, 2000);
+  const { error } = await db().from("sb_weeks").update({ recap: recap || null }).eq("id", week.id);
   if (error) throw error;
+  await pushRecap(n, recap);
+}
+
+/**
+ * Tells players a week's recap is up. Keyed by week, so later edits and the
+ * weekly job's backstop don't send it again. Never throws; null if there's no recap.
+ */
+async function pushRecap(n: number, recap: string | null | undefined): Promise<PushResult | null> {
+  const text = recap?.trim();
+  if (!text) return null;
+  try {
+    return await sendPush(
+      "recap",
+      { title: "Jaiye's recap is up", body: recapPreview(text), data: { route: "/corner" } },
+      `recap:${SB_SEASON}:${n}`,
+    );
+  } catch (e) {
+    console.error(JSON.stringify({ scope: "push", kind: "recap", err: String(e) }));
+    return null;
+  }
 }
 
 export async function finalizeWeek(n: number): Promise<void> {
@@ -299,6 +321,11 @@ export async function weeklyJob(now = new Date()) {
       }
     }
   }
+  // Backstop for the pushes: no-ops if nightlySync and saveRecap already sent them.
+  out.push = {
+    graded: await pushGraded(),
+    recap: last ? await pushRecap(n - 1, (await getWeek(n - 1))?.recap) : null,
+  };
   const current = await getWeek(n);
   if (!current || (current.status === "draft" && (await getItems(current.id)).length === 0)) {
     try {
