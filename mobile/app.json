@@ -49,11 +49,16 @@
         }
       ]
     ],
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "baseUrl": "/runitback/app"
     },
     "extra": {
-      "apiBaseUrl": "https://jaiyesobo.com"
+      "apiBaseUrl": "https://www.jaiyesobo.com"
     }
   }
 }

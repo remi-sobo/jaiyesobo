@@ -1,5 +1,4 @@
 {
-  "ignoreCommand": "bash scripts/vercel-ignore.sh",
   "functions": {
     "app/api/upload/route.ts": {
       "maxDuration": 60

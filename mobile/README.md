@@ -40,6 +40,18 @@ fast. The simulator opens automatically.
 
 ## Browser
 
+### Hosted build (no laptop needed)
+
+The site serves the app at `https://www.jaiyesobo.com/runitback/app`. Open it in
+Safari on the phone. "Share → Add to Home Screen" gives it a full-screen icon.
+
+Every deploy rebuilds it: `scripts/build-app.sh` runs inside `npm run build`.
+Vercel previews get the same at `<preview-url>/runitback/app`. In the browser
+the app talks to whatever origin serves it, so the hosted build on a preview
+hits that preview's backend.
+
+### Local dev server
+
 ```bash
 cd mobile
 npx expo start --web
@@ -68,15 +80,15 @@ settings.
   report / mute sheets use a numbered `window.prompt` (type 1, 2, ...).
   See `lib/dialog.ts`.
 
-**The API only allows the localhost origins.** `app/api/app/v1` sends CORS
-headers just for `http://localhost:8081`, `http://127.0.0.1:8081` and
-`http://localhost:19006`. Serve the web build from anywhere else and the
-browser will block its calls. As on the phone, the default backend is
-production, so picks made in the browser are real picks.
+**Same origin, no CORS.** Served from the site itself, the calls are
+same-origin. The CORS allow-list in `app/api/app/v1` (`http://localhost:8081`,
+`http://127.0.0.1:8081`, `http://localhost:19006`) only matters for
+`expo start --web`. As on the phone, the backend is production by default, so
+picks made in the browser are real picks.
 
 ## Which backend does it talk to?
 
-`app.json` → `expo.extra.apiBaseUrl` is set to `https://jaiyesobo.com`,
+`app.json` → `expo.extra.apiBaseUrl` is set to `https://www.jaiyesobo.com`
 so by default the app hits **production**. Any pick you make with Expo
 Go is a real pick on the real leaderboard. Options:
 
@@ -101,9 +113,10 @@ For a mobile-only PR:
 3. `npx expo start` → scan QR with Expo Go
 4. Walk the flows the PR touches. Shake → "Reload" to restart cleanly.
 
-Vercel preview URLs don't apply here: `vercel.json`'s `ignoreCommand`
-skips the web build on mobile-only commits. Pure mobile PRs test
-locally, not on a preview URL.
+Every PR gets a Vercel preview that includes the app at `/runitback/app`, so a
+mobile PR can be checked from a phone browser without a laptop. Expo Go is
+still the way to check native-only things (push, reminders, Keychain, share
+sheet).
 
 ## Ship to TestFlight
 
