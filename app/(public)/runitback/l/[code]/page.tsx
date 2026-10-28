@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getChallenger } from "@/lib/sportsbook/players";
 import { getLeagueByCode, isMember, memberIds } from "@/lib/sportsbook/leagues";
+import { playerFlags } from "@/lib/sportsbook/safety";
 import { featuredWeekNumber } from "@/lib/sportsbook/view";
 import { InviteJoin, JoinLeagueButton } from "@/components/sportsbook/public/league-bits";
 
@@ -36,7 +37,9 @@ export default async function InvitePage(props: PageProps<"/runitback/l/[code]">
     );
   }
 
-  const [me, members, week] = await Promise.all([getChallenger(), memberIds(league.id), featuredWeekNumber()]);
+  const [me, members, week, commissioner] = await Promise.all([getChallenger(), memberIds(league.id), featuredWeekNumber(), playerFlags(league.commissioner_id)]);
+  // Same rule as the app API: a hidden (reported) commissioner's league name isn't shown to strangers.
+  const leagueName = !commissioner || commissioner.hidden ? "A private league" : league.name;
   // ?from= is no longer resolved to a name: player codes are login credentials, and this lookup let anyone test them.
   const inviterName: string | null = null;
   const already = me ? await isMember(league.id, me.id) : false;
@@ -49,7 +52,7 @@ export default async function InvitePage(props: PageProps<"/runitback/l/[code]">
           {inviterName ? `${inviterName} challenged you.` : "You've been challenged."}
         </h1>
         <div className="mt-8 border border-[var(--color-line-strong)] bg-[var(--color-off-black)] p-5 text-center">
-          <div className="font-[family-name:var(--font-fraunces)] text-2xl font-black">{league.name}</div>
+          <div className="font-[family-name:var(--font-fraunces)] text-2xl font-black">{leagueName}</div>
           <div className={`${mono} mt-2 text-[0.72rem] uppercase tracking-[0.15em] text-[var(--color-mute)]`}>
             {members.length} {members.length === 1 ? "player" : "players"}
             {week ? ` · Week ${week}` : ""} · Code {league.code}
@@ -66,7 +69,7 @@ export default async function InvitePage(props: PageProps<"/runitback/l/[code]">
               </Link>
             </div>
           ) : me ? (
-            <JoinLeagueButton code={league.code} from={from} name={league.name} />
+            <JoinLeagueButton code={league.code} from={from} name={leagueName} />
           ) : (
             <InviteJoin code={league.code} from={from} />
           )}
