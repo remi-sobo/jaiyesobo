@@ -15,7 +15,7 @@ export function BoardList({ board, span }: { board: ApiBoard; span: Span }) {
       {board.headline ? <Text style={styles.headline}>{board.headline}</Text> : null}
 
       {empty ? (
-        <Text style={styles.empty}>Nobody's on the board yet. Make your picks.</Text>
+        <Text style={styles.empty}>Board's empty. First pick starts it.</Text>
       ) : (
         <View style={styles.rows}>
           {board.rows.map((row) => (

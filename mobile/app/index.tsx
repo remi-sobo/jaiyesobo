@@ -237,6 +237,8 @@ function ThisWeekBody({
           results={heroResults}
         />
 
+        {week.closest_rival ? <NemesisCard rival={week.closest_rival} /> : null}
+
         <View style={styles.scoreRow}>
           <ScoreBox name="Jaiye" value={scoreboard.jaiye} tone="accent" />
           <ScoreBox name="Remi" value={scoreboard.remi} tone="paper" />
@@ -461,6 +463,29 @@ function HeroCard({
   );
 }
 
+/** gap is their points minus yours: positive means they're ahead of you. */
+function NemesisCard({ rival }: { rival: NonNullable<ApiWeek["closest_rival"]> }) {
+  const pts = Math.abs(rival.gap);
+  const line =
+    rival.gap === 0
+      ? `You and ${rival.display_name} are tied`
+      : `${rival.display_name} is ${pts} pt${pts === 1 ? "" : "s"} ${rival.gap > 0 ? "ahead of" : "behind"} you`;
+
+  return (
+    <Pressable
+      onPress={() => router.push({ pathname: "/rivals/[id]", params: { id: rival.player_id } })}
+      accessibilityRole="button"
+      style={styles.nemesis}
+    >
+      <View style={styles.nemesisText}>
+        <Text style={styles.nemesisLabel}>Nemesis</Text>
+        <Text style={styles.nemesisLine} numberOfLines={2}>{line}</Text>
+      </View>
+      <Text style={styles.nemesisCta}>Head to head →</Text>
+    </Pressable>
+  );
+}
+
 function describeError(err: ApiError): string {
   if (err.body && typeof err.body === "object" && "error" in err.body) {
     return String((err.body as { error: unknown }).error);
@@ -628,7 +653,7 @@ function PickReveal({ item, meId, canTalk }: { item: ApiItem; meId: string; canT
               <Text style={styles.verdictStampText}>CALLED IT ✓</Text>
             </View>
           ) : (
-            <Text style={styles.verdictMiss}>Missed.</Text>
+            <Text style={styles.verdictMiss}>Not this time.</Text>
           )}
           <Text
             style={[
@@ -728,7 +753,7 @@ function CrowdSummary({
         crowd.avg !== null ? <Text style={styles.crowdLine}>Crowd average: {Math.round(crowd.avg)}</Text> : null
       ) : (
         <Text style={styles.crowdLine}>
-          {options.map((o) => `${o.label}: ${crowd.split[o.key] ?? 0}%`).join(", ")}
+          {options.map((o) => `${crowd.split[o.key] ?? 0}% ${o.label}`).join(" · ")}
         </Text>
       )}
     </View>
@@ -936,7 +961,7 @@ function ClosestInput({
           <Text style={styles.guessSaveText}>Save</Text>
         </Pressable>
       </View>
-      <Text style={styles.guessHint}>Enter a number 0–999.</Text>
+      <Text style={styles.guessHint}>Your number, 0 to 999.</Text>
     </View>
   );
 }
@@ -1099,6 +1124,22 @@ const styles = StyleSheet.create({
   cornerLink: { marginTop: 8, minHeight: 44 },
   settingsLink: { marginTop: 24, minHeight: 44 },
   resultsLink: { marginBottom: 8, minHeight: 44, borderColor: colors.accent },
+  nemesis: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 12,
+    minHeight: 44,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.surface,
+    borderRadius: radius.card,
+  },
+  nemesisText: { flex: 1, minWidth: 0 },
+  nemesisLabel: { color: colors.accent, fontFamily: fonts.label, fontSize: 12, letterSpacing: 2, textTransform: "uppercase" },
+  nemesisLine: { color: colors.paper, fontSize: 15, lineHeight: 20, marginTop: 2 },
+  nemesisCta: { flexShrink: 0, color: colors.accent, fontFamily: fonts.label, fontSize: 12, letterSpacing: 2, textTransform: "uppercase" },
   hero: {
     marginTop: 16,
     borderWidth: 1,

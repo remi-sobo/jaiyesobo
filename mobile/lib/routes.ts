@@ -7,6 +7,8 @@ import type {
   ApiLeagueDetail,
   ApiOk,
   ApiResults,
+  ApiRival,
+  ApiRivalDetail,
   ApiWeek,
   CreateLeagueRequest,
   JoinLeagueRequest,
@@ -163,4 +165,14 @@ export function removeMember(id: string, playerId: string): Promise<ApiOk> {
   return appApi<ApiOk>(`/leagues/${encodeURIComponent(id)}/members/${encodeURIComponent(playerId)}`, {
     method: "DELETE",
   });
+}
+
+/** GET /rivals — your head-to-head records against the House and the people you play with. */
+export function getRivals(signal?: AbortSignal): Promise<{ rivals: ApiRival[] }> {
+  return appApi<{ rivals: ApiRival[] }>("/rivals", { signal });
+}
+
+/** GET /rivals/:playerId — one rivalry week by week. 404 "Player not found." for an unknown id. */
+export function getRival(playerId: string, signal?: AbortSignal): Promise<ApiRivalDetail> {
+  return appApi<ApiRivalDetail>(`/rivals/${encodeURIComponent(playerId)}`, { signal });
 }
