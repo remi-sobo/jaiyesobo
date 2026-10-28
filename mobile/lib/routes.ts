@@ -11,6 +11,7 @@ import type {
   ApiRivalDetail,
   ApiWeek,
   CreateLeagueRequest,
+  InviteResponse,
   JoinLeagueRequest,
   JoinRequest,
   LeaguePatch,
@@ -144,6 +145,11 @@ export function createLeague(req: CreateLeagueRequest): Promise<{ league: ApiLea
 /** POST /leagues/join — join with a league code like WORD-1234. */
 export function joinLeague(req: JoinLeagueRequest): Promise<{ league: ApiLeague }> {
   return appApi<{ league: ApiLeague }>("/leagues/join", { method: "POST", body: req });
+}
+
+/** GET /invite/:code — public league invite preview: name, member count, featured week. Anonymous. 404 "That invite doesn't work anymore." for an unknown or archived code. */
+export function getInvite(code: string, signal?: AbortSignal): Promise<InviteResponse> {
+  return appApi<InviteResponse>(`/invite/${encodeURIComponent(code)}`, { anonymous: true, signal });
 }
 
 /** GET /leagues/:id — league, its week and season boards, and members. */
