@@ -19,7 +19,7 @@ import {
 import { overLimit } from "@/lib/sportsbook/limits";
 import { challengerByCode, checkDisplayName, createChallenger, isAgeBand } from "@/lib/sportsbook/players";
 import { rivalRecord, topRivals } from "@/lib/sportsbook/rivals";
-import { deleteAccount, deleteTalk, fileReport, isReportContext, postTalk, setMute } from "@/lib/sportsbook/safety";
+import { deleteAccount, deleteTalk, fileReport, isReportContext, mutedBy, playerFlags, postTalk, setMute } from "@/lib/sportsbook/safety";
 import { bearerToken, createSession, playerForToken, revokeSession } from "@/lib/sportsbook/sessions";
 import { TALK_KEYS, TALK_LINES } from "@/lib/sportsbook/talk";
 import { featuredWeekNumber, loadWeekView } from "@/lib/sportsbook/view";
@@ -147,7 +147,10 @@ async function handle(method: string, path: string[], req: Request): Promise<Res
       if (!league) throw new HttpError(404, "That invite doesn't work anymore.");
       // ?from= used to resolve a player code to a name, which let anyone test codes for free. Codes are login credentials; inviter attribution needs a non-secret id first.
       const inviter: InviteResponse["inviter"] = null;
-      return json({ league: { name: league.name, code: league.code, members: (await memberIds(league.id)).length }, inviter, week: await featuredWeekNumber() } satisfies InviteResponse);
+      // A hidden (reported) commissioner's league name could be the thing that got them hidden, so don't show it to strangers.
+      const commissioner = await playerFlags(league.commissioner_id);
+      const name = !commissioner || commissioner.hidden ? "A private league" : league.name;
+      return json({ league: { name, code: league.code, members: (await memberIds(league.id)).length }, inviter, week: await featuredWeekNumber() } satisfies InviteResponse);
     }
     case route === "GET /talk/lines":
       return json({ lines: TALK_KEYS.map((k) => ({ key: k, text: TALK_LINES[k] })) } satisfies TalkLinesResponse);
@@ -158,18 +161,26 @@ async function handle(method: string, path: string[], req: Request): Promise<Res
 
   switch (true) {
     case route === "GET /me":
-      return json({ player: apiPlayer(me), leagues: await apiLeagues(me), season: SB_SEASON } satisfies MeResponse);
+      return json({ player: apiPlayer(me), leagues: await apiLeagues(me), season: SB_SEASON, muted: [...(await mutedBy(me.id))] } satisfies MeResponse);
     case route === "PATCH /me": {
       const bd = await body(req);
       const patch: Record<string, unknown> = {};
       if (bd.display_name !== undefined) {
+        if (await overLimit(req, "name")) throw new HttpError(429, "Slow down a little.");
         const check = checkDisplayName(bd.display_name);
         if (!check.ok) throw new HttpError(400, check.error);
         patch.display_name = check.name;
       }
+      // Accounts made before the age question can answer it once. Anyone who already has an answer keeps it.
+      let ageBand = me.age_band;
+      if (me.age_band === null && isAgeBand(bd.age_band)) {
+        ageBand = bd.age_band;
+        patch.age_band = bd.age_band;
+        if (bd.age_band !== "13_plus") patch.push_token = null;
+      }
       if (bd.push_token !== undefined) {
         if (bd.push_token === null) patch.push_token = null;
-        else if (me.age_band === "under_13") patch.push_token = null;
+        else if (ageBand !== "13_plus") patch.push_token = null;
         else if (/^Expo(nent)?PushToken\[[A-Za-z0-9_-]{10,200}\]$/.test(str(bd.push_token))) patch.push_token = bd.push_token;
         else throw new HttpError(400, "That push token doesn't look right.");
       }
@@ -187,7 +198,7 @@ async function handle(method: string, path: string[], req: Request): Promise<Res
         if (error) throw error;
       }
       const p = (await loadPlayer(me.id))!;
-      return json({ player: apiPlayer(p), leagues: await apiLeagues(p), season: SB_SEASON } satisfies MeResponse);
+      return json({ player: apiPlayer(p), leagues: await apiLeagues(p), season: SB_SEASON, muted: [...(await mutedBy(p.id))] } satisfies MeResponse);
     }
     case route === "DELETE /me":
       await deleteAccount(me.id);
@@ -203,6 +214,7 @@ async function handle(method: string, path: string[], req: Request): Promise<Res
       return json(w);
     }
     case route === "POST /picks": {
+      if (await overLimit(req, "pick")) throw new HttpError(429, "Slow down a little.");
       const bd = await body(req);
       await savePick(uuid(bd.item_id), me.id, {
         choice: bd.choice === null ? null : typeof bd.choice === "string" ? bd.choice : undefined,
@@ -277,6 +289,7 @@ async function handle(method: string, path: string[], req: Request): Promise<Res
       } satisfies ApiLeagueDetail);
     }
     case route === "PATCH /leagues/:id": {
+      if (await overLimit(req, "name")) throw new HttpError(429, "Slow down a little.");
       const bd = await body(req);
       await renameLeague(me.id, b, bd.name);
       return ok();
@@ -331,12 +344,14 @@ async function handle(method: string, path: string[], req: Request): Promise<Res
 
     /* Talk, reactions, safety */
     case route === "POST /talk": {
+      if (await overLimit(req, "talk")) throw new HttpError(429, "Slow down a little.");
       const bd = await body(req);
       if (bd.key === null) await deleteTalk(me.id, uuid(bd.item_id));
       else await postTalk(me.id, uuid(bd.item_id), bd.key);
       return ok();
     }
     case route === "POST /react": {
+      if (await overLimit(req, "react")) throw new HttpError(429, "Slow down a little.");
       const bd = await body(req);
       if (!isReactionKey(bd.emoji)) throw new HttpError(400, "Pick a reaction.");
       try {
@@ -354,6 +369,7 @@ async function handle(method: string, path: string[], req: Request): Promise<Res
       return ok();
     }
     case route === "POST /mute": {
+      if (await overLimit(req, "mute")) throw new HttpError(429, "Slow down a little.");
       const bd = await body(req);
       await setMute(me.id, uuid(bd.player_id), bd.muted !== false);
       return ok();

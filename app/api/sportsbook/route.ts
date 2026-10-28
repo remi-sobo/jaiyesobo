@@ -66,6 +66,7 @@ export async function POST(req: Request) {
       case "pick": {
         const me = await getChallenger();
         if (!me) return NextResponse.json({ error: "Join first." }, { status: 401 });
+        if (await overLimit(req, "pick")) return NextResponse.json({ error: "Slow down a little." }, { status: 429 });
         await savePick(typeof body.item_id === "string" ? body.item_id : "", me.id, {
           choice: body.choice === null ? null : typeof body.choice === "string" ? body.choice : undefined,
           guess: body.guess === null ? null : typeof body.guess === "number" ? body.guess : undefined,
@@ -83,6 +84,7 @@ export async function POST(req: Request) {
       }
       case "react": {
         if (!isReactionKey(body.emoji)) break;
+        if (await overLimit(req, "react")) return NextResponse.json({ error: "Slow down a little." }, { status: 429 });
         const visitor = (await getVisitor(true))!;
         try {
           await toggleReaction(String(body.item_id ?? ""), String(body.player_id ?? ""), body.emoji, visitor);
@@ -121,6 +123,7 @@ export async function POST(req: Request) {
       case "talk": {
         const me = await getChallenger();
         if (!me) return NextResponse.json({ error: "Join first." }, { status: 401 });
+        if (await overLimit(req, "talk")) return NextResponse.json({ error: "Slow down a little." }, { status: 429 });
         const itemId = typeof body.item_id === "string" ? body.item_id : "";
         if (body.key === null) await deleteTalk(me.id, itemId);
         else await postTalk(me.id, itemId, body.key);
@@ -136,6 +139,7 @@ export async function POST(req: Request) {
       case "mute": {
         const me = await getChallenger();
         if (!me) return NextResponse.json({ error: "Join first." }, { status: 401 });
+        if (await overLimit(req, "mute")) return NextResponse.json({ error: "Slow down a little." }, { status: 429 });
         await setMute(me.id, String(body.player_id ?? ""), body.muted !== false);
         return NextResponse.json({ ok: true });
       }

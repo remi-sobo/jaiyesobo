@@ -26,9 +26,9 @@ export async function playerFlags(id: string): Promise<PlayerFlags | null> {
   return (data as PlayerFlags | null) ?? null;
 }
 
-/** Under 13 players can play and react but can't post talk or run leagues. */
+/** Players who aren't confirmed 13 or older (under 13, or no answer yet) can play and react but can't post talk or run leagues. */
 export function canPostTalk(p: PlayerFlags | null): boolean {
-  return !!p && !p.deleted_at && !p.hidden && p.age_band !== "under_13";
+  return !!p && !p.deleted_at && !p.hidden && p.age_band === "13_plus";
 }
 
 export async function postTalk(playerId: string, itemId: string, key: unknown): Promise<void> {
@@ -88,13 +88,16 @@ export function isReportContext(v: unknown): v is ReportContext {
 
 /**
  * Files a report. Jaiye and Remi can't be auto hidden. At AUTO_HIDE_AT open
- * reports from different people, the player is hidden until Remi reviews it.
+ * reports from different established players (account over a day old with at
+ * least one pick), the player is hidden until Remi reviews it. The reporter
+ * stops seeing the target right away either way.
  */
 export async function fileReport(reporterId: string | null, target: string, context: ReportContext, refId: string | null): Promise<void> {
   if (reporterId && reporterId === target) throw new ActionError("You can't report yourself.");
   const supa = db();
   const t = await playerFlags(target);
   if (!t) throw new ActionError("Player not found.");
+  if (reporterId) await setMute(reporterId, target, true);
   if (reporterId) {
     const { data: dupe } = await supa
       .from("sb_reports")
@@ -109,8 +112,17 @@ export async function fileReport(reporterId: string | null, target: string, cont
   if (error) throw error;
   if (t.kind !== "challenger") return;
   const { data: open } = await supa.from("sb_reports").select("reporter_id").eq("target_player_id", target).eq("resolved", false);
-  const distinct = new Set((open ?? []).map((r) => r.reporter_id ?? "anon"));
-  if (distinct.size >= AUTO_HIDE_AT) await supa.from("sb_players").update({ hidden: true }).eq("id", target);
+  // Anonymous reports and fresh accounts don't count toward the auto hide.
+  const reporters = [...new Set((open ?? []).map((r) => r.reporter_id as string | null).filter((id): id is string => !!id))];
+  if (reporters.length < AUTO_HIDE_AT) return;
+  const dayAgo = new Date(Date.now() - 24 * 3_600_000).toISOString();
+  const { data: established } = await supa
+    .from("sb_players")
+    .select("id, sb_picks!inner(item_id)")
+    .in("id", reporters)
+    .lt("created_at", dayAgo)
+    .limit(1, { referencedTable: "sb_picks" });
+  if ((established ?? []).length >= AUTO_HIDE_AT) await supa.from("sb_players").update({ hidden: true }).eq("id", target);
 }
 
 export type OpenReport = {
@@ -158,7 +170,8 @@ export async function resolveReports(target: string, unhide: boolean): Promise<v
  * Deletes a challenger's account. Their name, code, push token, sign-ins,
  * league spots, talk and mutes go. Past picks stay without a name so other
  * players' points (closest guess compares everyone) don't change.
- * Leagues they ran pass to the longest standing member, or close if empty.
+ * Leagues they ran pass to the longest standing member who is 13 or older, or
+ * close if there isn't one.
  */
 export async function deleteAccount(playerId: string): Promise<void> {
   const supa = db();
@@ -168,16 +181,18 @@ export async function deleteAccount(playerId: string): Promise<void> {
 
   const { data: owned } = await supa.from("sb_leagues").select("id").eq("commissioner_id", playerId).eq("archived", false);
   for (const l of owned ?? []) {
-    const { data: next } = await supa
+    const { data: members } = await supa
       .from("sb_league_members")
       .select("player_id")
       .eq("league_id", l.id)
       .eq("removed", false)
       .neq("player_id", playerId)
-      .order("joined_at")
-      .limit(1)
-      .maybeSingle();
-    if (next) await supa.from("sb_leagues").update({ commissioner_id: next.player_id }).eq("id", l.id);
+      .order("joined_at");
+    const ids = (members ?? []).map((m) => m.player_id as string);
+    const { data: adults } = ids.length ? await supa.from("sb_players").select("id").in("id", ids).eq("age_band", "13_plus") : { data: [] };
+    const eligible = new Set((adults ?? []).map((a) => a.id as string));
+    const next = ids.find((id) => eligible.has(id));
+    if (next) await supa.from("sb_leagues").update({ commissioner_id: next }).eq("id", l.id);
     else await supa.from("sb_leagues").update({ archived: true }).eq("id", l.id);
   }
   await supa.from("sb_league_members").delete().eq("player_id", playerId);

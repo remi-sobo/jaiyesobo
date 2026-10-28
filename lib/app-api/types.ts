@@ -29,7 +29,7 @@ export type ApiPlayer = {
   has_pass: boolean;
   pass_season: string | null;
   push_enabled: PushSettings;
-  /** Under 13 players can't post trash talk or create leagues, and get no push alerts. */
+  /** Players who haven't confirmed they're 13 or older can't post trash talk or create leagues, and get no push alerts. */
   can_talk: boolean;
 };
 
@@ -41,9 +41,17 @@ export type SessionResponse = { token: string; player: ApiPlayer };
 
 /* Me */
 
-export type MeResponse = { player: ApiPlayer; leagues: ApiLeague[]; season: string };
+export type MeResponse = {
+  player: ApiPlayer;
+  leagues: ApiLeague[];
+  season: string;
+  /** Ids of the players this player has muted, so the app can offer "Unmute". */
+  muted: string[];
+};
 export type MePatch = {
   display_name?: string;
+  /** Only settable once, when null. */
+  age_band?: AgeBand;
   /** Expo push token, like ExponentPushToken[xxxx]. null turns push off for this account. */
   push_token?: string | null;
   push_enabled?: Partial<PushSettings>;

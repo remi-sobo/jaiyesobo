@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   Pressable,
   ScrollView,
   Share,
@@ -18,7 +19,7 @@ import { Lockup } from "@/components/Lockup";
 import { ApiError, clearToken } from "@/lib/api";
 import { colors, fonts, radius } from "@/lib/brand";
 import { pushAvailable, registerForPush } from "@/lib/push";
-import { deleteMe, getMe, patchMe } from "@/lib/routes";
+import { deleteMe, getMe, patchMe, signOut } from "@/lib/routes";
 import type { ApiPlayer, MeResponse, PushSettings } from "@shared/types";
 
 const ALERTS: { key: keyof PushSettings; label: string }[] = [
@@ -26,6 +27,13 @@ const ALERTS: { key: keyof PushSettings; label: string }[] = [
   { key: "reveal", label: "When picks reveal" },
   { key: "graded", label: "When the week is graded" },
   { key: "recap", label: "When Jaiye's recap drops" },
+];
+
+const ABOUT_LINKS = [
+  { label: "Privacy", url: "https://jaiyesobo.com/runitback/privacy" },
+  { label: "Terms", url: "https://jaiyesobo.com/runitback/terms" },
+  { label: "For parents", url: "https://jaiyesobo.com/runitback/parents" },
+  { label: "Support", url: "https://jaiyesobo.com/runitback/support" },
 ];
 
 /**
@@ -97,7 +105,23 @@ function SettingsBody({ player }: { player: ApiPlayer }) {
     router.replace("/join");
   };
 
+  // Best effort: push off and token revoked server-side first; a failure never traps the user here.
+  const out = useMutation({
+    mutationFn: async () => {
+      await patchMe({ push_token: null }).catch(() => {});
+      await signOut().catch(() => {});
+    },
+    onSuccess: leaveAccount,
+  });
+
+  // DELETE /me already drops this account's sessions and push token.
   const del = useMutation({ mutationFn: () => deleteMe(), onSuccess: leaveAccount });
+
+  const confirmSignOut = () =>
+    Alert.alert("Sign out?", "You'll need your player code to get back in.", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Sign out", onPress: () => out.mutate() },
+    ]);
 
   const confirmDelete = () =>
     Alert.alert("Delete your account?", "Your picks and your spot on every board go away. This can't be undone.", [
@@ -111,9 +135,15 @@ function SettingsBody({ player }: { player: ApiPlayer }) {
       {player.code ? <CodeSection code={player.code} /> : null}
       <AlertsSection player={player} />
 
-      <Pressable onPress={leaveAccount} style={styles.signOutBtn}>
-        <Text style={styles.signOutText}>Sign out</Text>
-      </Pressable>
+      {out.isPending ? (
+        <View style={styles.signOutBtn}>
+          <ActivityIndicator color={colors.steel} />
+        </View>
+      ) : (
+        <Pressable onPress={confirmSignOut} style={styles.signOutBtn}>
+          <Text style={styles.signOutText}>Sign out</Text>
+        </Pressable>
+      )}
 
       {del.isPending ? (
         <View style={styles.deleteBtn}>
@@ -125,6 +155,26 @@ function SettingsBody({ player }: { player: ApiPlayer }) {
         </Pressable>
       )}
       {del.error ? <Text style={styles.error}>{actionError(del.error, "Couldn't delete your account. Try again.")}</Text> : null}
+
+      <AboutSection />
+    </View>
+  );
+}
+
+function AboutSection() {
+  return (
+    <View>
+      <Text style={styles.label}>About</Text>
+      {ABOUT_LINKS.map((l) => (
+        <Pressable
+          key={l.label}
+          accessibilityRole="link"
+          onPress={() => { Linking.openURL(l.url).catch(() => {}); }}
+          style={styles.aboutLink}
+        >
+          <Text style={styles.aboutText}>{l.label}</Text>
+        </Pressable>
+      ))}
     </View>
   );
 }
@@ -385,6 +435,8 @@ const styles = StyleSheet.create({
   error: { color: colors.loss, fontSize: 13, marginTop: 8 },
   signOutBtn: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center", marginTop: 28 },
   signOutText: { color: colors.steel, fontSize: 15, textDecorationLine: "underline" },
+  aboutLink: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center" },
+  aboutText: { color: colors.steel, fontSize: 15, textDecorationLine: "underline" },
   deleteBtn: { alignSelf: "flex-start", minHeight: 44, justifyContent: "center", marginTop: 32 },
   deleteText: { color: colors.loss, fontSize: 15, textDecorationLine: "underline" },
   loading: { alignItems: "center", paddingVertical: 48 },
