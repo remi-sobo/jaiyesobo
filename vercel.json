@@ -1,5 +1,5 @@
 {
-  "ignoreCommand": "git diff HEAD^ HEAD --quiet -- . ':(exclude)mobile'",
+  "ignoreCommand": "git diff --quiet ${VERCEL_GIT_PREVIOUS_SHA:-HEAD^} HEAD -- . ':(exclude)mobile'",
   "functions": {
     "app/api/upload/route.ts": {
       "maxDuration": 60
