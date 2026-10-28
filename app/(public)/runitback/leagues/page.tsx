@@ -61,7 +61,12 @@ export default async function LeaguesPage() {
 
         <section className="flex flex-col gap-3">
           <Label>Join a league</Label>
-          <p className="text-[0.95rem] text-[var(--color-mute)]">Got a code from a friend? Put it here. Starting your own league comes with the Season Pass in the iPhone app.</p>
+          <p className="text-[0.95rem] text-[var(--color-mute)]">
+            Got a code from a friend? Put it here. Starting your own league comes with the Season Pass.{" "}
+            <Link href="/runitback/pass" className="text-[var(--color-red)] underline-offset-4 hover:underline">
+              Get the pass →
+            </Link>
+          </p>
           <JoinByCode />
         </section>
 

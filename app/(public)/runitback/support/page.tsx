@@ -13,7 +13,7 @@ export default function SupportPage() {
       <h2>Playing on a new phone</h2>
       <p>Use your player code (like HOOP-7342). On the website tap &ldquo;Already playing? Use your code.&rdquo; In the app tap &ldquo;Have a player code?&rdquo;</p>
       <h2>Leagues</h2>
-      <p>Join any league with its code or invite link, free. Starting your own league comes with the Season Pass in the iPhone app.</p>
+      <p>Join any league with its code or invite link, free. Starting your own league comes with the Season Pass, $1.99 for the season at jaiyesobo.com/runitback/pass.</p>
       <h2>Something wrong?</h2>
       <p>Email {CONTACT_EMAIL}. If someone&apos;s name or trash talk isn&apos;t okay, tap the ⋯ next to it and report it.</p>
       <p>
