@@ -10,4 +10,4 @@ cd "$(dirname "$0")/../mobile"
 # devDependencies; babel-preset-expo is one, so force them in.
 npm ci --include=dev --no-audit --no-fund
 rm -rf ../public/runitback/app
-CI=1 EXPO_OFFLINE=1 npx expo export --platform web --output-dir ../public/runitback/app
+CI=1 EXPO_OFFLINE=1 EXPO_WEB_BASE_URL=/runitback/app npx expo export --platform web --output-dir ../public/runitback/app
