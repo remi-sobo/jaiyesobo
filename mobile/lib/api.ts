@@ -16,7 +16,19 @@ if (!configuredBase) {
   throw new Error("Missing API base URL. Set EXPO_PUBLIC_API_BASE_URL or app.json extra.apiBaseUrl.");
 }
 
-export const API_BASE_URL = `${configuredBase.replace(/\/$/, "")}/api/app/v1`;
+// The hosted web build at /runitback/app must talk to the origin that serves
+// it: production talks to production, and a Vercel preview talks to its own
+// preview backend. `expo start --web` runs on localhost, so it keeps using the
+// configured base above.
+function resolveBase(configured: string): string {
+  if (Platform.OS === "web" && typeof window !== "undefined") {
+    const { hostname, origin } = window.location;
+    if (hostname !== "localhost" && hostname !== "127.0.0.1") return origin;
+  }
+  return configured;
+}
+
+export const API_BASE_URL = `${resolveBase(configuredBase).replace(/\/$/, "")}/api/app/v1`;
 
 // SecureStore (the Keychain) is phone-only. In the browser the token lives in
 // localStorage instead. Private windows and blocked site data can make it throw,
