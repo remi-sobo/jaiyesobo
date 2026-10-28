@@ -18,8 +18,9 @@ import { Lockup } from "@/components/Lockup";
 import { MoreButton, usePlayerActions } from "@/components/PlayerActions";
 import { ApiError, clearToken, getToken } from "@/lib/api";
 import { colors, fonts, radius } from "@/lib/brand";
-import { getCurrentWeek, getMe, getRecap, getResults, getTalkLines, patchMe, postTalk, savePick, submitPicks } from "@/lib/routes";
-import type { AgeBand, ApiCrowd, ApiHousePick, ApiItem, ApiOption, ApiWeek, TalkLinesResponse } from "@shared/types";
+import { getBoard, getCurrentWeek, getMe, getRecap, getResults, getTalkLines, patchMe, postTalk, savePick, submitPicks } from "@/lib/routes";
+import { syncLockReminder } from "@/lib/reminders";
+import type { AgeBand, ApiCrowd, ApiHousePick, ApiItem, ApiOption, ApiResults, ApiWeek, TalkLinesResponse } from "@shared/types";
 
 /**
  * This Week — the home of the signed-in app. Loads /me and /week/current,
@@ -53,8 +54,14 @@ export default function ThisWeek() {
     queryFn: ({ signal }) => getCurrentWeek(signal),
     enabled: hasToken.data === true,
     retry: (failureCount, err) => !(err instanceof ApiError && err.status === 401) && failureCount < 2,
-    // Poll every minute while a game is live (locked, not yet graded).
-    refetchInterval: (q) => (q.state.data?.items.some((i) => i.locked && i.status === "open") ? 60_000 : false),
+    // Poll every minute while a game is live (locked, not yet graded) or a lock is under ten minutes away.
+    refetchInterval: (q) => {
+      const d = q.state.data;
+      if (!d) return false;
+      const live = d.items.some((i) => i.locked && i.status === "open");
+      const soon = d.next_lock_at ? Date.parse(d.next_lock_at) - Date.now() < 10 * 60_000 : false;
+      return live || soon ? 60_000 : false;
+    },
   });
 
   if (hasToken.data === false) return <Redirect href="/join" />;
@@ -105,6 +112,7 @@ export default function ThisWeek() {
       meName={me.data.player.display_name}
       canTalk={me.data.player.can_talk}
       leagueCount={me.data.leagues.length}
+      pushLockEnabled={me.data.player.push_enabled.lock}
       needsAge={me.data.player.age_band === null}
       onRefresh={() => Promise.all([me.refetch(), week.refetch()])}
     />
@@ -117,6 +125,7 @@ function ThisWeekBody({
   meName,
   canTalk,
   leagueCount,
+  pushLockEnabled,
   needsAge,
   onRefresh,
 }: {
@@ -125,6 +134,7 @@ function ThisWeekBody({
   meName: string;
   canTalk: boolean;
   leagueCount: number;
+  pushLockEnabled: boolean;
   needsAge: boolean;
   onRefresh: () => Promise<unknown>;
 }) {
@@ -138,17 +148,29 @@ function ThisWeekBody({
   const canSubmit = showFooter && pickedOpen === open.length;
   const [footerH, setFooterH] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const now = useNow();
 
-  const banner =
-    items.length === 0 ? `Picks for Week ${week.number} drop soon.` :
-    week.status === "graded" || week.status === "final" ? `Week ${week.number} is in the books.` :
-    week.status === "open" && open.length === 0 ? "Every pick is locked. Watch the games, then come back Sunday night." :
-    null;
+  const heroKind: HeroKind =
+    items.length === 0 ? "soon" :
+    week.status === "graded" || week.status === "final" ? "books" :
+    week.status !== "open" ? "soon" :
+    open.length === 0 ? "live" :
+    week.submitted ? "in" : "picking";
+  const lockWhen = week.next_lock_at ? fmtWhen(week.next_lock_at, now) : null;
+  const nextTipoff = week.next_lock_at
+    ? `Next tip-off${minsWithinDay(week.next_lock_at, now) === null ? ":" : ""} ${lockWhen}`
+    : null;
 
-  const progress =
-    week.status !== "open" || open.length === 0 ? null :
-    week.submitted ? "You're in. Jaiye and Remi's picks show at tip-off." :
-    `${pickedOpen} of ${open.length} picked. ${canSubmit ? "Hit Submit when you're ready." : "Pick them all, then submit."}`;
+  const unpickedOpenCount = open.length - pickedOpen;
+  const reminderOn = pushLockEnabled && week.status === "open" && !week.submitted;
+  useEffect(() => {
+    void syncLockReminder({
+      weekNumber: week.number,
+      nextLockAt: week.next_lock_at,
+      unpicked: unpickedOpenCount,
+      enabled: reminderOn,
+    });
+  }, [week.number, week.next_lock_at, unpickedOpenCount, reminderOn]);
 
   // Entry strip only: never blocks render, falls back to the short label.
   const recap = useQuery({
@@ -166,6 +188,8 @@ function ThisWeekBody({
     retry: false,
   });
   const r = results.data;
+  // Cached results can lag a week behind right after the Sunday flip; only show them for this week.
+  const heroResults = r && r.week === week.number ? r : undefined;
   const resultsLabel = !r
     ? null
     : r.scores.me === null
@@ -204,6 +228,15 @@ function ThisWeekBody({
         <Text style={styles.title}>Beat Jaiye & Remi.</Text>
         <Text style={styles.lockHint}>One Lock of the Week. It doubles the points — up or down.</Text>
 
+        <HeroCard
+          kind={heroKind}
+          weekNumber={week.number}
+          openCount={open.length}
+          pickedOpen={pickedOpen}
+          lockWhen={lockWhen}
+          results={heroResults}
+        />
+
         <View style={styles.scoreRow}>
           <ScoreBox name="Jaiye" value={scoreboard.jaiye} tone="accent" />
           <ScoreBox name="Remi" value={scoreboard.remi} tone="paper" />
@@ -234,18 +267,8 @@ function ThisWeekBody({
           <Text style={styles.boardLinkCta}>Read →</Text>
         </Pressable>
 
-        {progress ? <Text style={styles.progress}>{progress}</Text> : null}
-        {week.next_lock_at ? (
-          <Text style={styles.nextLock}>Next tip-off: {fmtWeekdayTime(week.next_lock_at)}</Text>
-        ) : null}
-
         <View style={styles.cards}>
           {needsAge ? <AgePrompt /> : null}
-          {banner ? (
-            <View style={styles.banner}>
-              <Text style={styles.bannerText}>{banner}</Text>
-            </View>
-          ) : null}
           {items.map((item) => (
             <PickCard
               key={item.id}
@@ -253,6 +276,7 @@ function ThisWeekBody({
               disabled={week.submitted || week.status !== "open"}
               meId={meId}
               canTalk={canTalk}
+              now={now}
             />
           ))}
         </View>
@@ -326,6 +350,117 @@ function fmtWeekdayTime(iso: string): string {
   return `${day} ${time}`;
 }
 
+/** Re-renders every `intervalMs` so countdowns tick. */
+function useNow(intervalMs = 30_000): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), intervalMs);
+    return () => clearInterval(id);
+  }, [intervalMs]);
+  return now;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Whole minutes until `iso`, or null when it's a day or more away. */
+function minsWithinDay(iso: string, now: number): number | null {
+  const ms = new Date(iso).getTime() - now;
+  return ms < DAY_MS ? Math.max(0, Math.floor(ms / 60_000)) : null;
+}
+
+function fmtHm(mins: number): string {
+  const h = Math.floor(mins / 60);
+  return h > 0 ? `${h}h ${mins % 60}m` : `${mins}m`;
+}
+
+/** "in 2h 14m" inside 24 hours, else "Thu 7:30 PM". */
+function fmtWhen(iso: string, now: number): string {
+  const mins = minsWithinDay(iso, now);
+  return mins === null ? fmtWeekdayTime(iso) : mins < 1 ? "in under a minute" : `in ${fmtHm(mins)}`;
+}
+
+function fmtLockChip(iso: string, now: number): string {
+  const mins = minsWithinDay(iso, now);
+  if (mins === null) return `LOCKS ${fmtWeekdayTime(iso).toUpperCase()}`;
+  return mins < 1 ? "LOCKING" : `LOCKS IN ${fmtHm(mins).toUpperCase()}`;
+}
+
+type HeroKind = "picking" | "in" | "live" | "books" | "soon";
+
+/** The "when do I come back" card: one state per phase of the week. */
+function HeroCard({
+  kind,
+  weekNumber,
+  openCount,
+  pickedOpen,
+  lockWhen,
+  results,
+}: {
+  kind: HeroKind;
+  weekNumber: number;
+  openCount: number;
+  pickedOpen: number;
+  lockWhen: string | null;
+  results: ApiResults | undefined;
+}) {
+  const board = useQuery({
+    queryKey: ["board", "week", results?.week],
+    queryFn: ({ signal }) => getBoard({ span: "week", week: results?.week }, signal),
+    enabled: kind === "books" && !!results,
+    staleTime: 300_000,
+  });
+  const winner = board.data?.rows[0];
+
+  return (
+    <View style={styles.hero}>
+      {kind === "picking" ? (
+        <>
+          <Text style={styles.heroEyebrow}>This week</Text>
+          <Text style={styles.heroBig}>{pickedOpen} of {openCount} picked</Text>
+          <View
+            style={styles.heroBar}
+            accessibilityRole="progressbar"
+            accessibilityValue={{ min: 0, max: openCount, now: pickedOpen }}
+          >
+            <View style={[styles.heroBarFill, { width: `${Math.round((pickedOpen / openCount) * 100)}%` }]} />
+          </View>
+          {lockWhen ? <Text style={styles.heroLine}>Picks lock {lockWhen}</Text> : null}
+        </>
+      ) : kind === "in" ? (
+        <>
+          <Text style={[styles.heroBig, styles.heroBigAccent]}>{"You're in."}</Text>
+          <Text style={styles.heroLine}>
+            {lockWhen ? `First reveal ${lockWhen}. ` : ""}
+            {"Jaiye and Remi's picks show at tip-off."}
+          </Text>
+        </>
+      ) : kind === "live" ? (
+        <>
+          <Text style={styles.heroBig}>Games are on.</Text>
+          <Text style={styles.heroLine}>Watch, then come back Sunday night for the results.</Text>
+        </>
+      ) : kind === "books" ? (
+        <>
+          <Text style={styles.heroBig}>Week {weekNumber} is in the books.</Text>
+          {results ? (
+            <Text style={styles.heroLine}>
+              {`Jaiye ${results.scores.jaiye} · Remi ${results.scores.remi}`}
+              {results.scores.me !== null ? ` · You ${results.scores.me}` : ""}
+            </Text>
+          ) : null}
+          {winner ? (
+            <Text style={[styles.heroWinner, winner.is_me && styles.heroBigAccent]}>
+              {winner.is_me ? "You took it." : `${winner.display_name} took it.`}
+            </Text>
+          ) : null}
+        </>
+      ) : (
+        <Text style={styles.heroBig}>Picks for Week {weekNumber} drop soon.</Text>
+      )}
+    </View>
+  );
+}
+
 function describeError(err: ApiError): string {
   if (err.body && typeof err.body === "object" && "error" in err.body) {
     return String((err.body as { error: unknown }).error);
@@ -358,11 +493,13 @@ function PickCard({
   disabled,
   meId,
   canTalk,
+  now,
 }: {
   item: ApiItem;
   disabled: boolean;
   meId: string;
   canTalk: boolean;
+  now: number;
 }) {
   const qc = useQueryClient();
   const [errorText, setErrorText] = useState<string | null>(null);
@@ -396,7 +533,7 @@ function PickCard({
   const lockChip =
     item.status !== "open" ? null :
     item.locked ? "LOCKED" :
-    `LOCKS ${fmtWeekdayTime(item.locks_at).toUpperCase()}`;
+    fmtLockChip(item.locks_at, now);
 
   return (
     <View style={[styles.card, isLocked && styles.cardIsLock]}>
@@ -962,17 +1099,30 @@ const styles = StyleSheet.create({
   cornerLink: { marginTop: 8, minHeight: 44 },
   settingsLink: { marginTop: 24, minHeight: 44 },
   resultsLink: { marginBottom: 8, minHeight: 44, borderColor: colors.accent },
-  progress: { color: colors.paper, fontSize: 15, marginTop: 18 },
-  nextLock: { color: colors.steel, fontSize: 13, marginTop: 4 },
-  cards: { marginTop: 20, gap: 12 },
-  banner: {
+  hero: {
+    marginTop: 16,
     borderWidth: 1,
     borderColor: colors.line,
     backgroundColor: colors.surface,
     borderRadius: radius.card,
     padding: 14,
   },
-  bannerText: { color: colors.paper, fontSize: 15, lineHeight: 22 },
+  heroEyebrow: {
+    color: colors.steel,
+    fontFamily: fonts.label,
+    fontSize: 12,
+    letterSpacing: 2,
+    textTransform: "uppercase",
+    marginBottom: 2,
+  },
+  heroBig: { color: colors.paper, fontFamily: fonts.label, fontSize: 18, lineHeight: 24 },
+  heroBigAccent: { color: colors.accent },
+  heroBar: { height: 4, marginTop: 8, borderRadius: 2, backgroundColor: colors.line, overflow: "hidden" },
+  heroBarFill: { height: 4, backgroundColor: colors.accent },
+  heroLine: { color: colors.steel, fontSize: 13, lineHeight: 18, marginTop: 6 },
+  heroWinner: { color: colors.paper, fontSize: 15, lineHeight: 20, marginTop: 6 },
+  nextLock: { color: colors.steel, fontSize: 13, marginTop: 16 },
+  cards: { marginTop: 20, gap: 12 },
   ageCard: {
     borderWidth: 1,
     borderColor: colors.line,
