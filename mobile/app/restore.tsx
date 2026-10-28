@@ -20,6 +20,8 @@ export default function Restore() {
   const restore = useMutation({
     mutationFn: () => restoreSession({ code: code.trim().toUpperCase() }),
     onSuccess: () => {
+      // Seed the cached gate so Home doesn't bounce back to Join on a stale `false`.
+      qc.setQueryData(["session", "has-token"], true);
       qc.invalidateQueries();
       router.replace("/");
     },
@@ -65,7 +67,7 @@ export default function Restore() {
         {restore.isPending ? <ActivityIndicator color={colors.ink} /> : <Text style={styles.primaryText}>Bring my picks over</Text>}
       </Pressable>
 
-      <Link href="/join" style={styles.joinLink}>
+      <Link replace href="/join" style={styles.joinLink}>
         <Text style={styles.joinLinkText}>New here? Join instead</Text>
       </Link>
     </SafeAreaView>

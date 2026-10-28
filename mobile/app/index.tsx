@@ -1,23 +1,25 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Redirect, router } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Keyboard,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Lockup } from "@/components/Lockup";
 import { MoreButton, usePlayerActions } from "@/components/PlayerActions";
 import { ApiError, clearToken, getToken } from "@/lib/api";
 import { colors, fonts, radius } from "@/lib/brand";
-import { getCurrentWeek, getMe, getRecap, getTalkLines, postTalk, savePick, submitPicks } from "@/lib/routes";
-import type { ApiCrowd, ApiHousePick, ApiItem, ApiOption, ApiWeek, TalkLinesResponse } from "@shared/types";
+import { getCurrentWeek, getMe, getRecap, getTalkLines, patchMe, postTalk, savePick, submitPicks } from "@/lib/routes";
+import type { AgeBand, ApiCrowd, ApiHousePick, ApiItem, ApiOption, ApiWeek, TalkLinesResponse } from "@shared/types";
 
 /**
  * This Week — the home of the signed-in app. Loads /me and /week/current,
@@ -32,6 +34,7 @@ import type { ApiCrowd, ApiHousePick, ApiItem, ApiOption, ApiWeek, TalkLinesResp
  * they were new.
  */
 export default function ThisWeek() {
+  const qc = useQueryClient();
   const hasToken = useQuery({
     queryKey: ["session", "has-token"],
     queryFn: async () => (await getToken()) !== null,
@@ -50,10 +53,12 @@ export default function ThisWeek() {
     queryFn: ({ signal }) => getCurrentWeek(signal),
     enabled: hasToken.data === true,
     retry: (failureCount, err) => !(err instanceof ApiError && err.status === 401) && failureCount < 2,
+    // Poll every minute while a game is live (locked, not yet graded).
+    refetchInterval: (q) => (q.state.data?.items.some((i) => i.locked && i.status === "open") ? 60_000 : false),
   });
 
   if (hasToken.data === false) return <Redirect href="/join" />;
-  if (me.error instanceof ApiError && me.error.status === 401) {
+  if ([me.error, week.error].some((e) => e instanceof ApiError && e.status === 401)) {
     // Server disowned the token (revoked, account deleted). Clear it, go sign in.
     clearToken().catch(() => {});
     return <Redirect href="/join" />;
@@ -73,12 +78,20 @@ export default function ThisWeek() {
     me.error || week.error ? "Can't reach Run It Back right now." : null;
 
   if (errorText || !me.data || !week.data) {
+    const switchAccount = async () => {
+      await clearToken().catch(() => {});
+      qc.clear();
+      router.replace("/join");
+    };
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.errorBox}>
-          <Text style={styles.errorText}>{errorText ?? "Loading went sideways. Pull down to refresh."}</Text>
+          <Text style={styles.errorText}>{errorText ?? "Couldn't load this week."}</Text>
           <Pressable onPress={() => { me.refetch(); week.refetch(); }} style={styles.retryBtn}>
             <Text style={styles.retryText}>Try again</Text>
+          </Pressable>
+          <Pressable onPress={switchAccount} style={styles.switchLink}>
+            <Text style={styles.switchLinkText}>Use a different account</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -92,6 +105,8 @@ export default function ThisWeek() {
       meName={me.data.player.display_name}
       canTalk={me.data.player.can_talk}
       leagueCount={me.data.leagues.length}
+      needsAge={me.data.player.age_band === null}
+      onRefresh={() => Promise.all([me.refetch(), week.refetch()])}
     />
   );
 }
@@ -102,18 +117,38 @@ function ThisWeekBody({
   meName,
   canTalk,
   leagueCount,
+  needsAge,
+  onRefresh,
 }: {
   week: ApiWeek;
   meId: string;
   meName: string;
   canTalk: boolean;
   leagueCount: number;
+  needsAge: boolean;
+  onRefresh: () => Promise<unknown>;
 }) {
+  const insets = useSafeAreaInsets();
   const scoreboard = week.scores;
   const items = week.items;
-  const picked = items.filter((i) => isPicked(i.my_pick)).length;
-  const total = items.length;
-  const canSubmit = picked === total && total > 0 && !week.submitted && week.status === "open";
+  // Locked items can't be picked any more, so Submit only counts the open ones.
+  const open = items.filter((i) => !i.locked);
+  const pickedOpen = open.filter((i) => isPicked(i.my_pick)).length;
+  const showFooter = open.length > 0 && !week.submitted && week.status === "open";
+  const canSubmit = showFooter && pickedOpen === open.length;
+  const [footerH, setFooterH] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const banner =
+    items.length === 0 ? `Picks for Week ${week.number} drop soon.` :
+    week.status === "graded" || week.status === "final" ? `Week ${week.number} is in the books.` :
+    week.status === "open" && open.length === 0 ? "Every pick is locked. Watch the games, then come back Sunday night." :
+    null;
+
+  const progress =
+    week.status !== "open" || open.length === 0 ? null :
+    week.submitted ? "You're in. Jaiye and Remi's picks show at tip-off." :
+    `${pickedOpen} of ${open.length} picked. ${canSubmit ? "Hit Submit when you're ready." : "Pick them all, then submit."}`;
 
   // Entry strip only: never blocks render, falls back to the short label.
   const recap = useQuery({
@@ -123,15 +158,31 @@ function ThisWeekBody({
   });
   const recapWeek = recap.data?.text ? recap.data.week : null;
 
+  const pullRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([onRefresh(), recap.refetch()]);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+      <ScrollView
+        contentContainerStyle={[styles.scroll, { paddingBottom: showFooter ? footerH + 24 : 48 + insets.bottom }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={pullRefresh} tintColor={colors.steel} />}
+      >
         <View style={styles.header}>
           <Lockup h={44} />
         </View>
 
         <Text style={styles.eyebrow}>Week {week.number} · {week.label}</Text>
         <Text style={styles.title}>Beat Jaiye & Remi.</Text>
+        <Text style={styles.lockHint}>One Lock of the Week. It doubles the points — up or down.</Text>
 
         <View style={styles.scoreRow}>
           <ScoreBox name="Jaiye" value={scoreboard.jaiye} tone="accent" />
@@ -156,16 +207,18 @@ function ThisWeekBody({
           <Text style={styles.boardLinkCta}>Read →</Text>
         </Pressable>
 
-        <Text style={styles.progress}>
-          {week.submitted
-            ? "Submitted. Sit back."
-            : `${picked} of ${total} picked. ${picked === total ? "Hit Submit when you're ready." : "Pick them all, then submit."}`}
-        </Text>
+        {progress ? <Text style={styles.progress}>{progress}</Text> : null}
         {week.next_lock_at ? (
-          <Text style={styles.nextLock}>Next lock: {new Date(week.next_lock_at).toLocaleString()}</Text>
+          <Text style={styles.nextLock}>Next tip-off: {fmtWeekdayTime(week.next_lock_at)}</Text>
         ) : null}
 
         <View style={styles.cards}>
+          {needsAge ? <AgePrompt /> : null}
+          {banner ? (
+            <View style={styles.banner}>
+              <Text style={styles.bannerText}>{banner}</Text>
+            </View>
+          ) : null}
           {items.map((item) => (
             <PickCard
               key={item.id}
@@ -177,20 +230,73 @@ function ThisWeekBody({
           ))}
         </View>
 
-        {canSubmit ? <SubmitButton week={week.number} /> : null}
-
         <Pressable onPress={() => router.push("/settings")} style={[styles.boardLink, styles.settingsLink]}>
           <Text style={styles.boardLinkText} numberOfLines={1}>{`Playing as ${meName}`}</Text>
           <Text style={styles.boardLinkCta}>Settings →</Text>
         </Pressable>
       </ScrollView>
+
+      {showFooter ? (
+        <SubmitFooter
+          week={week.number}
+          pickedOpen={pickedOpen}
+          openCount={open.length}
+          ready={canSubmit}
+          onHeight={setFooterH}
+        />
+      ) : null}
     </SafeAreaView>
+  );
+}
+
+/** One-time 13+ check for accounts that never answered (the server only takes it while null). */
+function AgePrompt() {
+  const qc = useQueryClient();
+  const save = useMutation({
+    mutationFn: (age_band: AgeBand) => patchMe({ age_band }),
+    onSuccess: (data) => qc.setQueryData(["me"], data),
+  });
+  const errorText = save.error
+    ? save.error instanceof ApiError ? describeError(save.error) : "Couldn't save that. Try again."
+    : null;
+
+  return (
+    <View style={styles.ageCard}>
+      <Text style={styles.ageLabel}>Quick one</Text>
+      <Text style={styles.ageQuestion}>Are you 13 or older?</Text>
+      <View style={styles.ageRow}>
+        {([["13_plus", "Yes"], ["under_13", "No"]] as const).map(([band, label]) => {
+          const selected = save.isPending && save.variables === band;
+          return (
+            <Pressable
+              key={band}
+              disabled={save.isPending}
+              onPress={() => save.mutate(band)}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: save.isPending, selected }}
+              style={[styles.ageBtn, selected && styles.ageBtnSelected, save.isPending && !selected && styles.optionBtnLocked]}
+            >
+              <Text style={[styles.ageBtnText, selected && styles.ageBtnTextSelected]}>{label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      {errorText ? <Text style={styles.cardError}>{errorText}</Text> : null}
+    </View>
   );
 }
 
 function isPicked(p: ApiItem["my_pick"]): boolean {
   if (!p) return false;
   return p.choice !== null || p.guess !== null;
+}
+
+/** "Thu 7:30 PM" in the viewer's locale. */
+function fmtWeekdayTime(iso: string): string {
+  const d = new Date(iso);
+  const day = d.toLocaleDateString(undefined, { weekday: "short" });
+  const time = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  return `${day} ${time}`;
 }
 
 function describeError(err: ApiError): string {
@@ -259,11 +365,17 @@ function PickCard({
   const isClosest = item.type === "closest";
   const hasPick = isPicked(item.my_pick);
   const isLocked = item.my_pick?.is_lock === true;
+  // Graded/void cards show the verdict instead of a lock chip.
+  const lockChip =
+    item.status !== "open" ? null :
+    item.locked ? "LOCKED" :
+    `LOCKS ${fmtWeekdayTime(item.locks_at).toUpperCase()}`;
 
   return (
     <View style={[styles.card, isLocked && styles.cardIsLock]}>
       <View style={styles.cardTop}>
         <Text style={styles.cardType}>{item.points} pt · {item.type_label}{isLocked ? " · 2× LOCK" : ""}</Text>
+        {lockChip ? <Text style={styles.lockChip}>{lockChip}</Text> : null}
       </View>
       <Text style={styles.cardPrompt}>{item.prompt}</Text>
       {item.note ? <Text style={styles.cardNote}>{item.note}</Text> : null}
@@ -306,7 +418,7 @@ function PickCard({
           style={[styles.lockBtn, isLocked && styles.lockBtnActive]}
         >
           <Text style={[styles.lockBtnText, isLocked && styles.lockBtnTextActive]}>
-            {isLocked ? "LOCKED · 2× POINTS" : "Lock this pick (2×)"}
+            {isLocked ? "★ LOCKED · 2× POINTS" : "★ Lock of the Week · 2×"}
           </Text>
         </Pressable>
       ) : null}
@@ -331,7 +443,8 @@ function PickReveal({ item, meId, canTalk }: { item: ApiItem; meId: string; canT
   const called = isClosest
     ? points > 0
     : pick?.choice != null && !!result?.winners.includes(pick.choice);
-  const pointsText = `${points < 0 ? points : `+${points}`} pt${pick?.is_lock ? " · 2× LOCK" : ""}`;
+  const pointsGlyph = points > 0 ? "✓ " : points < 0 ? "✗ " : "";
+  const pointsText = `${pointsGlyph}${points < 0 ? points : `+${points}`} pt${pick?.is_lock ? " · 2× LOCK" : ""}`;
 
   return (
     <View style={styles.reveal}>
@@ -381,14 +494,20 @@ function HouseCell({ name, pick, item }: { name: string; pick: ApiHousePick | nu
     pickText = item.options.find((o) => o.key === choice)?.label ?? choice;
   }
 
-  const outcomeStyle =
-    !isClosest && winners && choice !== null
-      ? winners.includes(choice) ? styles.houseCellWin : styles.houseCellLoss
-      : null;
+  const outcome: "win" | "loss" | null =
+    !isClosest && winners && choice !== null ? (winners.includes(choice) ? "win" : "loss") : null;
+  const outcomeStyle = outcome === "win" ? styles.houseCellWin : outcome === "loss" ? styles.houseCellLoss : null;
 
   return (
     <View style={[styles.houseCell, outcomeStyle]}>
-      <Text style={styles.houseName}>{name}</Text>
+      <View style={styles.houseHead}>
+        <Text style={styles.houseName}>{name}</Text>
+        {outcome ? (
+          <Text style={[styles.houseGlyph, outcome === "win" ? styles.pointsWin : styles.pointsLoss]}>
+            {outcome === "win" ? "✓" : "✗"}
+          </Text>
+        ) : null}
+      </View>
       <Text style={[styles.housePick, pickText === null && styles.housePickEmpty]} numberOfLines={2}>
         {pickText ?? "—"}
       </Text>
@@ -554,7 +673,7 @@ function TalkComposer({ item, meId, myKey }: { item: ApiItem; meId: string; myKe
   );
 }
 
-/** Numeric input for closest-guess items. Commits on submit/blur if the value changed. */
+/** Numeric input for closest-guess items. Commits on Save/submit/blur if the value changed. */
 function ClosestInput({
   current,
   disabled,
@@ -565,15 +684,26 @@ function ClosestInput({
   onCommit: (n: number | null) => void;
 }) {
   const [draft, setDraft] = useState<string>(current == null ? "" : String(current));
+  // Last value sent, so Save and the blur it triggers don't send twice.
+  const sent = useRef<number | null | undefined>(undefined);
   // Reset local draft when server value changes (e.g. after invalidate).
   useEffect(() => {
     setDraft(current == null ? "" : String(current));
   }, [current]);
+  useEffect(() => {
+    if (!disabled) sent.current = undefined;
+  }, [disabled]);
+
+  const send = (n: number | null) => {
+    if (sent.current === n) return;
+    sent.current = n;
+    onCommit(n);
+  };
 
   const commit = () => {
     const trimmed = draft.trim();
     if (trimmed === "") {
-      if (current != null) onCommit(null);
+      if (current != null) send(null);
       return;
     }
     const n = Number(trimmed);
@@ -583,36 +713,65 @@ function ClosestInput({
       return;
     }
     const rounded = Math.round(n);
-    if (rounded !== current) onCommit(rounded);
+    if (rounded !== current) send(rounded);
   };
+
+  // iOS number-pad has no Done key, so Save is the way out of the keyboard.
+  const save = () => { commit(); Keyboard.dismiss(); };
 
   return (
     <View style={styles.guessRow}>
-      <TextInput
-        value={draft}
-        onChangeText={setDraft}
-        onSubmitEditing={() => { commit(); Keyboard.dismiss(); }}
-        onBlur={commit}
-        editable={!disabled}
-        placeholder="—"
-        placeholderTextColor={colors.steel}
-        keyboardType="number-pad"
-        maxLength={3}
-        returnKeyType="done"
-        style={[styles.guessInput, disabled && styles.guessInputDisabled]}
-      />
+      <View style={styles.guessInline}>
+        <TextInput
+          value={draft}
+          onChangeText={setDraft}
+          onSubmitEditing={save}
+          onBlur={commit}
+          editable={!disabled}
+          placeholder="—"
+          placeholderTextColor={colors.steel}
+          keyboardType="number-pad"
+          maxLength={3}
+          returnKeyType="done"
+          style={[styles.guessInput, disabled && styles.guessInputDisabled]}
+        />
+        <Pressable
+          onPress={save}
+          disabled={disabled}
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.guessSave, pressed && styles.guessSavePressed, disabled && styles.guessInputDisabled]}
+        >
+          <Text style={styles.guessSaveText}>Save</Text>
+        </Pressable>
+      </View>
       <Text style={styles.guessHint}>Enter a number 0–999.</Text>
     </View>
   );
 }
 
-function SubmitButton({ week }: { week: number }) {
+/** Sticky footer: pick progress on the left, confirmed Submit on the right. */
+function SubmitFooter({
+  week,
+  pickedOpen,
+  openCount,
+  ready,
+  onHeight,
+}: {
+  week: number;
+  pickedOpen: number;
+  openCount: number;
+  ready: boolean;
+  onHeight: (h: number) => void;
+}) {
   const qc = useQueryClient();
+  const insets = useSafeAreaInsets();
   const [errorText, setErrorText] = useState<string | null>(null);
   const submit = useMutation({
     mutationFn: () => submitPicks({ week }),
+    onMutate: () => setErrorText(null),
     onSuccess: () => {
-      setErrorText(null);
+      // Flip the flag now so the footer drops before the refetch lands.
+      qc.setQueryData<ApiWeek>(["week", "current"], (prev) => (prev ? { ...prev, submitted: true } : prev));
       qc.invalidateQueries({ queryKey: ["week", "current"] });
     },
     onError: (err) => {
@@ -620,17 +779,33 @@ function SubmitButton({ week }: { week: number }) {
     },
   });
 
+  const confirm = () =>
+    Alert.alert("Submit your picks?", "They're final once submitted. Jaiye and Remi's picks show at tip-off.", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Submit", onPress: () => submit.mutate() },
+    ]);
+
+  const blocked = !ready || submit.isPending;
+
   return (
-    <View style={styles.submitBox}>
-      <Pressable
-        onPress={() => submit.mutate()}
-        disabled={submit.isPending}
-        style={({ pressed }) => [styles.submitBtn, pressed && styles.submitBtnPressed, submit.isPending && styles.submitBtnDisabled]}
-      >
-        {submit.isPending
-          ? <ActivityIndicator color={colors.ink} />
-          : <Text style={styles.submitBtnText}>Lock in my picks</Text>}
-      </Pressable>
+    <View
+      style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}
+      onLayout={(e) => onHeight(e.nativeEvent.layout.height)}
+    >
+      <View style={styles.footerRow}>
+        <Text style={styles.footerCount}>{pickedOpen} of {openCount} picked</Text>
+        <Pressable
+          onPress={confirm}
+          disabled={blocked}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: blocked }}
+          style={({ pressed }) => [styles.submitBtn, pressed && styles.submitBtnPressed, blocked && styles.submitBtnDisabled]}
+        >
+          {submit.isPending
+            ? <ActivityIndicator color={colors.ink} />
+            : <Text style={styles.submitBtnText}>Submit picks</Text>}
+        </Pressable>
+      </View>
       {errorText ? <Text style={styles.submitError}>{errorText}</Text> : null}
     </View>
   );
@@ -697,6 +872,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   title: { color: colors.paper, fontFamily: fonts.displayItalic, fontSize: 36, lineHeight: 38 },
+  lockHint: { color: colors.steel, fontSize: 13, marginTop: 6 },
   scoreRow: { flexDirection: "row", gap: 8, marginTop: 16 },
   scoreBox: {
     flex: 1,
@@ -708,7 +884,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     alignItems: "center",
   },
-  scoreName: { color: colors.steel, fontFamily: fonts.label, fontSize: 11, letterSpacing: 2, textTransform: "uppercase" },
+  scoreName: { color: colors.steel, fontFamily: fonts.label, fontSize: 12, letterSpacing: 2, textTransform: "uppercase" },
   scoreValue: { fontFamily: fonts.label, fontSize: 28, lineHeight: 32, marginTop: 4 },
   scoreAccent: { color: colors.accent },
   scorePaper: { color: colors.paper },
@@ -733,6 +909,37 @@ const styles = StyleSheet.create({
   progress: { color: colors.paper, fontSize: 15, marginTop: 18 },
   nextLock: { color: colors.steel, fontSize: 13, marginTop: 4 },
   cards: { marginTop: 20, gap: 12 },
+  banner: {
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.surface,
+    borderRadius: radius.card,
+    padding: 14,
+  },
+  bannerText: { color: colors.paper, fontSize: 15, lineHeight: 22 },
+  ageCard: {
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.surface,
+    borderRadius: radius.card,
+    padding: 14,
+  },
+  ageLabel: { color: colors.steel, fontFamily: fonts.label, fontSize: 12, letterSpacing: 2, textTransform: "uppercase" },
+  ageQuestion: { color: colors.paper, fontSize: 16, lineHeight: 22, marginTop: 6 },
+  ageRow: { flexDirection: "row", gap: 8, marginTop: 12 },
+  ageBtn: {
+    flex: 1,
+    minHeight: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radius.button,
+    backgroundColor: colors.ink,
+  },
+  ageBtnSelected: { borderColor: colors.accent, backgroundColor: colors.surface2 },
+  ageBtnText: { color: colors.paper, fontSize: 16 },
+  ageBtnTextSelected: { color: colors.paper, fontFamily: fonts.label, letterSpacing: 1 },
   card: {
     borderWidth: 1,
     borderColor: colors.line,
@@ -742,7 +949,8 @@ const styles = StyleSheet.create({
   },
   cardIsLock: { borderColor: colors.accent, borderWidth: 2 },
   cardTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  cardType: { color: colors.accent, fontFamily: fonts.label, fontSize: 11, letterSpacing: 2 },
+  cardType: { flexShrink: 1, color: colors.accent, fontFamily: fonts.label, fontSize: 12, letterSpacing: 2 },
+  lockChip: { flexShrink: 0, marginLeft: 8, color: colors.steel, fontFamily: fonts.label, fontSize: 12, letterSpacing: 1 },
   cardPrompt: { color: colors.paper, fontSize: 16, lineHeight: 22, marginTop: 8 },
   cardNote: { color: colors.steel, fontSize: 13, marginTop: 4, fontStyle: "italic" },
   optionsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
@@ -764,7 +972,9 @@ const styles = StyleSheet.create({
   optionText: { color: colors.paper, fontSize: 15, textAlign: "center" },
   optionTextSelected: { color: colors.accent, fontFamily: fonts.label, letterSpacing: 1 },
   guessRow: { marginTop: 12 },
+  guessInline: { flexDirection: "row", gap: 8 },
   guessInput: {
+    flex: 1,
     height: 48,
     borderWidth: 1,
     borderColor: colors.line,
@@ -778,11 +988,24 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   guessInputDisabled: { opacity: 0.5 },
+  guessSave: {
+    minHeight: 48,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.accent,
+    borderRadius: radius.button,
+  },
+  guessSavePressed: { backgroundColor: colors.surface2 },
+  guessSaveText: { color: colors.accent, fontFamily: fonts.label, fontSize: 12, letterSpacing: 2, textTransform: "uppercase" },
   guessHint: { color: colors.steel, fontSize: 12, marginTop: 6 },
   lockBtn: {
     marginTop: 12,
     alignSelf: "flex-start",
-    paddingHorizontal: 10,
+    minHeight: 44,
+    justifyContent: "center",
+    paddingHorizontal: 14,
     paddingVertical: 6,
     borderWidth: 1,
     borderColor: colors.line,
@@ -793,17 +1016,29 @@ const styles = StyleSheet.create({
   lockBtnText: {
     color: colors.steel,
     fontFamily: fonts.label,
-    fontSize: 11,
+    fontSize: 12,
     letterSpacing: 2,
     textTransform: "uppercase",
   },
   lockBtnTextActive: { color: colors.ink },
   cardError: { color: colors.loss, fontSize: 13, marginTop: 8 },
   cardResult: { color: colors.steel, fontSize: 13, marginTop: 6 },
-  submitBox: { marginTop: 24 },
+  footer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingTop: 12,
+    paddingHorizontal: 20,
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.line,
+  },
+  footerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  footerCount: { flexShrink: 1, color: colors.paper, fontSize: 15 },
   submitBtn: {
-    minHeight: 56,
-    paddingHorizontal: 24,
+    minHeight: 48,
+    paddingHorizontal: 20,
     backgroundColor: colors.accent,
     alignItems: "center",
     justifyContent: "center",
@@ -821,8 +1056,20 @@ const styles = StyleSheet.create({
   submitError: { color: colors.loss, fontSize: 14, marginTop: 10, textAlign: "center" },
   errorBox: { alignItems: "center", padding: 20 },
   errorText: { color: colors.paper, fontSize: 15, textAlign: "center" },
-  retryBtn: { marginTop: 12, borderWidth: 1, borderColor: colors.line, paddingHorizontal: 16, paddingVertical: 10, borderRadius: radius.button },
+  retryBtn: {
+    marginTop: 12,
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.line,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: radius.button,
+  },
   retryText: { color: colors.paper, fontSize: 14 },
+  switchLink: { marginTop: 8, minHeight: 44, paddingHorizontal: 12, alignItems: "center", justifyContent: "center" },
+  switchLinkText: { color: colors.steel, fontSize: 14, textDecorationLine: "underline" },
   reveal: { marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.line },
   verdictStamp: {
     alignSelf: "flex-start",
@@ -838,7 +1085,7 @@ const styles = StyleSheet.create({
   pointsWin: { color: colors.win },
   pointsLoss: { color: colors.loss },
   pointsFlat: { color: colors.steel },
-  houseHeader: { color: colors.steel, fontFamily: fonts.label, fontSize: 11, letterSpacing: 2, textTransform: "uppercase" },
+  houseHeader: { color: colors.steel, fontFamily: fonts.label, fontSize: 12, letterSpacing: 2, textTransform: "uppercase" },
   houseHeaderSpaced: { marginTop: 14 },
   houseRow: { flexDirection: "row", gap: 8, marginTop: 6 },
   houseCell: {
@@ -853,7 +1100,9 @@ const styles = StyleSheet.create({
   },
   houseCellWin: { borderColor: colors.win },
   houseCellLoss: { borderColor: colors.loss },
-  houseName: { color: colors.steel, fontFamily: fonts.label, fontSize: 11, letterSpacing: 2, textTransform: "uppercase" },
+  houseHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 6 },
+  houseName: { color: colors.steel, fontFamily: fonts.label, fontSize: 12, letterSpacing: 2, textTransform: "uppercase" },
+  houseGlyph: { fontFamily: fonts.label, fontSize: 14 },
   housePick: { color: colors.paper, fontSize: 15, marginTop: 4 },
   housePickEmpty: { color: colors.steel },
   crowdCount: { color: colors.steel, fontSize: 12, marginTop: 12 },
@@ -869,6 +1118,8 @@ const styles = StyleSheet.create({
   talkComposer: { marginTop: 10 },
   talkBtn: {
     alignSelf: "flex-start",
+    minHeight: 44,
+    justifyContent: "center",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderWidth: 1,
@@ -878,7 +1129,7 @@ const styles = StyleSheet.create({
   },
   talkBtnText: { color: colors.paper, fontFamily: fonts.label, fontSize: 12, letterSpacing: 1 },
   talkChips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  talkChip: { flexGrow: 0, flexBasis: "auto", maxWidth: "100%", minHeight: 0, paddingVertical: 8 },
+  talkChip: { flexGrow: 0, flexBasis: "auto", maxWidth: "100%", minHeight: 44, paddingVertical: 8 },
   talkChipText: { fontSize: 13 },
   talkCancel: { alignSelf: "flex-start", marginTop: 10 },
   talkCancelText: { color: colors.steel, fontSize: 13, textDecorationLine: "underline" },
