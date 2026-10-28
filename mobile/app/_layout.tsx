@@ -7,6 +7,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { AppState, Platform, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import DialogHost from "@/components/DialogHost";
 import { colors } from "@/lib/brand";
 
 // Keep the native splash up until the Archivo faces have loaded, so the
@@ -67,6 +68,7 @@ export default function RootLayout() {
               contentStyle: { backgroundColor: colors.ink },
             }}
           />
+          <DialogHost />
         </View>
       </SafeAreaProvider>
     </QueryClientProvider>
