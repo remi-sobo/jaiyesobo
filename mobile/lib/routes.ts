@@ -6,6 +6,7 @@ import type {
   ApiLeague,
   ApiLeagueDetail,
   ApiOk,
+  ApiResults,
   ApiWeek,
   CreateLeagueRequest,
   JoinLeagueRequest,
@@ -80,6 +81,12 @@ export function getBoard(
   if (q.week !== undefined) params.set("week", String(q.week));
   if (q.league !== undefined) params.set("league", q.league);
   return appApi<ApiBoard>(`/board?${params.toString()}`, { signal });
+}
+
+/** GET /results/current, or /results/{season}/{week} for a specific week. 404 until a week is graded. */
+export function getResults(ref?: { season: string; week: number }, signal?: AbortSignal): Promise<ApiResults> {
+  const path = ref ? `/results/${encodeURIComponent(ref.season)}/${ref.week}` : "/results/current";
+  return appApi<ApiResults>(path, { signal });
 }
 
 /** GET /talk/lines — the preset trash-talk list. Public, no auth needed. */

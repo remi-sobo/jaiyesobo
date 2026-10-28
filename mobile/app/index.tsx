@@ -18,7 +18,7 @@ import { Lockup } from "@/components/Lockup";
 import { MoreButton, usePlayerActions } from "@/components/PlayerActions";
 import { ApiError, clearToken, getToken } from "@/lib/api";
 import { colors, fonts, radius } from "@/lib/brand";
-import { getCurrentWeek, getMe, getRecap, getTalkLines, patchMe, postTalk, savePick, submitPicks } from "@/lib/routes";
+import { getCurrentWeek, getMe, getRecap, getResults, getTalkLines, patchMe, postTalk, savePick, submitPicks } from "@/lib/routes";
 import type { AgeBand, ApiCrowd, ApiHousePick, ApiItem, ApiOption, ApiWeek, TalkLinesResponse } from "@shared/types";
 
 /**
@@ -158,6 +158,26 @@ function ThisWeekBody({
   });
   const recapWeek = recap.data?.text ? recap.data.week : null;
 
+  // Latest graded week, for the payoff strip. 404 until something is graded, so no retry.
+  const results = useQuery({
+    queryKey: ["results", "current", ""],
+    queryFn: ({ signal }) => getResults(undefined, signal),
+    staleTime: 60_000,
+    retry: false,
+  });
+  const r = results.data;
+  const resultsLabel = !r
+    ? null
+    : r.scores.me === null
+      ? `Week ${r.week} results`
+      : r.you_beat.jaiye && r.you_beat.remi
+        ? `Week ${r.week}: you beat the house ✓`
+        : r.you_beat.jaiye
+          ? `Week ${r.week}: you beat Jaiye ✓`
+          : r.you_beat.remi
+            ? `Week ${r.week}: you beat Remi ✓`
+            : `Week ${r.week}: Jaiye got you`;
+
   const pullRefresh = async () => {
     setRefreshing(true);
     try {
@@ -189,6 +209,13 @@ function ThisWeekBody({
           <ScoreBox name="Remi" value={scoreboard.remi} tone="paper" />
           <ScoreBox name={meName} value={scoreboard.me ?? 0} tone="paper" />
         </View>
+
+        {resultsLabel ? (
+          <Pressable onPress={() => router.push("/results")} style={[styles.boardLink, styles.resultsLink]}>
+            <Text style={styles.boardLinkText} numberOfLines={1}>{resultsLabel}</Text>
+            <Text style={styles.boardLinkCta}>See results →</Text>
+          </Pressable>
+        ) : null}
 
         <Pressable onPress={() => router.push("/board")} style={styles.boardLink}>
           {week.rank ? (
@@ -446,6 +473,15 @@ function PickReveal({ item, meId, canTalk }: { item: ApiItem; meId: string; canT
   const pointsGlyph = points > 0 ? "✓ " : points < 0 ? "✗ " : "";
   const pointsText = `${pointsGlyph}${points < 0 ? points : `+${points}`} pt${pick?.is_lock ? " · 2× LOCK" : ""}`;
 
+  // Agree/fade chip: choice items only, once both the viewer and Jaiye have picked.
+  const myChoice = pick?.choice ?? null;
+  const jaiyeChoice = item.house.jaiye?.choice ?? null;
+  const fadeTone: "agree" | "fade" | "brag" | null =
+    isClosest || myChoice === null || jaiyeChoice === null ? null :
+    myChoice === jaiyeChoice ? "agree" :
+    result && result.winners.includes(myChoice) && !result.winners.includes(jaiyeChoice) ? "brag" :
+    "fade";
+
   return (
     <View style={styles.reveal}>
       {showVerdict ? (
@@ -474,6 +510,14 @@ function PickReveal({ item, meId, canTalk }: { item: ApiItem; meId: string; canT
         <HouseCell name="Remi" pick={item.house.remi} item={item} />
       </View>
 
+      {fadeTone ? (
+        <View style={[styles.fadeChip, fadeTone === "agree" ? styles.fadeChipAgree : fadeTone === "brag" ? styles.fadeChipBrag : styles.fadeChipFade]}>
+          <Text style={[styles.fadeChipText, fadeTone === "agree" ? styles.fadeChipTextAgree : fadeTone === "brag" ? styles.fadeChipTextBrag : styles.fadeChipTextFade]}>
+            {fadeTone === "agree" ? "You and Jaiye agree" : fadeTone === "brag" ? "You faded Jaiye ✓" : "You faded Jaiye"}
+          </Text>
+        </View>
+      ) : null}
+
       {item.crowd ? <CrowdSummary crowd={item.crowd} options={item.options} isClosest={isClosest} /> : null}
 
       <TalkBlock item={item} meId={meId} canTalk={canTalk} />
@@ -497,6 +541,8 @@ function HouseCell({ name, pick, item }: { name: string; pick: ApiHousePick | nu
   const outcome: "win" | "loss" | null =
     !isClosest && winners && choice !== null ? (winners.includes(choice) ? "win" : "loss") : null;
   const outcomeStyle = outcome === "win" ? styles.houseCellWin : outcome === "loss" ? styles.houseCellLoss : null;
+  const talk = pick?.talk?.trim() ?? "";
+  const isJaiye = name === "Jaiye";
 
   return (
     <View style={[styles.houseCell, outcomeStyle]}>
@@ -511,8 +557,17 @@ function HouseCell({ name, pick, item }: { name: string; pick: ApiHousePick | nu
       <Text style={[styles.housePick, pickText === null && styles.housePickEmpty]} numberOfLines={2}>
         {pickText ?? "—"}
       </Text>
-      {pick?.talk ? (
-        <Text style={styles.houseQuote} numberOfLines={2}>{`"${pick.talk}"`}</Text>
+      {talk !== "" ? (
+        <View style={styles.houseTalkRow}>
+          <View style={[styles.houseMono, isJaiye ? styles.houseMonoJaiye : styles.houseMonoRemi]}>
+            <Text style={[styles.houseMonoText, isJaiye ? styles.houseMonoTextJaiye : styles.houseMonoTextRemi]}>
+              {name.charAt(0).toUpperCase()}
+            </Text>
+          </View>
+          <View style={styles.houseBubble}>
+            <Text style={styles.houseBubbleText} numberOfLines={3}>{talk}</Text>
+          </View>
+        </View>
       ) : null}
     </View>
   );
@@ -906,6 +961,7 @@ const styles = StyleSheet.create({
   leagueLink: { marginTop: 8 },
   cornerLink: { marginTop: 8, minHeight: 44 },
   settingsLink: { marginTop: 24, minHeight: 44 },
+  resultsLink: { marginBottom: 8, minHeight: 44, borderColor: colors.accent },
   progress: { color: colors.paper, fontSize: 15, marginTop: 18 },
   nextLock: { color: colors.steel, fontSize: 13, marginTop: 4 },
   cards: { marginTop: 20, gap: 12 },
@@ -1107,7 +1163,37 @@ const styles = StyleSheet.create({
   housePickEmpty: { color: colors.steel },
   crowdCount: { color: colors.steel, fontSize: 12, marginTop: 12 },
   crowdLine: { color: colors.paper, fontSize: 13, lineHeight: 18, marginTop: 2 },
-  houseQuote: { color: colors.steel, fontSize: 12, fontStyle: "italic", marginTop: 4 },
+  houseTalkRow: { flexDirection: "row", alignItems: "flex-start", gap: 6, marginTop: 6 },
+  houseMono: { width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center" },
+  houseMonoJaiye: { backgroundColor: colors.accent },
+  houseMonoRemi: { backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.line },
+  houseMonoText: { fontFamily: fonts.label, fontSize: 12, lineHeight: 14 },
+  houseMonoTextJaiye: { color: colors.ink },
+  houseMonoTextRemi: { color: colors.paper },
+  houseBubble: {
+    flex: 1,
+    minWidth: 0,
+    backgroundColor: colors.surface2,
+    borderRadius: radius.button,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  houseBubbleText: { color: colors.paper, fontSize: 13 },
+  fadeChip: {
+    alignSelf: "flex-start",
+    marginTop: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderRadius: radius.button,
+  },
+  fadeChipAgree: { borderColor: colors.accent },
+  fadeChipFade: { borderColor: colors.line },
+  fadeChipBrag: { borderColor: colors.win },
+  fadeChipText: { fontFamily: fonts.label, fontSize: 12, letterSpacing: 1, textTransform: "uppercase" },
+  fadeChipTextAgree: { color: colors.accent },
+  fadeChipTextFade: { color: colors.steel },
+  fadeChipTextBrag: { color: colors.win },
   talkHeaderSpaced: { marginTop: 14 },
   talkLine: { marginTop: 6, lineHeight: 20 },
   talkRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 6 },
