@@ -78,6 +78,65 @@ Vercel preview URLs don't apply here: `vercel.json`'s `ignoreCommand`
 skips the web build on mobile-only commits. Pure mobile PRs test
 locally, not on a preview URL.
 
+## Ship to TestFlight
+
+Expo Go is for development. To put the app on other people's phones you
+need a real build through EAS and TestFlight. One-time setup is about an
+hour; after that each release is two commands.
+
+**You need, once**
+
+- An Expo account (free): https://expo.dev/signup
+- An Apple Developer Program membership ($99/yr) on the Apple ID that
+  owns the app: https://developer.apple.com/programs/
+- In App Store Connect, an app record with bundle ID `com.sobo.runitback`
+  (EAS can create this for you during the first submit).
+
+**One-time project setup**
+
+```bash
+cd mobile
+npm install -g eas-cli
+eas login                     # Expo account
+eas init                      # links the project, writes extra.eas.projectId into app.json
+```
+
+Commit the `app.json` change from `eas init`. That `projectId` is also what
+turns on push-token registration in `lib/push.ts`; until it exists the
+alert toggles save but no token is requested.
+
+Then fill in `eas.json` → `submit.production.ios`: `appleTeamId` (from
+https://developer.apple.com/account, Membership) and `ascAppId` (the
+numeric Apple ID of the app record in App Store Connect).
+
+**Each release**
+
+```bash
+cd mobile
+eas build --platform ios --profile production   # ~15 min on EAS servers
+eas submit --platform ios --latest              # uploads to TestFlight
+```
+
+The first `eas build` walks you through Apple credentials (sign in with the
+Apple ID; let EAS manage certificates and the push key). In App Store
+Connect → TestFlight, add testers by email or share the public link. Bump
+`expo.version` in `app.json` for a new TestFlight version; the build
+number auto-increments.
+
+**Other build profiles**
+
+| Profile | What it makes |
+| --- | --- |
+| `production` | App Store / TestFlight build. |
+| `preview` | Ad-hoc build for a few registered phones (`eas device:create` first). Faster than TestFlight for a quick check. |
+| `preview-simulator` | iOS Simulator build, no Apple account needed. |
+| `development` | Dev-client build (custom native modules). Not needed today. |
+
+**Push notifications** need one more thing after the first build: in
+`eas credentials` make sure an APNs key is set up (EAS offers to create
+it). The server-side sender is a separate piece of work; without it the
+app registers tokens but nothing is sent.
+
 ## Scripts
 
 | Command | What it does |
