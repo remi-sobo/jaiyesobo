@@ -13,6 +13,11 @@
     <meta name="apple-mobile-web-app-title" content="Run It Back" />
     <meta name="robots" content="noindex" />
     <title>%WEB_TITLE%</title>
+    <!-- Icons and manifest live in mobile/public and are copied into the export,
+         so these paths are absolute under the site's /runitback/app base. -->
+    <link rel="icon" type="image/png" sizes="64x64" href="/runitback/app/favicon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/runitback/app/apple-touch-icon.png" />
+    <link rel="manifest" href="/runitback/app/manifest.json" />
     <!-- Web shell for `expo export` with web.output "single". Expo Router's
          +html.tsx is only read for "static" and "server" output, so the head
          lives here. The expo-reset block is react-native-web's root-element
