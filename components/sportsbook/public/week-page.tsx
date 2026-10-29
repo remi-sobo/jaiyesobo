@@ -71,7 +71,7 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
   const published = weeks.filter((w) => w.status !== "draft").sort((a, b) => b.week_number - a.week_number);
   const lastRecap = view.week.recap ? view.week : published.find((w) => w.status === "final" && w.recap && w.week_number < n);
   const isOpen = view.week.status === "open";
-  const episode = sportsbookEpisode();
+  const episode = sportsbookEpisode(n);
 
   return (
     <main className="px-4 py-[clamp(40px,6vw,80px)] min-[760px]:px-10">
