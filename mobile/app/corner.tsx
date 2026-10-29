@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Redirect, router } from "expo-router";
 import {
   ActivityIndicator,
+  Linking,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -14,7 +15,7 @@ import { Lockup } from "@/components/Lockup";
 import { ApiError, clearToken } from "@/lib/api";
 import { colors, fonts, radius } from "@/lib/brand";
 import { getCurrentWeek, getRecap } from "@/lib/routes";
-import type { ApiHousePick, ApiItem, RecapResponse } from "@shared/types";
+import type { ApiEpisode, ApiHousePick, ApiItem, RecapResponse } from "@shared/types";
 
 const retryUnlessUnauthorized = (failureCount: number, err: Error) =>
   !(err instanceof ApiError && err.status === 401) && failureCount < 2;
@@ -23,7 +24,8 @@ const retryUnlessUnauthorized = (failureCount: number, err: Error) =>
  * Jaiye's Corner — his weekly recap plus a rundown of his picks and
  * one-liners. Reads /recap/current and /week/current (the same cache key
  * This Week uses, so the week is usually already warm). The recap's audio
- * is intentionally not played here.
+ * is intentionally not played here. The week's On The Court episode sits
+ * above the recap when there is one.
  */
 export default function Corner() {
   const recap = useQuery({
@@ -81,6 +83,7 @@ export default function Corner() {
 
         {recap.data && week.data ? (
           <>
+            {recap.data.episode ? <EpisodeCard episode={recap.data.episode} /> : null}
             <RecapSection recap={recap.data} />
             <View style={styles.picksSection}>
               <Text style={styles.label}>{`Jaiye's picks · Week ${week.data.number}`}</Text>
@@ -117,6 +120,27 @@ function describeError(err: ApiError): string {
     return String((err.body as { error: unknown }).error);
   }
   return `Something went wrong (${err.status}).`;
+}
+
+/**
+ * The week's On The Court episode (the video Jaiye records for each Run It Back
+ * week). The app doesn't play it; the button hands the YouTube link to the
+ * system, which opens the YouTube app or the browser.
+ */
+function EpisodeCard({ episode }: { episode: ApiEpisode }) {
+  return (
+    <View style={styles.episodeCard}>
+      <Text style={styles.label}>{`On The Court · Ep. ${String(episode.number).padStart(2, "0")}`}</Text>
+      <Text style={styles.episodeTitle}>{episode.title}</Text>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => { Linking.openURL(episode.youtube_url).catch(() => {}); }}
+        style={({ pressed }) => [styles.watchBtn, pressed && styles.watchBtnPressed]}
+      >
+        <Text style={styles.watchText}>Watch on YouTube</Text>
+      </Pressable>
+    </View>
+  );
 }
 
 function RecapSection({ recap }: { recap: RecapResponse }) {
@@ -215,6 +239,33 @@ const styles = StyleSheet.create({
     letterSpacing: 3,
     textTransform: "uppercase",
     marginBottom: 8,
+  },
+  episodeCard: {
+    marginTop: 24,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.surface,
+    borderRadius: radius.card,
+    padding: 16,
+  },
+  episodeTitle: { color: colors.paper, fontFamily: fonts.displayItalic, fontSize: 24, lineHeight: 28 },
+  watchBtn: {
+    marginTop: 16,
+    minHeight: 48,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radius.button,
+    backgroundColor: colors.paper,
+  },
+  watchBtnPressed: { opacity: 0.8 },
+  watchText: {
+    color: colors.ink,
+    fontFamily: fonts.label,
+    fontSize: 13,
+    letterSpacing: 2,
+    textAlign: "center",
+    textTransform: "uppercase",
   },
   recapSection: { marginTop: 24 },
   paragraphs: { gap: 12 },
