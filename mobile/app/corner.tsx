@@ -130,7 +130,7 @@ function describeError(err: ApiError): string {
 function EpisodeCard({ episode }: { episode: ApiEpisode }) {
   return (
     <View style={styles.episodeCard}>
-      <Text style={styles.label}>{`On The Court · Ep. ${String(episode.number).padStart(2, "0")}`}</Text>
+      <Text style={styles.label}>{`On The Court · Ep. ${String(episode.number).padStart(3, "0")}`}</Text>
       <Text style={styles.episodeTitle}>{episode.title}</Text>
       <Pressable
         accessibilityRole="button"
