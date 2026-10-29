@@ -4,9 +4,9 @@ import Link from "next/link";
 import ArticleBody from "@/components/site/article-body";
 import EpisodePlayer from "@/components/site/episode-player";
 import { notFound } from "next/navigation";
-import { episodes, getEpisode } from "@/lib/content/episodes";
+import { episodeMeta, episodes, getEpisode } from "@/lib/content/episodes";
 import { getVaultEntry } from "@/lib/content/vault";
-import { formatDate, pad } from "@/lib/content/format";
+import { pad } from "@/lib/content/format";
 import { Accent, SectionLabel } from "@/components/site/type";
 import { VaultCompact } from "@/components/site/vault";
 
@@ -57,7 +57,7 @@ export default async function EpisodePage(props: PageProps<"/pod/[slug]">) {
 
           <div>
             <div className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-red)]">
-              EP.{pad(ep.number)} · {formatDate(ep.date)} · {ep.runtime} · {ep.guests}
+              EP.{pad(ep.number)} · {episodeMeta(ep)}
             </div>
             <h1 className="mt-4 font-[family-name:var(--font-fraunces)] text-[clamp(2.2rem,5vw,3.6rem)] font-black leading-[0.92] tracking-[-0.035em] text-pretty">
               <Accent text={ep.title} accent={ep.titleAccent} />
