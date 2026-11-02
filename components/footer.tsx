@@ -4,6 +4,7 @@ const links = [
   { href: "/column", label: "Column" },
   { href: "/pod", label: "Pod" },
   { href: "/games", label: "Games" },
+  { href: "/history", label: "History" },
   { href: "/now", label: "Now" },
   { href: "/about", label: "About" },
   { href: "/feed.xml", label: "Feed" },
