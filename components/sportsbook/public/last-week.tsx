@@ -3,7 +3,7 @@ import { SB_SEASON, weekSlug } from "@/lib/sportsbook/weeks";
 
 /**
  * "Last week" callout for the top of /runitback and the home-page panel.
- * Sunday is the transition day — a visitor who lands on Sunday morning
+ * Monday is the transition day — a visitor who lands on Monday morning
  * for the new week should immediately see who won the week that just
  * closed. The caller decides which prior week to feature (usually the
  * latest finalized one); when `prior` is null, nothing renders.

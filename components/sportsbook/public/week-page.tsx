@@ -79,7 +79,7 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
         {n === 1 && currentWeekNumber(new Date(now)) === 1 ? <OpeningWeekBanner /> : null}
         {(() => {
           // The latest finalized week prior to this one — what people landing
-          // Sunday morning for the new week should see at the top.
+          // Monday morning for the new week should see at the top.
           const prior = season?.summary.weekly.filter((w) => w.week < n).sort((a, b) => b.week - a.week)[0];
           return prior ? (
             <LastWeekBanner

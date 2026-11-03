@@ -4,7 +4,7 @@ import { fetchBox, fetchGames } from "./espn";
 import { gradeItem, scoreWeek, weekWinner, type GameBox, type PlayerWeekScore } from "./grade";
 import { sendPush, type PushResult } from "./push";
 import type { ItemSpec, SbItem, SbPick, SbPlayer, SbWeek } from "./types";
-import { SB_SEASON, pacificDate, weekBounds, weekWindow } from "./weeks";
+import { SB_SEASON, pacificDate, weekBounds } from "./weeks";
 
 const supa = () => createServiceClient();
 
@@ -175,7 +175,7 @@ export async function gradeWeek(week: SbWeek, now = new Date()): Promise<number>
   if (week.status === "final" || week.status === "draft") return 0;
   const items = await getItems(week.id);
   const open = items.filter((i) => i.status === "open" && i.type !== "custom");
-  const bounds = weekBounds(weekWindow(week.week_number));
+  const bounds = weekBounds(week); // the row's own dates, not recomputed from the season start
   const weekOver = now >= bounds.end;
 
   const needsWeek = open.some((i) => i.type === "weekly_leader");

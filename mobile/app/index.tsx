@@ -185,7 +185,7 @@ function ThisWeekBody({
     retry: false,
   });
   const r = results.data;
-  // Cached results can lag a week behind right after the Sunday flip; only show them for this week.
+  // Cached results can lag a week behind right after the Monday flip; only show them for this week.
   const heroResults = r && r.week === week.number ? r : undefined;
   const resultsLabel = !r
     ? null

@@ -1,13 +1,19 @@
 /**
- * Sportsbook weeks run Sunday 12:00am to Saturday 11:59pm Pacific. Sunday
+ * Run It Back weeks run Monday 12:00am to Sunday 11:59pm Pacific. Monday
  * is the transition day: the previous week closes and the new week opens
- * on the same Sunday morning, right after Saturday night's final games.
+ * on the same Monday morning, right after Sunday night's final games.
  * Week 1 of 2026-27 is the week of opening night.
+ *
+ * `weekWindow` only decides the dates of a week that doesn't exist yet.
+ * Everything that reads a week's dates takes the stored row (`SbWeek`), so
+ * a week can run on its own dates: Weeks 1 and 2 were created Sunday to
+ * Saturday (Oct 18 to 24, Oct 25 to 31) and keep that, and Week 3 was
+ * opened late and runs Tuesday Nov 3 to Sunday Nov 8.
  */
 
 export const SB_SEASON = "2026-27";
-/** Sunday of opening week, Pacific. */
-export const SB_SEASON_START = "2026-10-18";
+/** Monday of opening week, Pacific. */
+export const SB_SEASON_START = "2026-10-19";
 
 const TZ = "America/Los_Angeles";
 
