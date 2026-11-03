@@ -81,6 +81,12 @@ export default async function AdminSportsbookPage(props: { searchParams: Promise
           >
             Public page
           </Link>
+          <Link
+            href={`/me/pod?week=${n}`}
+            className="font-[family-name:var(--font-jetbrains)] text-[0.62rem] uppercase tracking-[0.15em] text-[var(--color-red)]"
+          >
+            On The Court prep
+          </Link>
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 import { after } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
-import { gradeWeek, pushGraded, syncBoxes, syncGames } from "./data";
+import { gradeWeek, pushGraded, pushOpen, syncBoxes, syncGames } from "./data";
 import { sendPush } from "./push";
 import type { SbWeek } from "./types";
 import { SB_SEASON, pacificDate } from "./weeks";
@@ -63,6 +63,8 @@ async function maybeSync(now = new Date()) {
   } finally {
     // Daytime caller for the graded push: the nightly cron lands in quiet hours.
     try { await pushGraded(); } catch { /* push never blocks the sync */ }
+    // Same for the new-week push: this also covers a week opened during quiet hours.
+    try { await pushOpen(); } catch { /* push never blocks the sync */ }
     // Whether or not ESPN cooperated: the reveal only depends on the lock time.
     await pushReveals(locked, live, now);
   }

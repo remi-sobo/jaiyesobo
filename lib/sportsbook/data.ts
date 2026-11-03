@@ -2,7 +2,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import type { TeamCode } from "@/lib/nba/teams";
 import { fetchBox, fetchGames } from "./espn";
 import { gradeItem, scoreWeek, weekWinner, type GameBox, type PlayerWeekScore } from "./grade";
-import { sendPush, type PushResult } from "./push";
+import { openPushMessage, sendPush, type PushResult } from "./push";
 import type { ItemSpec, SbItem, SbPick, SbPlayer, SbWeek } from "./types";
 import { SB_SEASON, pacificDate, weekBounds } from "./weeks";
 
@@ -200,6 +200,22 @@ export async function gradeWeek(week: SbWeek, now = new Date()): Promise<number>
     await supa().from("sb_weeks").update({ status: "graded" }).eq("id", week.id);
   }
   return changed;
+}
+
+/**
+ * Tells players the open week is up. Keyed by week, so it sends once however
+ * many callers (admin open, live sync) run it. Never throws; null if no week is open.
+ */
+export async function pushOpen(): Promise<PushResult | null> {
+  try {
+    const open = (await listWeeks()).filter((w) => w.status === "open");
+    if (open.length === 0) return null;
+    const n = Math.max(...open.map((w) => w.week_number));
+    return await sendPush("open", openPushMessage(n), `open:${SB_SEASON}:${n}`);
+  } catch (e) {
+    console.error(JSON.stringify({ scope: "push", kind: "open", err: String(e) }));
+    return null;
+  }
 }
 
 /**

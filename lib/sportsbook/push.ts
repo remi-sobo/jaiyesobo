@@ -4,15 +4,15 @@ import { createServiceClient } from "@/lib/supabase/server";
  * Server-side push for the iPhone app, through Expo's push service.
  *
  * The app schedules its own "1 hour to tip-off" reminder on the phone, so the
- * server never sends `lock`. It sends the three alerts that need the server:
- * picks revealed at tip-off, a week graded, and Jaiye's recap.
+ * server never sends `lock`. It sends the four alerts that need the server:
+ * a new week opening, picks revealed at tip-off, a week graded, and Jaiye's recap.
  *
  * Every send is keyed by a marker in `app_config` (same table the live sync
  * throttle uses), so the several places that can trigger a push (nightly cron,
  * weekly cron, live sync, admin recap) are safe to overlap.
  */
 
-export type PushKind = "reveal" | "graded" | "recap";
+export type PushKind = "open" | "reveal" | "graded" | "recap";
 export type PushMessage = { title: string; body: string; data?: Record<string, string> };
 export type PushResult = { sent: number; skipped: "marker" | "no-recipients" | "quiet" | null; errors: number };
 
@@ -23,6 +23,11 @@ const PAGE = 1000;
 const PREVIEW_MAX = 90;
 
 type Ticket = { status?: string; message?: string; details?: { error?: string } };
+
+/** The "new week" alert. Taps open This Week. */
+export function openPushMessage(n: number): PushMessage {
+  return { title: `Week ${n} is up`, body: "New picks are in. Beat Jaiye and Remi.", data: { route: "/" } };
+}
 
 /**
  * The first ~90 characters of a recap for a push body: whitespace collapsed,

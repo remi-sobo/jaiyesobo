@@ -1,6 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { buildContext, draftOne, draftSlate, half, writeRecap, type DraftItem } from "./draft";
-import { getItems, getPicks, getPlayers, getSubmissions, getWeek, gradeWeek, nightlySync, pushGraded, weekBoard } from "./data";
+import { getItems, getPicks, getPlayers, getSubmissions, getWeek, gradeWeek, nightlySync, pushGraded, pushOpen, weekBoard } from "./data";
 import { pickPoints } from "./grade";
 import { recapPreview, sendPush, type PushResult } from "./push";
 import type { ItemOption, SbItem, SbPick, SbWeek } from "./types";
@@ -133,6 +133,9 @@ export async function openWeek(n: number): Promise<void> {
   if (items.length === 0) throw new ActionError("Add some picks first.");
   const { error } = await db().from("sb_weeks").update({ status: "open" }).eq("id", week.id);
   if (error) throw error;
+  // The push goes out when Remi opens the week. If that lands in quiet hours,
+  // the live sync sends it the next morning. pushOpen never throws.
+  await pushOpen();
 }
 
 /** Saves one player's answer. The database refuses it after tip-off. */

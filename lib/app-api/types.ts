@@ -17,7 +17,7 @@ export type PlayerKind = "remi" | "jaiye" | "challenger";
 export type WeekStatus = "draft" | "open" | "graded" | "final";
 export type ItemStatus = "open" | "graded" | "void";
 
-export type PushSettings = { lock: boolean; reveal: boolean; graded: boolean; recap: boolean };
+export type PushSettings = { open: boolean; lock: boolean; reveal: boolean; graded: boolean; recap: boolean };
 
 export type ApiPlayer = {
   id: string;
