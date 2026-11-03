@@ -48,7 +48,7 @@ export async function loadPlayer(id: string): Promise<PlayerRow | null> {
   return (data as PlayerRow | null) ?? null;
 }
 
-const DEFAULT_PUSH: PushSettings = { lock: true, reveal: true, graded: true, recap: true };
+const DEFAULT_PUSH: PushSettings = { open: true, lock: true, reveal: true, graded: true, recap: true };
 
 export function apiPlayer(p: PlayerRow): ApiPlayer {
   return {

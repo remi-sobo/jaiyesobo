@@ -230,7 +230,7 @@ async function handle(method: string, path: string[], req: Request): Promise<Res
       if (bd.push_enabled && typeof bd.push_enabled === "object") {
         const cur = apiPlayer(me).push_enabled;
         const next = { ...cur };
-        for (const k of ["lock", "reveal", "graded", "recap"] as const) {
+        for (const k of ["open", "lock", "reveal", "graded", "recap"] as const) {
           const v = (bd.push_enabled as Record<string, unknown>)[k];
           if (typeof v === "boolean") next[k] = v;
         }

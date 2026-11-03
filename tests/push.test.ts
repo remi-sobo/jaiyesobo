@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { recapPreview } from "@/lib/sportsbook/push";
+import { openPushMessage, recapPreview } from "@/lib/sportsbook/push";
 
 describe("recapPreview", () => {
   it("leaves short text unchanged", () => {
@@ -42,5 +42,19 @@ describe("recapPreview", () => {
 
   it("is empty for blank text", () => {
     expect(recapPreview("   \n ")).toBe("");
+  });
+});
+
+describe("openPushMessage", () => {
+  it("names the week and sends people to This Week", () => {
+    expect(openPushMessage(3)).toEqual({
+      title: "Week 3 is up",
+      body: "New picks are in. Beat Jaiye and Remi.",
+      data: { route: "/" },
+    });
+  });
+
+  it("uses the week number in the title", () => {
+    expect(openPushMessage(12).title).toBe("Week 12 is up");
   });
 });

@@ -23,6 +23,7 @@ import { deleteMe, getMe, patchMe, signOut } from "@/lib/routes";
 import type { ApiPlayer, MeResponse, PushSettings } from "@shared/types";
 
 const ALERTS: { key: keyof PushSettings; label: string }[] = [
+  { key: "open", label: "When a new week opens" },
   { key: "lock", label: "When picks lock" },
   { key: "reveal", label: "When picks reveal" },
   { key: "graded", label: "When the week is graded" },
