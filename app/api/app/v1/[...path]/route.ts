@@ -25,6 +25,7 @@ import { bearerToken, createSession, playerForToken, revokeSession } from "@/lib
 import { TALK_KEYS, TALK_LINES } from "@/lib/sportsbook/talk";
 import { featuredWeekNumber, loadWeekView } from "@/lib/sportsbook/view";
 import { getPicks, getWeek, listWeeks } from "@/lib/sportsbook/data";
+import { episodeForWeek } from "@/lib/app-api/episode";
 import {
   apiLeague,
   apiLeagues,
@@ -381,7 +382,9 @@ async function handle(method: string, path: string[], req: Request): Promise<Res
       const n = await featuredWeekNumber();
       let week = n ? await getWeek(n) : null;
       if (week && !week.recap && n && n > 1) week = await getWeek(n - 1);
-      return json({ week: week?.week_number ?? null, text: week?.recap ?? null, audio_url: null } satisfies RecapResponse);
+      // `week` can be the previous week (its recap is the latest written). The episode is always the
+      // featured week's, so a new week's video shows up as soon as its picks open.
+      return json({ week: week?.week_number ?? null, text: week?.recap ?? null, audio_url: null, episode: episodeForWeek(n) } satisfies RecapResponse);
     }
 
     /* Talk, reactions, safety */

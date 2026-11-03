@@ -242,4 +242,21 @@ export type InviteResponse = {
   week: number | null;
 };
 
-export type RecapResponse = { week: number | null; text: string | null; audio_url: string | null };
+/**
+ * One On The Court podcast episode, the video Jaiye records for a Run It Back week.
+ * `week` is the Run It Back week the episode covers, `number` is the episode's own
+ * number in the series. `youtube_url` opens in the YouTube app or the browser.
+ */
+export type ApiEpisode = { number: number; title: string; youtube_url: string; week: number };
+
+export type RecapResponse = {
+  week: number | null;
+  text: string | null;
+  audio_url: string | null;
+  /**
+   * The On The Court episode for the featured week (the week whose picks are open),
+   * null when there is none yet. Not tied to `week`: the recap text falls back to the
+   * previous week until the featured week's recap is written, the episode never does.
+   */
+  episode: ApiEpisode | null;
+};

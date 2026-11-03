@@ -119,7 +119,7 @@ Every route rate limited like the current join route. Errors are `{ error: "<mes
 | POST `/talk` · POST `/react` | preset line, emoji |
 | POST `/report` · POST `/mute` | safety |
 | GET `/invite/{code}` | public, no auth: league name, size, inviter display name |
-| GET `/recap/current` | Jaiye's text recap and audio URL if posted |
+| GET `/recap/current` | Jaiye's text recap and audio URL if posted, plus the featured week's On The Court episode (`episode`, null until one is posted) |
 | POST `/pass/verify` | Phase 3 |
 
 Write tests for the scoring paths that matter: lock rules, week scores, rivalry records, league
