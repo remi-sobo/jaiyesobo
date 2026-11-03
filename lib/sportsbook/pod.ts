@@ -277,12 +277,13 @@ export function buildPodPrep(input: {
   sections.push({
     key: "segments",
     title: "The segments",
-    lead: "The usual bits. Dad reads them out; you answer fast.",
+    // Jaiye records on his own, so every bit here works with one voice.
+    lead: "Your bits. Keep each one quick.",
     prompts: [
-      { key: "seg.buy", text: "Buy or Sell. Three seconds, then one sentence why. Write five this week." },
-      { key: "seg.blind", text: "Blind Rank. Rule: you have to actually be blind. Dad reads five names one at a time; you slot each as it comes. Pick the five." },
+      { key: "seg.buy", text: "Buy or Sell. Five takes, three seconds each, then one sentence why. Write your five." },
+      { key: "seg.rank", text: "Rank them. Best player in the league right now, one to five. Pick the five names, give the order, and one reason for the top spot." },
       { key: "seg.pocket", text: "In Your Pocket. One word per player. Pick five players from this week's picks." },
-      { key: "seg.hot", text: "Hot Seat. Dad picks one of your takes and you defend it in five points. Which take?" },
+      { key: "seg.defend", text: "Defend it. The take people will push back on most this week. Defend it in five points." },
       { key: "seg.vault", text: "The Vault. One September call to check. Any pick you'd take back?" },
     ],
   });
