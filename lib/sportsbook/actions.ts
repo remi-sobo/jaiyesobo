@@ -36,7 +36,7 @@ async function recentPrompts(n: number): Promise<string[]> {
 export async function draftWeek(n: number): Promise<number> {
   const week = await ensureWeek(n);
   if (week.status !== "draft") throw new ActionError("This week is already open.");
-  const ctx = await buildContext(n);
+  const ctx = await buildContext(week);
   const items = await draftSlate(ctx, await recentPrompts(n));
   const supa = db();
   const { error: delErr } = await supa.from("sb_items").delete().eq("week_id", week.id).neq("type", "custom");
@@ -62,7 +62,7 @@ export async function regenerateItem(itemId: string): Promise<void> {
   const { item, week } = await draftItemAndWeek(itemId);
   if (week.status !== "draft") throw new ActionError("You can only swap picks before the week opens.");
   if (item.type === "custom") throw new ActionError("Edit Jaiye's Prop by hand instead.");
-  const ctx = await buildContext(week.week_number);
+  const ctx = await buildContext(week);
   const avoid = [...(await getItems(week.id)).map((i) => i.prompt), ...(await recentPrompts(week.week_number))];
   const next = await draftOne(ctx, avoid, item.type);
   const { error } = await db()

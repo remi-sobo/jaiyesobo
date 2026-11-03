@@ -150,7 +150,7 @@ export default function ResultsPanel({
             Finalize week
           </button>
           {status !== "graded" ? (
-            <p className="mt-2 text-[0.8rem] text-[var(--color-warm-mute)]">Available once Sunday&apos;s games are done.</p>
+            <p className="mt-2 text-[0.8rem] text-[var(--color-warm-mute)]">Available once the week&apos;s last games are done.</p>
           ) : null}
         </section>
       ) : (

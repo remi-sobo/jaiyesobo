@@ -37,7 +37,7 @@ export type GradeContext = {
   games: Map<string, GameBox>;
   /** Every game in the week, for week long items. */
   weekGames: GameBox[];
-  /** True once the week's Sunday is over. */
+  /** True once the week's last day is over. */
   weekOver: boolean;
 };
 

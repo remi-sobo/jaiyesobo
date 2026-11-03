@@ -13,7 +13,7 @@ import { TEAMS, isTeamCode, type TeamCode } from "@/lib/nba/teams";
 import { fetchRoster, type RosterPlayer } from "./espn";
 import { getGamesBetween, syncGames } from "./data";
 import { DEFAULT_POINTS, ITEM_TYPE_LABEL, STAT_LABEL, type ItemOption, type ItemSpec, type ItemType, type PlayerRef, type StatKey } from "./types";
-import { tipLabel, weekBounds, weekWindow, type WeekWindow } from "./weeks";
+import { tipLabel, weekBounds, type WeekWindow } from "./weeks";
 
 const MODELS = ["claude-sonnet-5-5", "claude-sonnet-4-6"];
 
@@ -62,8 +62,8 @@ export function cleanCopy(s: string): string {
 /** Every line ends in .5 so nobody ties. */
 export const half = (n: number) => Math.floor(n) + 0.5;
 
-export async function buildContext(weekNumber: number, now = new Date()): Promise<SlateContext> {
-  const week = weekWindow(weekNumber);
+/** `week` is the stored row (or the window a new week will get): its dates decide which games are in play. */
+export async function buildContext(week: WeekWindow, now = new Date()): Promise<SlateContext> {
   const { start, end } = weekBounds(week);
   await syncGames(week.starts_on, week.ends_on);
   const soon = new Date(now.getTime() + 30 * 60_000);
