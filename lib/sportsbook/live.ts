@@ -45,6 +45,11 @@ async function maybeSync(now = new Date()) {
     .in("status", ["open", "graded"]);
   const live = (weeks ?? []) as SbWeek[];
   if (live.length === 0) return;
+  // A graded week whose last pick has a result publishes on the next visit,
+  // not the next cron. Cheap, and the recap waits for a cron job with time.
+  if (live.some((w) => w.status === "graded")) {
+    try { await closeOutWeeks(now); } catch { /* closing a week never blocks the sync */ }
+  }
   const { data: locked } = await db
     .from("sb_items")
     .select("week_id, locks_at")
@@ -62,7 +67,7 @@ async function maybeSync(now = new Date()) {
     await syncBoxes(15);
     for (const w of live) await gradeWeek(w, now);
   } finally {
-    // A week whose every pick now has a result publishes itself.
+    // A week whose every pick now has a result publishes itself (recap left to the cron jobs).
     try { await closeOutWeeks(now); } catch { /* closing a week never blocks the sync */ }
     // Daytime caller for the graded push: the nightly cron lands in quiet hours.
     try { await pushGraded(); } catch { /* push never blocks the sync */ }
