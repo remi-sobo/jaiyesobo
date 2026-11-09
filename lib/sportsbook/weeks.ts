@@ -22,6 +22,12 @@ export function pacificDate(d: Date = new Date()): string {
   return d.toLocaleDateString("en-CA", { timeZone: TZ });
 }
 
+/** Weekday in Pacific time, 0 = Sunday ... 6 = Saturday. */
+export function pacificWeekday(d: Date = new Date()): number {
+  const name = d.toLocaleDateString("en-US", { timeZone: TZ, weekday: "short" });
+  return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(name);
+}
+
 function addDays(iso: string, n: number): string {
   const d = new Date(`${iso}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() + n);

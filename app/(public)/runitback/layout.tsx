@@ -5,6 +5,13 @@
  * `.runitback-brand` block in app/globals.css. The rest of jaiyesobo.com
  * keeps Fraunces + the Vol. 02 palette.
  */
+import SectionNav from "@/components/sportsbook/public/section-nav";
+
 export default function RunItBackLayout({ children }: { children: React.ReactNode }) {
-  return <div className="runitback-brand">{children}</div>;
+  return (
+    <div className="runitback-brand">
+      <SectionNav />
+      {children}
+    </div>
+  );
 }
