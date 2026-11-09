@@ -2,11 +2,11 @@ import Link from "next/link";
 import { getChallenger } from "@/lib/sportsbook/players";
 import { getVisitor, loadReactions, loadVotes } from "@/lib/sportsbook/fans";
 import { listWeeks } from "@/lib/sportsbook/data";
-import { lastWeekRow, loadSeason, loadWeekView } from "@/lib/sportsbook/view";
-import { currentWeekNumber, weekRangeLabel, weekSlug } from "@/lib/sportsbook/weeks";
+import { lastWeekRow, loadWeekView, weekResultRow } from "@/lib/sportsbook/view";
+import { currentWeekNumber, pacificWeekday, weekRangeLabel, weekSlug } from "@/lib/sportsbook/weeks";
 import { FanVote } from "./fan-bits";
 import { LastWeekCard } from "./last-week";
-import { PublicCard, SeasonStandings } from "./public-week";
+import { PublicCard } from "./public-week";
 import PlayerBoard from "./player-board";
 import VideoPopout from "@/components/site/video-popout";
 import { sportsbookEpisode } from "@/lib/content/episodes";
@@ -41,6 +41,35 @@ export function SportsbookEmpty() {
   );
 }
 
+function WeekArrows({ n, week, prev, next }: { n: number; week: { starts_on: string; ends_on: string; status: string }; prev: { season: string; week_number: number } | null; next: { season: string; week_number: number } | null }) {
+  const arrow = "inline-flex h-11 w-11 items-center justify-center border text-[1.1rem]";
+  return (
+    <div className="flex items-center gap-3">
+      {prev ? (
+        <Link href={`/runitback/${prev.season}/${weekSlug(prev.week_number)}`} aria-label={`Week ${prev.week_number}`} className={`${arrow} border-[var(--color-line-strong)] hover:border-[var(--color-red)]`}>
+          ‹
+        </Link>
+      ) : (
+        <span aria-disabled="true" className={`${arrow} border-[var(--color-line)] text-[var(--color-mute)] opacity-40`}>
+          ‹
+        </span>
+      )}
+      {next ? (
+        <Link href={`/runitback/${next.season}/${weekSlug(next.week_number)}`} aria-label={`Week ${next.week_number}`} className={`${arrow} border-[var(--color-line-strong)] hover:border-[var(--color-red)]`}>
+          ›
+        </Link>
+      ) : (
+        <span aria-disabled="true" className={`${arrow} border-[var(--color-line)] text-[var(--color-mute)] opacity-40`}>
+          ›
+        </span>
+      )}
+      <span className="font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">
+        Week {n} · {weekRangeLabel(week)} · {week.status === "final" ? "Final" : "Grading"}
+      </span>
+    </div>
+  );
+}
+
 /** The whole public page for one week. Used by /sportsbook and the archive. */
 export default async function WeekPage({ n, featured }: { n: number; featured: boolean }) {
   scheduleLiveSync();
@@ -48,12 +77,16 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
   const view = await loadWeekView(n, { viewerId: me?.id ?? null });
   if (!view) return null;
   const visitor = await getVisitor(false);
-  const [reactions, votes, season, weeks, lastWeek] = await Promise.all([
+  const isOpen = view.week.status === "open";
+  const isDone = view.week.status === "final" || view.week.status === "graded";
+  const [reactions, votes, weeks, lastWeek, thisResult] = await Promise.all([
     loadReactions(view.items.map((i) => i.id), visitor),
     loadVotes(view.week.id, visitor),
-    featured ? loadSeason() : Promise.resolve(null),
     listWeeks(),
-    featured ? lastWeekRow(n).catch(() => null) : Promise.resolve(null),
+    // The featured page leads with the latest final week: the one before this
+    // week while it is open, or this week itself once nothing is open.
+    featured ? lastWeekRow(isOpen ? n : n + 1, me?.id).catch(() => null) : Promise.resolve(null),
+    !featured && isDone ? weekResultRow(n, me?.id).catch(() => null) : Promise.resolve(null),
   ]);
   const lockedIds = view.items.filter((i) => Date.parse(i.locks_at) <= view.now || view.week.status !== "open").map((i) => i.id);
   const [talkLines, meFlags, leagues] = await Promise.all([
@@ -71,14 +104,25 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
   const now = view.now;
   const published = weeks.filter((w) => w.status !== "draft").sort((a, b) => b.week_number - a.week_number);
   const lastRecap = view.week.recap ? view.week : published.find((w) => w.status === "final" && w.recap && w.week_number < n);
-  const isOpen = view.week.status === "open";
   const episode = sportsbookEpisode(n);
+  // Monday and Tuesday (Pacific), or any time nothing is open, lead with last week's result.
+  const weekday = pacificWeekday(new Date(now));
+  const resultBanner = featured && (weekday === 1 || weekday === 2 || !isOpen);
+  const prevWeek = published.filter((w) => w.week_number < n).sort((a, b) => b.week_number - a.week_number)[0] ?? null;
+  const nextWeekLink = published.filter((w) => w.week_number > n).sort((a, b) => a.week_number - b.week_number)[0] ?? null;
+  const top5 = view.board.slice(0, 5);
 
   return (
     <main className="px-4 py-[clamp(40px,6vw,80px)] min-[760px]:px-10">
       <div className="mx-auto max-w-[1240px]">
+        {resultBanner ? <LastWeekCard last={lastWeek} className="mb-6" /> : null}
+        {!featured && isDone ? (
+          <div className="mb-6">
+            <WeekArrows n={n} week={view.week} prev={prevWeek} next={nextWeekLink} />
+            <LastWeekCard last={thisResult} on="results" className="mt-4" />
+          </div>
+        ) : null}
         {n === 1 && currentWeekNumber(new Date(now)) === 1 ? <OpeningWeekBanner /> : null}
-        <LastWeekCard last={lastWeek} className="mb-6" />
         <SportsbookHero
           jaiye={view.board.find((b) => b.player.kind === "jaiye")?.score.points ?? 0}
           remi={view.board.find((b) => b.player.kind === "remi")?.score.points ?? 0}
@@ -115,6 +159,28 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
 
         <div className="mt-[clamp(40px,6vw,72px)] grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
           <section>
+            {featured && !resultBanner ? <LastWeekCard last={lastWeek} variant="line" className="mb-4" /> : null}
+            {featured && top5.length ? (
+              <div className="mb-8 lg:hidden">
+                <Label>Week {n} leaderboard</Label>
+                <ol aria-label={`Week ${n} top five`} className="mt-4 border border-[var(--color-line)]">
+                  {top5.map((b, i) => {
+                    const rank = view.board.filter((x) => x.score.points > b.score.points).length + 1;
+                    const house = b.player.kind !== "challenger";
+                    return (
+                      <li key={b.player.id} className={`flex min-h-11 items-center gap-3 px-3 ${i > 0 ? "border-t border-[var(--color-line)]" : ""} ${house ? "bg-[var(--color-black)]" : ""}`}>
+                        <span className="w-5 font-[family-name:var(--font-jetbrains)] text-[0.7rem] tabular-nums text-[var(--color-mute)]">{rank}</span>
+                        <span className={`min-w-0 flex-1 truncate text-[0.95rem] ${house ? "font-semibold text-[var(--color-red)]" : "text-[var(--color-bone)]"}`}>{b.player.display_name}</span>
+                        <span className={`font-[family-name:var(--font-jetbrains)] text-[0.9rem] tabular-nums ${house ? "text-[var(--color-red)]" : "text-[var(--color-bone)]"}`}>{b.score.points}</span>
+                      </li>
+                    );
+                  })}
+                </ol>
+                <a href="#board" className="mt-1 inline-flex min-h-11 items-center font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.2em] text-[var(--color-bone)] underline-offset-4 hover:text-[var(--color-red)] hover:underline">
+                  Full board ↓
+                </a>
+              </div>
+            ) : null}
             <Label>This week&apos;s picks</Label>
             <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
               {view.items.map((item) => (
@@ -138,7 +204,7 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
               </div>
             ) : null}
             <FanVote weekId={view.week.id} open={isOpen} tally={votes} />
-            <div>
+            <div id="board" className="scroll-mt-6">
               <Label>Week {n} leaderboard</Label>
               <div className="mt-4">
                 <PlayerBoard board={view.board} items={view.items} picks={view.picks} now={now} />
@@ -154,40 +220,13 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
           </section>
         ) : null}
 
-        {season ? (
-          <section className="mt-[clamp(48px,7vw,88px)]">
-            <Label>Who&apos;s winning the season</Label>
-            <div className="mt-5">
-              <SeasonStandings summary={season.summary} />
-            </div>
-          </section>
-        ) : null}
-
-        <section className="mt-[clamp(48px,7vw,88px)]">
-          <Label>{published.length > 1 ? "Past weeks" : "Season archive"}</Label>
-          <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
-            <ul className="flex flex-wrap gap-2">
-              {published.map((w) => (
-                <li key={w.id}>
-                  <Link
-                    href={`/runitback/${w.season}/${weekSlug(w.week_number)}`}
-                    className={`inline-flex min-h-10 items-center border px-3 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.15em] hover:border-[var(--color-red)] ${
-                      w.week_number === n ? "border-[var(--color-red)]" : "border-[var(--color-line-strong)]"
-                    }`}
-                  >
-                    Week {w.week_number}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-            <Link
-              href="/runitback/archive"
-              className="inline-flex min-h-10 items-center justify-center bg-[var(--color-red)] px-4 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.2em] text-[var(--color-black)] hover:bg-[var(--color-bone)]"
-            >
-              {published.length > 1 ? "Open the full archive →" : "See every week →"}
+        {featured ? (
+          <div className="mt-[clamp(40px,6vw,72px)]">
+            <Link href="/runitback/standings" className="inline-flex min-h-11 items-center font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.2em] text-[var(--color-bone)] underline-offset-4 hover:text-[var(--color-red)] hover:underline">
+              Season standings →
             </Link>
           </div>
-        </section>
+        ) : null}
       </div>
     </main>
   );

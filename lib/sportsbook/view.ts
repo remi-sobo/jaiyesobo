@@ -62,15 +62,17 @@ export async function loadSeason(): Promise<{ weeks: SbWeek[]; summary: SeasonSu
 }
 
 /**
- * The latest FINAL week below `beforeWeek`, shaped for the last-week card.
- * Winner uses the same rule as the season summary (`weekWinner`: most points,
- * a hit Lock breaks a tie, otherwise a tie). Null when no week is final yet.
+ * One week's result, shaped for the result card. Works for `final` and
+ * `graded` weeks (the row's `status` says which); null for a draft, an open
+ * week, or a week that does not exist. Winner uses the same rule as the
+ * season summary (`weekWinner`: most points, a hit Lock breaks a tie,
+ * otherwise a tie). With `playerId`, `me` carries that player's own line.
  */
-export async function lastWeekRow(beforeWeek: number): Promise<LastWeekRow | null> {
+export async function weekResultRow(n: number, playerId?: string | null): Promise<LastWeekRow | null> {
   const weeks = await listWeeks();
-  const last = weeks.filter((w) => w.status === "final" && w.week_number < beforeWeek).sort((a, b) => b.week_number - a.week_number)[0];
-  if (!last) return null;
-  const view = await loadWeekView(last.week_number);
+  const wk = weeks.find((w) => w.week_number === n);
+  if (!wk || (wk.status !== "final" && wk.status !== "graded")) return null;
+  const view = await loadWeekView(n, { viewerId: playerId ?? null });
   if (!view) return null;
   const { board } = view;
   const points = (kind: "jaiye" | "remi") => board.find((b) => b.player.kind === kind)?.score.points ?? 0;
@@ -80,8 +82,10 @@ export async function lastWeekRow(beforeWeek: number): Promise<LastWeekRow | nul
   const winner = board.find((b) => b.player.id === winnerId);
   const challengers = board.filter((b) => b.player.kind === "challenger");
   const open = weeks.filter((w) => w.status === "open").sort((a, b) => b.week_number - a.week_number)[0];
+  const mine = playerId ? board.find((b) => b.player.id === playerId && b.player.kind === "challenger") : undefined;
   return {
-    week: last.week_number,
+    week: n,
+    status: wk.status,
     jaiye,
     remi,
     winnerName: winner?.player.display_name ?? null,
@@ -92,7 +96,30 @@ export async function lastWeekRow(beforeWeek: number): Promise<LastWeekRow | nul
       remi: challengers.filter((b) => b.score.points > remi).length,
     },
     nextWeek: open?.week_number ?? null,
+    ...(playerId
+      ? {
+          me: mine
+            ? {
+                rank: board.filter((b) => b.score.points > mine.score.points).length + 1,
+                points: mine.score.points,
+                vsJaiye: mine.score.points - jaiye,
+                vsRemi: mine.score.points - remi,
+              }
+            : null,
+        }
+      : {}),
   };
+}
+
+/**
+ * The latest FINAL week below `beforeWeek`, shaped for the last-week card.
+ * Null when no week is final yet.
+ */
+export async function lastWeekRow(beforeWeek: number, playerId?: string | null): Promise<LastWeekRow | null> {
+  const weeks = await listWeeks();
+  const last = weeks.filter((w) => w.status === "final" && w.week_number < beforeWeek).sort((a, b) => b.week_number - a.week_number)[0];
+  if (!last) return null;
+  return weekResultRow(last.week_number, playerId);
 }
 
 export type ArchiveWeek = {
