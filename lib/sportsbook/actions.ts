@@ -1,6 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { buildContext, draftOne, draftSlate, half, writeRecap, type DraftItem } from "./draft";
-import { getItems, getPicks, getPlayers, getSubmissions, getWeek, gradeWeek, nightlySync, pushGraded, pushOpen, weekBoard } from "./data";
+import { getItems, getPicks, getPlayers, getSubmissions, getWeek, gradeWeek, listWeeks, nightlySync, pushGraded, pushOpen, weekBoard } from "./data";
 import { pickPoints } from "./grade";
 import { recapPreview, sendPush, type PushResult } from "./push";
 import type { ItemOption, SbItem, SbPick, SbWeek } from "./types";
@@ -306,6 +306,39 @@ export async function finalizeWeek(n: number): Promise<void> {
   if (error) throw error;
 }
 
+/**
+ * Publishes finished weeks by themselves: every `graded` week with no open
+ * pick gets its recap (if missing) and is finalized, so the front page can show
+ * it. A week with an open pick (Jaiye's Prop awaiting hand grading) is left
+ * alone. Remi can still finalize early by hand. Safe to run any number of
+ * times, from any job; returns the week numbers it closed.
+ */
+export async function closeOutWeeks(now = new Date()): Promise<number[]> {
+  const closed: number[] = [];
+  for (const week of (await listWeeks()).filter((w) => w.status === "graded")) {
+    try {
+      const items = await getItems(week.id);
+      if (items.some((i) => i.status === "open")) continue;
+      if (!week.recap) {
+        // A recap failure must not keep the week from publishing.
+        try {
+          await makeRecap(week.week_number);
+        } catch (e) {
+          console.error(JSON.stringify({ scope: "sportsbook.closeout", week: week.week_number, recapError: String(e) }));
+        }
+      }
+      await finalizeWeek(week.week_number);
+      closed.push(week.week_number);
+      console.log(JSON.stringify({ scope: "sportsbook.closeout", week: week.week_number, closed: true, at: now.toISOString() }));
+    } catch (e) {
+      console.error(JSON.stringify({ scope: "sportsbook.closeout", week: week.week_number, err: String(e) }));
+    }
+  }
+  // The recap push went out with the recap. This is the idempotent graded push.
+  if (closed.length) await pushGraded();
+  return closed;
+}
+
 /** Monday morning: grade last week, write its recap, draft this week. */
 export async function weeklyJob(now = new Date()) {
   const sync = await nightlySync(now);
@@ -324,6 +357,7 @@ export async function weeklyJob(now = new Date()) {
       }
     }
   }
+  out.closed = await closeOutWeeks(now);
   // Backstop for the pushes: no-ops if nightlySync and saveRecap already sent them.
   out.push = {
     graded: await pushGraded(),
