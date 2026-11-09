@@ -5,7 +5,7 @@
 
 import type { TeamCode } from "@/lib/nba/teams";
 
-export type StatKey = "pts" | "reb" | "ast" | "fg3m" | "stl" | "blk";
+export type StatKey = "pts" | "reb" | "ast" | "fg3m" | "stl" | "blk" | "pra" | "stocks";
 
 export const STAT_LABEL: Record<StatKey, string> = {
   pts: "points",
@@ -14,6 +14,8 @@ export const STAT_LABEL: Record<StatKey, string> = {
   fg3m: "3s made",
   stl: "steals",
   blk: "blocks",
+  pra: "points + rebounds + assists",
+  stocks: "steals + blocks",
 };
 
 export type PlayerRef = {
@@ -38,6 +40,17 @@ export type ItemSpec =
   | { type: "weekly_leader"; stat: StatKey; candidates: Array<{ person_id: number | null; name: string; team: TeamCode }> }
   | { type: "closest"; game_id: string; measure: "total_points" | "total_3s" | "team_points"; team?: TeamCode }
   | { type: "upset"; picks: Array<{ team: TeamCode; game_id: string }> }
+  | { type: "blowout"; games: Array<{ game_id: string; home: TeamCode; away: TeamCode }> }
+  | { type: "nail_biter"; game_ids: string[]; within: number }
+  | {
+      type: "stat_count";
+      player: { person_id: number | null; name: string; team: TeamCode };
+      game_ids: string[];
+      check: "double_double" | "triple_double" | "at_least";
+      stat?: StatKey;
+      threshold?: number;
+      buckets: Array<[number, number]>;
+    }
   | { type: "custom" };
 
 export type ItemType = ItemSpec["type"];
@@ -55,6 +68,9 @@ export const ITEM_TYPE_LABEL: Record<ItemType, string> = {
   weekly_leader: "Weekly Leader",
   closest: "Closest Guess",
   upset: "Upset Special",
+  blowout: "Blowout of the Week",
+  nail_biter: "Nail-biter",
+  stat_count: "How Many",
   custom: "Jaiye's Prop",
 };
 
@@ -71,6 +87,9 @@ export const DEFAULT_POINTS: Record<ItemType, number> = {
   weekly_leader: 3,
   closest: 3,
   upset: 5,
+  blowout: 3,
+  nail_biter: 2,
+  stat_count: 3,
   custom: 2,
 };
 
