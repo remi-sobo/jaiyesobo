@@ -14,6 +14,12 @@ describe("statFromPrompt", () => {
     ["Who scores the most points?", "pts"],
     ["Who has the biggest game this week?", null],
     ["Points and rebounds leader?", null],
+    ["Most points, rebounds and assists in a game?", "pra"],
+    ["Who has the best PRA night?", "pra"],
+    ["Points + rebounds + assists for Jokic: over 45.5?", "pra"],
+    ["Who gets the most steals and blocks?", "stocks"],
+    ["Most stocks in one game?", "stocks"],
+    ["Blocks and steals leader this week?", "stocks"],
   ] as const)("%s", (prompt, want) => {
     expect(statFromPrompt(prompt)).toBe(want);
   });
@@ -22,6 +28,10 @@ describe("statFromPrompt", () => {
 describe("reconcileStat", () => {
   it("prompt wins when it names a different stat", () => {
     expect(reconcileStat("Who grabs the most rebounds?", "pts")).toBe("reb");
+  });
+  it("maps the combo words to pra and stocks", () => {
+    expect(reconcileStat("Most points, rebounds and assists?", "pts")).toBe("pra");
+    expect(reconcileStat("Most steals and blocks?", "blk")).toBe("stocks");
   });
   it("keeps the AI stat when the prompt names none", () => {
     expect(reconcileStat("Who has the biggest game this week?", "ast")).toBe("ast");

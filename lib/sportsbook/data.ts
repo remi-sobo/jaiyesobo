@@ -162,7 +162,11 @@ function specGameIds(spec: ItemSpec): string[] {
     case "h2h":
       return spec.players.map((p) => p.game_id);
     case "week_wins":
+    case "nail_biter":
+    case "stat_count":
       return spec.game_ids;
+    case "blowout":
+      return spec.games.map((g) => g.game_id);
     case "upset":
       return spec.picks.map((p) => p.game_id);
     default:
