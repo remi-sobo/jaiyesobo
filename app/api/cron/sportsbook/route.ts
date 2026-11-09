@@ -12,6 +12,11 @@ export const maxDuration = 300;
  * it as a bearer token and nothing else gets in. Without it, only Vercel's
  * cron user agent is accepted. Both jobs are safe to run twice.
  *
+ * Schedules (vercel.json, UTC): nightly at 10:00; weekly Monday at 11:00
+ * (3am Pacific Monday). The weekly job must run after the Pacific week has
+ * ended and after the nightly's last grading pass, so currentWeekNumber() is
+ * the NEW week and the week that just ended is n - 1.
+ *
  * Both also send the "graded" push (and weekly the "recap" one) through
  * lib/sportsbook/push.ts. Those are keyed by week, so a rerun sends nothing new.
  */

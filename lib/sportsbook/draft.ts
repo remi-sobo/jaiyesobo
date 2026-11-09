@@ -60,6 +60,39 @@ export function cleanCopy(s: string): string {
     .trim();
 }
 /** Every line ends in .5 so nobody ties. */
+/**
+ * The one stat a prompt names, or null when it names none (or several, which
+ * is too ambiguous to override anything). "three-pointer" and "3s" mean fg3m,
+ * so they are removed before looking for "point".
+ */
+export function statFromPrompt(prompt: string): StatKey | null {
+  const text = prompt.toLowerCase();
+  const threes = /\b(?:3s|3-?(?:pointers?|point|pt)s?|threes|three[- ]?(?:pointers?|point|pt)s?)\b/;
+  const rest = text.replace(new RegExp(threes, "g"), " ");
+  const found = new Set<StatKey>();
+  if (threes.test(text)) found.add("fg3m");
+  if (/\brebound|\breb\b/.test(rest)) found.add("reb");
+  if (/\bassist/.test(rest)) found.add("ast");
+  if (/\bsteal/.test(rest)) found.add("stl");
+  if (/\bblock/.test(rest)) found.add("blk");
+  if (/\bpoint|\bscor|\bpts\b/.test(rest)) found.add("pts");
+  return found.size === 1 ? [...found][0] : null;
+}
+
+/**
+ * Prompt and stat must agree. If the prompt names a stat that differs from the
+ * one the AI put in `spec.stat`, the prompt wins (it is what people read).
+ */
+export function reconcileStat(prompt: string, stat: StatKey | undefined): StatKey {
+  const named = statFromPrompt(prompt);
+  const chosen = stat ?? "pts";
+  if (named && named !== chosen) {
+    console.warn(JSON.stringify({ scope: "sportsbook.draft", fix: "stat", prompt, was: chosen, now: named }));
+    return named;
+  }
+  return chosen;
+}
+
 export const half = (n: number) => Math.floor(n) + 0.5;
 
 /** `week` is the stored row (or the window a new week will get): its dates decide which games are in play. */
@@ -188,6 +221,7 @@ Rules:
 - Feature Jaiye's favorite teams and players when they play, but not every item.
 - prompt: the question on the card, short and punchy, no more than 90 characters. Plain words, like "Lakers or Warriors?" or "Will Wemby get 12+ rebounds?"
 - note: one line from Jaiye about the pick, no more than 120 characters, like "Wemby is a cheat code on the boards." No money talk.
+- The stat word in the prompt must match the "stat" field (a prompt that says rebounds needs stat "reb"; points needs "pts"; assists "ast"; threes "fg3m"; steals "stl"; blocks "blk").
 - Never use em dashes, en dashes or double hyphens (--).
 - VOICE: You are writing as Jaiye, a confident 9 year old Black kid from East Palo Alto who loves hoops. Short sentences. Simple words a 4th grader uses. Swagger and confidence, playful trash talk, but never mean and never a caricature: no forced slang, at most one slang word. Sounds like a kid texting his friends, not a TV announcer or a grown up. No words like slate, matchup narrative, storyline, compelling, showdown, clash, or poised.`;
 
@@ -272,7 +306,8 @@ export function toDraftItem(ai: AiItem, ctx: SlateContext): DraftItem | null {
     { key: "yes", label: "Yes" },
     { key: "no", label: "No" },
   ];
-  const stat: StatKey = ai.stat ?? "pts";
+  // Weekly Leader, Player Over/Under and Head to Head: the stat follows the prompt's words.
+  const stat: StatKey = ai.type === "weekly_leader" || ai.type === "player_ou" || ai.type === "h2h" ? reconcileStat(base.prompt, ai.stat) : (ai.stat ?? "pts");
 
   switch (ai.type) {
     case "winner": {

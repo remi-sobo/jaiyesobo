@@ -2,10 +2,10 @@ import Link from "next/link";
 import { getChallenger } from "@/lib/sportsbook/players";
 import { getVisitor, loadReactions, loadVotes } from "@/lib/sportsbook/fans";
 import { listWeeks } from "@/lib/sportsbook/data";
-import { loadSeason, loadWeekView } from "@/lib/sportsbook/view";
+import { lastWeekRow, loadSeason, loadWeekView } from "@/lib/sportsbook/view";
 import { currentWeekNumber, weekRangeLabel, weekSlug } from "@/lib/sportsbook/weeks";
 import { FanVote } from "./fan-bits";
-import { LastWeekBanner } from "./last-week";
+import { LastWeekCard } from "./last-week";
 import { PublicCard, SeasonStandings } from "./public-week";
 import PlayerBoard from "./player-board";
 import VideoPopout from "@/components/site/video-popout";
@@ -48,11 +48,12 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
   const view = await loadWeekView(n, { viewerId: me?.id ?? null });
   if (!view) return null;
   const visitor = await getVisitor(false);
-  const [reactions, votes, season, weeks] = await Promise.all([
+  const [reactions, votes, season, weeks, lastWeek] = await Promise.all([
     loadReactions(view.items.map((i) => i.id), visitor),
     loadVotes(view.week.id, visitor),
     featured ? loadSeason() : Promise.resolve(null),
     listWeeks(),
+    featured ? lastWeekRow(n).catch(() => null) : Promise.resolve(null),
   ]);
   const lockedIds = view.items.filter((i) => Date.parse(i.locks_at) <= view.now || view.week.status !== "open").map((i) => i.id);
   const [talkLines, meFlags, leagues] = await Promise.all([
@@ -77,17 +78,7 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
     <main className="px-4 py-[clamp(40px,6vw,80px)] min-[760px]:px-10">
       <div className="mx-auto max-w-[1240px]">
         {n === 1 && currentWeekNumber(new Date(now)) === 1 ? <OpeningWeekBanner /> : null}
-        {(() => {
-          // The latest finalized week prior to this one — what people landing
-          // Monday morning for the new week should see at the top.
-          const prior = season?.summary.weekly.filter((w) => w.week < n).sort((a, b) => b.week - a.week)[0];
-          return prior ? (
-            <LastWeekBanner
-              prior={{ week: prior.week, jaiye: prior.jaiye, remi: prior.remi, winnerName: prior.winner }}
-              className="mb-4"
-            />
-          ) : null;
-        })()}
+        <LastWeekCard last={lastWeek} className="mb-6" />
         <SportsbookHero
           jaiye={view.board.find((b) => b.player.kind === "jaiye")?.score.points ?? 0}
           remi={view.board.find((b) => b.player.kind === "remi")?.score.points ?? 0}

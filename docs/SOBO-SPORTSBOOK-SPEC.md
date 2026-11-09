@@ -159,7 +159,8 @@ the same lock rules; the public Supabase keys still can't write anything.
 ## 7. Automation
 
 - Vercel cron, nightly around 3am Pacific: ingest finished games, grade decided picks.
-- Vercel cron, Sunday night around 10pm Pacific (06:00 UTC Monday): grade last week, write recap, draft next slate.
+- Vercel cron, Monday around 3am Pacific (11:00 UTC Monday, after the 10:00 UTC nightly and after the week has ended): grade last week, write recap, draft next slate.
+- A week publishes itself: once every pick has a result (nothing left open, so Jaiye's Prop must be hand graded first), the nightly, weekly and live syncs write the recap if it is missing and finalize the week. Remi can still finalize early by hand.
 - Both can also be run by hand from admin ("Refresh results", "Draft slate").
 - Data source: NBA's public JSON feeds on cdn.nba.com (schedule, scoreboard, box scores).
   No API key. First build step is confirming they're reachable from Vercel; fallback is a

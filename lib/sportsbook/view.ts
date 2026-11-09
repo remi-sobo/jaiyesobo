@@ -1,4 +1,5 @@
 import { getItems, getItemsForWeeks, getPicks, getPlayers, getSubmissions, getWeek, listWeeks, seasonSummary, weekBoard, type Board, type SeasonSummary } from "./data";
+import type { LastWeekRow } from "@/components/sportsbook/public/last-week";
 import { weekWinner } from "./grade";
 import type { SbItem, SbPick, SbPlayer, SbWeek } from "./types";
 
@@ -58,6 +59,40 @@ export async function loadSeason(): Promise<{ weeks: SbWeek[]; summary: SeasonSu
   const items = await getItemsForWeeks(finals.map((w) => w.id));
   const [picks, players] = await Promise.all([getPicks(items.map((i) => i.id)), getPlayers()]);
   return { weeks, summary: seasonSummary(weeks, items, picks, players) };
+}
+
+/**
+ * The latest FINAL week below `beforeWeek`, shaped for the last-week card.
+ * Winner uses the same rule as the season summary (`weekWinner`: most points,
+ * a hit Lock breaks a tie, otherwise a tie). Null when no week is final yet.
+ */
+export async function lastWeekRow(beforeWeek: number): Promise<LastWeekRow | null> {
+  const weeks = await listWeeks();
+  const last = weeks.filter((w) => w.status === "final" && w.week_number < beforeWeek).sort((a, b) => b.week_number - a.week_number)[0];
+  if (!last) return null;
+  const view = await loadWeekView(last.week_number);
+  if (!view) return null;
+  const { board } = view;
+  const points = (kind: "jaiye" | "remi") => board.find((b) => b.player.kind === kind)?.score.points ?? 0;
+  const jaiye = points("jaiye");
+  const remi = points("remi");
+  const winnerId = weekWinner(board.map((b) => b.score));
+  const winner = board.find((b) => b.player.id === winnerId);
+  const challengers = board.filter((b) => b.player.kind === "challenger");
+  const open = weeks.filter((w) => w.status === "open").sort((a, b) => b.week_number - a.week_number)[0];
+  return {
+    week: last.week_number,
+    jaiye,
+    remi,
+    winnerName: winner?.player.display_name ?? null,
+    winnerPoints: winner?.score.points ?? Math.max(0, ...board.map((b) => b.score.points)),
+    top: board.slice(0, 5).map((b) => ({ name: b.player.display_name, points: b.score.points })),
+    beat: {
+      jaiye: challengers.filter((b) => b.score.points > jaiye).length,
+      remi: challengers.filter((b) => b.score.points > remi).length,
+    },
+    nextWeek: open?.week_number ?? null,
+  };
 }
 
 export type ArchiveWeek = {

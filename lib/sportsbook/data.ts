@@ -182,19 +182,30 @@ export async function gradeWeek(week: SbWeek, now = new Date()): Promise<number>
   const weekGameRows = needsWeek ? await getGamesBetween(bounds.start, bounds.end) : [];
   const ids = new Set<string>([...open.flatMap((i) => specGameIds(i.spec)), ...weekGameRows.map((g) => g.game_id)]);
   const boxes = await loadBoxes([...ids]);
-  const ctx = { games: boxes, weekGames: weekGameRows.map((g) => boxes.get(g.game_id)!).filter(Boolean), weekOver };
+  const ctx = {
+    games: boxes,
+    weekGames: weekGameRows.map((g) => boxes.get(g.game_id)!).filter(Boolean),
+    weekOver,
+    now: now.getTime(),
+    weekEnd: bounds.end.getTime(),
+  };
 
+  // One bad item must never keep the week from flipping to graded below.
   let changed = 0;
   for (const item of open) {
-    const out = gradeItem(item, ctx);
-    if (out.state === "pending") continue;
-    const patch =
-      out.state === "void"
-        ? { status: "void", result: { winners: [], actual: null, display: out.display } }
-        : { status: "graded", result: out.result };
-    const { error } = await supa().from("sb_items").update(patch).eq("id", item.id);
-    if (error) throw error;
-    changed++;
+    try {
+      const out = gradeItem(item, ctx);
+      if (out.state === "pending") continue;
+      const patch =
+        out.state === "void"
+          ? { status: "void", result: { winners: [], actual: null, display: out.display } }
+          : { status: "graded", result: out.result };
+      const { error } = await supa().from("sb_items").update(patch).eq("id", item.id);
+      if (error) throw error;
+      changed++;
+    } catch (err) {
+      console.error(JSON.stringify({ scope: "sportsbook.grade", item: item.id, err: String(err) }));
+    }
   }
   if (weekOver && week.status === "open") {
     await supa().from("sb_weeks").update({ status: "graded" }).eq("id", week.id);
@@ -248,8 +259,16 @@ export async function nightlySync(now = new Date()) {
   const { data: weeks } = await supa().from("sb_weeks").select(WEEK_COLS).in("status", ["open", "graded"]);
   let graded = 0;
   for (const w of (weeks ?? []) as SbWeek[]) graded += await gradeWeek(w, now);
+  // Publish weeks whose every pick has a result. Lives in actions.ts (it needs
+  // makeRecap), which imports this file, so it is loaded lazily.
+  let closed: number[] = [];
+  try {
+    closed = await (await import("./actions")).closeOutWeeks(now);
+  } catch (err) {
+    console.error(JSON.stringify({ scope: "sportsbook.closeout", err: String(err) }));
+  }
   const push = await pushGraded();
-  return { today, games, boxes, graded, push };
+  return { today, games, boxes, graded, closed, push };
 }
 
 /* Standings */

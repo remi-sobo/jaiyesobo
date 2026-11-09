@@ -1,5 +1,6 @@
 import { after } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { closeOutWeeks } from "./actions";
 import { gradeWeek, pushGraded, pushOpen, syncBoxes, syncGames } from "./data";
 import { sendPush } from "./push";
 import type { SbWeek } from "./types";
@@ -61,6 +62,8 @@ async function maybeSync(now = new Date()) {
     await syncBoxes(15);
     for (const w of live) await gradeWeek(w, now);
   } finally {
+    // A week whose every pick now has a result publishes itself.
+    try { await closeOutWeeks(now); } catch { /* closing a week never blocks the sync */ }
     // Daytime caller for the graded push: the nightly cron lands in quiet hours.
     try { await pushGraded(); } catch { /* push never blocks the sync */ }
     // Same for the new-week push: this also covers a week opened during quiet hours.
