@@ -27,7 +27,7 @@ export default function Shorts() {
           </div>
           <div className="flex flex-wrap gap-3">
             <PlayButton href={`/pod/${ep.slug}`}>Watch the full episode</PlayButton>
-            <GhostButton href="/pod">All episodes</GhostButton>
+            <GhostButton href="/pod#episodes">All episodes</GhostButton>
           </div>
         </div>
 
