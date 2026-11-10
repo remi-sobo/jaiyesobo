@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, router } from "expo-router";
+import { Link, router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -14,6 +14,7 @@ import { restoreSession } from "@/lib/routes";
  * account.
  */
 export default function Restore() {
+  const { invite } = useLocalSearchParams<{ invite?: string }>();
   const [code, setCode] = useState("");
   const qc = useQueryClient();
 
@@ -23,7 +24,9 @@ export default function Restore() {
       // Seed the cached gate so Home doesn't bounce back to Join on a stale `false`.
       qc.setQueryData(["session", "has-token"], true);
       qc.invalidateQueries();
-      router.replace("/");
+      // Came from an invite link: go back to it (now signed in) instead of Home.
+      if (typeof invite === "string" && invite.length > 0) router.replace({ pathname: "/l/[code]", params: { code: invite } });
+      else router.replace("/");
     },
   });
 
@@ -67,7 +70,8 @@ export default function Restore() {
         {restore.isPending ? <ActivityIndicator color={colors.ink} /> : <Text style={styles.primaryText}>Bring my picks over</Text>}
       </Pressable>
 
-      <Link replace href="/join" style={styles.joinLink}>
+      {/* Keep the invite code when switching screens, so signing in still lands back on it. */}
+      <Link replace href={typeof invite === "string" && invite.length > 0 ? { pathname: "/join", params: { invite } } : "/join"} style={styles.joinLink}>
         <Text style={styles.joinLinkText}>New here? Join instead</Text>
       </Link>
     </SafeAreaView>

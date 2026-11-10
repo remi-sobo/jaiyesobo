@@ -1,18 +1,20 @@
+import { formatDate } from "./format";
 import type { Episode } from "./types";
 
 /** On The Court. Newest first. */
 export const episodes: Episode[] = [
   {
     number: 3,
-    slug: "run-it-back-week-2",
+    slug: "sportsbook-week-2",
     title: "Run It Back Picks: my Week 2 recap",
     titleAccent: "Week 2",
     standfirst:
       "Week two of Run It Back Picks. I go through every pick, check the leaderboard, and find out my dad made two accounts.",
-    date: "2026-11-10",
+    date: "2026-10-25",
     runtime: "12:46",
     guests: "Jaiye",
     youtubeId: "hBtpyWI6twU",
+    sportsbookWeek: 2,
     myTake: "He ain't cooking me this week. This is my week.",
     chapters: [
       { time: "00:06", text: "Welcome to week two. The Sobo Sportsbook is now Run It Back Picks." },
@@ -47,6 +49,7 @@ export const episodes: Episode[] = [
     runtime: "11:30",
     guests: "Jaiye",
     youtubeId: "m3zazl94p4E",
+    sportsbookWeek: 1,
     myTake: "The Mavs aren't winning that game. San Antonio wins the whole thing this year.",
     chapters: [
       { time: "00:00", text: "Welcome back. The Sobo Sportsbook drops on day one of the season." },
@@ -204,7 +207,17 @@ export function latestEpisode(): Episode {
   return episodes[0];
 }
 
-/** The newest episode about the Sobo Sportsbook. Its slug starts with "sportsbook". */
-export function sportsbookEpisode(): Episode | undefined {
-  return episodes.find((e) => e.slug.startsWith("sportsbook"));
+/**
+ * The Run It Back episode for a week, or with no week the newest one (the
+ * homepage). A week with no episode yet gets nothing rather than another
+ * week's video, so a new week's video can be added together with its picks.
+ */
+export function sportsbookEpisode(week?: number): Episode | undefined {
+  if (week !== undefined) return episodes.find((e) => e.sportsbookWeek === week);
+  return episodes.find((e) => e.sportsbookWeek !== undefined);
+}
+
+/** The "date · runtime · guests" eyebrow. Runtime is skipped until it's known. */
+export function episodeMeta(ep: Episode): string {
+  return [formatDate(ep.date), ep.runtime, ep.guests].filter(Boolean).join(" · ");
 }

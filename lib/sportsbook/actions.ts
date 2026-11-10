@@ -1,7 +1,8 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { buildContext, draftOne, draftSlate, half, writeRecap, type DraftItem } from "./draft";
-import { getItems, getPicks, getPlayers, getSubmissions, getWeek, gradeWeek, nightlySync, weekBoard } from "./data";
+import { getItems, getPicks, getPlayers, getSubmissions, getWeek, gradeWeek, listWeeks, nightlySync, pushGraded, pushOpen, weekBoard } from "./data";
 import { pickPoints } from "./grade";
+import { recapPreview, sendPush, type PushResult } from "./push";
 import type { ItemOption, SbItem, SbPick, SbWeek } from "./types";
 import { SB_SEASON, currentWeekNumber, weekWindow } from "./weeks";
 
@@ -35,7 +36,7 @@ async function recentPrompts(n: number): Promise<string[]> {
 export async function draftWeek(n: number): Promise<number> {
   const week = await ensureWeek(n);
   if (week.status !== "draft") throw new ActionError("This week is already open.");
-  const ctx = await buildContext(n);
+  const ctx = await buildContext(week);
   const items = await draftSlate(ctx, await recentPrompts(n));
   const supa = db();
   const { error: delErr } = await supa.from("sb_items").delete().eq("week_id", week.id).neq("type", "custom");
@@ -61,7 +62,7 @@ export async function regenerateItem(itemId: string): Promise<void> {
   const { item, week } = await draftItemAndWeek(itemId);
   if (week.status !== "draft") throw new ActionError("You can only swap picks before the week opens.");
   if (item.type === "custom") throw new ActionError("Edit Jaiye's Prop by hand instead.");
-  const ctx = await buildContext(week.week_number);
+  const ctx = await buildContext(week);
   const avoid = [...(await getItems(week.id)).map((i) => i.prompt), ...(await recentPrompts(week.week_number))];
   const next = await draftOne(ctx, avoid, item.type);
   const { error } = await db()
@@ -132,6 +133,9 @@ export async function openWeek(n: number): Promise<void> {
   if (items.length === 0) throw new ActionError("Add some picks first.");
   const { error } = await db().from("sb_weeks").update({ status: "open" }).eq("id", week.id);
   if (error) throw error;
+  // The push goes out when Remi opens the week. If that lands in quiet hours,
+  // the live sync sends it the next morning. pushOpen never throws.
+  await pushOpen();
 }
 
 /** Saves one player's answer. The database refuses it after tip-off. */
@@ -267,8 +271,29 @@ export async function makeRecap(n: number): Promise<string> {
 export async function saveRecap(n: number, text: string): Promise<void> {
   const week = await getWeek(n);
   if (!week || week.status === "final") throw new ActionError("Can't edit that recap.");
-  const { error } = await db().from("sb_weeks").update({ recap: text.trim().slice(0, 2000) || null }).eq("id", week.id);
+  const recap = text.trim().slice(0, 2000);
+  const { error } = await db().from("sb_weeks").update({ recap: recap || null }).eq("id", week.id);
   if (error) throw error;
+  await pushRecap(n, recap);
+}
+
+/**
+ * Tells players a week's recap is up. Keyed by week, so later edits and the
+ * weekly job's backstop don't send it again. Never throws; null if there's no recap.
+ */
+async function pushRecap(n: number, recap: string | null | undefined): Promise<PushResult | null> {
+  const text = recap?.trim();
+  if (!text) return null;
+  try {
+    return await sendPush(
+      "recap",
+      { title: "Jaiye's recap is up", body: recapPreview(text), data: { route: "/corner" } },
+      `recap:${SB_SEASON}:${n}`,
+    );
+  } catch (e) {
+    console.error(JSON.stringify({ scope: "push", kind: "recap", err: String(e) }));
+    return null;
+  }
 }
 
 export async function finalizeWeek(n: number): Promise<void> {
@@ -279,6 +304,39 @@ export async function finalizeWeek(n: number): Promise<void> {
   if (left.length) throw new ActionError(`${left.length} ${left.length === 1 ? "pick still needs" : "picks still need"} a result.`);
   const { error } = await db().from("sb_weeks").update({ status: "final" }).eq("id", week.id);
   if (error) throw error;
+}
+
+/**
+ * Publishes finished weeks by themselves: every `graded` week with no open
+ * pick gets its recap (if missing) and is finalized, so the front page can show
+ * it. A week with an open pick (Jaiye's Prop awaiting hand grading) is left
+ * alone. Remi can still finalize early by hand. Safe to run any number of
+ * times, from any job; returns the week numbers it closed.
+ */
+export async function closeOutWeeks(now = new Date()): Promise<number[]> {
+  const closed: number[] = [];
+  for (const week of (await listWeeks()).filter((w) => w.status === "graded")) {
+    try {
+      const items = await getItems(week.id);
+      if (items.some((i) => i.status === "open")) continue;
+      if (!week.recap) {
+        // A recap failure must not keep the week from publishing.
+        try {
+          await makeRecap(week.week_number);
+        } catch (e) {
+          console.error(JSON.stringify({ scope: "sportsbook.closeout", week: week.week_number, recapError: String(e) }));
+        }
+      }
+      await finalizeWeek(week.week_number);
+      closed.push(week.week_number);
+      console.log(JSON.stringify({ scope: "sportsbook.closeout", week: week.week_number, closed: true, at: now.toISOString() }));
+    } catch (e) {
+      console.error(JSON.stringify({ scope: "sportsbook.closeout", week: week.week_number, err: String(e) }));
+    }
+  }
+  // The recap push went out with the recap. This is the idempotent graded push.
+  if (closed.length) await pushGraded();
+  return closed;
 }
 
 /** Monday morning: grade last week, write its recap, draft this week. */
@@ -299,6 +357,12 @@ export async function weeklyJob(now = new Date()) {
       }
     }
   }
+  out.closed = await closeOutWeeks(now);
+  // Backstop for the pushes: no-ops if nightlySync and saveRecap already sent them.
+  out.push = {
+    graded: await pushGraded(),
+    recap: last ? await pushRecap(n - 1, (await getWeek(n - 1))?.recap) : null,
+  };
   const current = await getWeek(n);
   if (!current || (current.status === "draft" && (await getItems(current.id)).length === 0)) {
     try {

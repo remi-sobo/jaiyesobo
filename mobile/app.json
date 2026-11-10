@@ -21,7 +21,9 @@
         "applinks:www.jaiyesobo.com"
       ],
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       }
     },
     "splash": {
@@ -49,11 +51,15 @@
         }
       ]
     ],
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
-      "apiBaseUrl": "https://jaiyesobo.com"
+      "apiBaseUrl": "https://www.jaiyesobo.com"
     }
   }
 }

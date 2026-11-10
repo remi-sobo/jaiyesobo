@@ -17,7 +17,7 @@ export type PlayerKind = "remi" | "jaiye" | "challenger";
 export type WeekStatus = "draft" | "open" | "graded" | "final";
 export type ItemStatus = "open" | "graded" | "void";
 
-export type PushSettings = { lock: boolean; reveal: boolean; graded: boolean; recap: boolean };
+export type PushSettings = { open: boolean; lock: boolean; reveal: boolean; graded: boolean; recap: boolean };
 
 export type ApiPlayer = {
   id: string;
@@ -63,7 +63,15 @@ export type ApiOption = { key: string; label: string; team?: string };
 
 export type ApiPick = { choice: string | null; guess: number | null; is_lock: boolean };
 
-export type ApiHousePick = ApiPick & { talk: string | null };
+export type ReactionKey = "fire" | "laugh" | "cold" | "clown" | "target";
+
+export type ApiHousePick = ApiPick & {
+  talk: string | null;
+  /** Reaction counts on this pick. Only after the item locks; empty before. */
+  reactions: Partial<Record<ReactionKey, number>>;
+  /** The viewer's own reaction on this pick, if any. */
+  my_reaction: ReactionKey | null;
+};
 
 export type ApiTalk = { player_id: string; display_name: string; key: string; text: string };
 
@@ -234,4 +242,21 @@ export type InviteResponse = {
   week: number | null;
 };
 
-export type RecapResponse = { week: number | null; text: string | null; audio_url: string | null };
+/**
+ * One On The Court podcast episode, the video Jaiye records for a Run It Back week.
+ * `week` is the Run It Back week the episode covers, `number` is the episode's own
+ * number in the series. `youtube_url` opens in the YouTube app or the browser.
+ */
+export type ApiEpisode = { number: number; title: string; youtube_url: string; week: number };
+
+export type RecapResponse = {
+  week: number | null;
+  text: string | null;
+  audio_url: string | null;
+  /**
+   * The On The Court episode for the featured week (the week whose picks are open),
+   * null when there is none yet. Not tied to `week`: the recap text falls back to the
+   * previous week until the featured week's recap is written, the episode never does.
+   */
+  episode: ApiEpisode | null;
+};

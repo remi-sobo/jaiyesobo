@@ -119,7 +119,7 @@ Every route rate limited like the current join route. Errors are `{ error: "<mes
 | POST `/talk` · POST `/react` | preset line, emoji |
 | POST `/report` · POST `/mute` | safety |
 | GET `/invite/{code}` | public, no auth: league name, size, inviter display name |
-| GET `/recap/current` | Jaiye's text recap and audio URL if posted |
+| GET `/recap/current` | Jaiye's text recap and audio URL if posted, plus the featured week's On The Court episode (`episode`, null until one is posted) |
 | POST `/pass/verify` | Phase 3 |
 
 Write tests for the scoring paths that matter: lock rules, week scores, rivalry records, league
@@ -167,6 +167,7 @@ The app lives in this repo so Claude Code sees the backend, the API and the app 
 ## 5. Phase 3: alerts and the pass
 
 - **Push** through Expo push service. Cron jobs on Vercel:
+  - When a week opens: "Week 4 is up. New picks are in. Beat Jaiye and Remi."
   - 30 minutes before each lock, to players with that pick still open.
   - At each reveal, to players who picked it ("Picks revealed. Jaiye took the upset.").
   - Monday after finalize: "Week 6 is graded. You beat Remi by 4."

@@ -20,11 +20,11 @@ import type { ApiResults } from "@shared/types";
 type Verdict = "sat_out" | "house" | "jaiye" | "remi" | "none";
 
 const HERO: Record<Verdict, { text: string; color: string }> = {
-  sat_out: { text: "You sat this one out.", color: colors.steel },
-  house: { text: "You beat the house.", color: colors.accent },
-  jaiye: { text: "You beat Jaiye.", color: colors.accent },
-  remi: { text: "You beat Remi.", color: colors.accent },
-  none: { text: "Jaiye got you.", color: colors.paper },
+  sat_out: { text: "You sat this one out", color: colors.steel },
+  house: { text: "You beat the house", color: colors.accent },
+  jaiye: { text: "You beat Jaiye", color: colors.accent },
+  remi: { text: "You beat Remi", color: colors.accent },
+  none: { text: "Jaiye got you", color: colors.paper },
 };
 
 const SHARE_VERDICT: Record<Verdict, string> = {
@@ -75,18 +75,18 @@ export default function Results() {
         refreshControl={<RefreshControl refreshing={q.isRefetching} onRefresh={() => { q.refetch(); }} tintColor={colors.steel} />}
       >
         <Pressable
-          onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))}
+          onPress={() => (router.canGoBack() ? router.back() : router.replace(ref ? "/weeks" : "/"))}
           hitSlop={8}
           style={styles.backBtn}
         >
-          <Text style={styles.backText}>← This Week</Text>
+          <Text style={styles.backText}>{ref ? "← Past weeks" : "← This Week"}</Text>
         </Pressable>
         <View style={styles.header}>
           <Lockup h={36} />
         </View>
 
         {q.data ? (
-          <ResultsBody r={q.data} />
+          <ResultsBody r={q.data} showPastWeeks={!ref && q.data.week > 1} />
         ) : notGraded ? (
           <Text style={styles.notice}>{errorText}</Text>
         ) : q.isError ? (
@@ -121,6 +121,11 @@ function verdictOf(r: ApiResults): Verdict {
   return "none";
 }
 
+/** The hero's verdict wording, without the full stop. Past weeks rows reuse it. */
+export function verdictLine(r: ApiResults): string {
+  return HERO[verdictOf(r)].text;
+}
+
 function buildShareMessage(r: ApiResults): string {
   const lines = [`Run It Back Picks · Week ${r.week}`, SHARE_VERDICT[verdictOf(r)]];
   if (r.scores.me !== null) {
@@ -147,7 +152,7 @@ async function shareWeek(r: ApiResults) {
   }
 }
 
-function ResultsBody({ r }: { r: ApiResults }) {
+function ResultsBody({ r, showPastWeeks }: { r: ApiResults; showPastWeeks: boolean }) {
   const hero = HERO[verdictOf(r)];
   const scoreLine = [
     ...(r.scores.me === null ? [] : [`You ${r.scores.me}`]),
@@ -159,7 +164,7 @@ function ResultsBody({ r }: { r: ApiResults }) {
   return (
     <>
       <Text style={styles.eyebrow}>{`Week ${r.week} results`}</Text>
-      <Text style={[styles.hero, { color: hero.color }]}>{hero.text}</Text>
+      <Text style={[styles.hero, { color: hero.color }]}>{`${hero.text}.`}</Text>
       <Text style={styles.scoreLine}>{scoreLine}</Text>
       <Text style={styles.recordLine}>
         {`${r.record.right}-${r.record.wrong} · ${r.beat_jaiye.count} of ${r.players} ${noun} beat Jaiye · ${r.beat_remi.count} beat Remi`}
@@ -247,6 +252,13 @@ function ResultsBody({ r }: { r: ApiResults }) {
       >
         <Text style={styles.primaryText}>Share my week</Text>
       </Pressable>
+
+      {showPastWeeks ? (
+        <Pressable onPress={() => router.push("/weeks")} accessibilityRole="button" style={styles.pastLink}>
+          <Text style={styles.pastLinkText}>Past weeks</Text>
+          <Text style={styles.pastLinkCta}>See all →</Text>
+        </Pressable>
+      ) : null}
     </>
   );
 }
@@ -366,6 +378,22 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     textTransform: "uppercase",
   },
+  pastLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    minHeight: 44,
+    marginTop: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.surface,
+    borderRadius: radius.button,
+  },
+  pastLinkText: { flexShrink: 1, color: colors.paper, fontSize: 14 },
+  pastLinkCta: { marginLeft: "auto", color: colors.accent, fontFamily: fonts.label, fontSize: 12, letterSpacing: 2, textTransform: "uppercase" },
   notice: { color: colors.steel, fontSize: 15, textAlign: "center", marginTop: 24 },
   loading: { alignItems: "center", paddingVertical: 48 },
   errorBox: { alignItems: "center", padding: 20, marginTop: 24 },

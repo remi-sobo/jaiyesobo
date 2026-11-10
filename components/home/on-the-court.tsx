@@ -1,8 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { latestEpisode } from "@/lib/content/episodes";
+import { episodeMeta, latestEpisode } from "@/lib/content/episodes";
 import { schedule } from "@/lib/content/publishing";
-import { formatDate, formatShortDate, pad } from "@/lib/content/format";
+import { formatShortDate, pad } from "@/lib/content/format";
 import { SectionLabel } from "@/components/site/type";
 import { GhostButton, PlayButton } from "@/components/site/buttons";
 
@@ -39,7 +39,7 @@ export default function OnTheCourt() {
             </h2>
 
             <div className="mt-8 font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-red)]">
-              EP.{pad(ep.number)} · {formatDate(ep.date)} · {ep.runtime} · {ep.guests}
+              EP.{pad(ep.number)} · {episodeMeta(ep)}
             </div>
 
             <h3 className="mt-4 font-[family-name:var(--font-fraunces)] text-[clamp(1.5rem,3vw,2.1rem)] font-black leading-[1.05] tracking-[-0.025em] text-pretty">
@@ -47,8 +47,7 @@ export default function OnTheCourt() {
             </h3>
 
             <p className="mt-4 max-w-[46ch] text-[1rem] leading-[1.7] text-[var(--color-mute)]">
-              Giannis to Miami, LeBron to Philly, Ja to Portland. Then I put every
-              prediction I&apos;ve got in the vault.
+              {ep.standfirst}
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">

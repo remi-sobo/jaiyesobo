@@ -5,8 +5,9 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { AppState, View } from "react-native";
+import { AppState, Platform, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import DialogHost from "@/components/DialogHost";
 import { colors } from "@/lib/brand";
 
 // Keep the native splash up until the Archivo faces have loaded, so the
@@ -16,14 +17,17 @@ SplashScreen.preventAutoHideAsync().catch(() => {
 });
 
 // Local reminders (see lib/reminders.ts) should still show as a banner while the app is open.
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-  }),
-});
+// Phone only: there are no local notifications in the browser.
+if (Platform.OS !== "web") {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: false,
+      shouldSetBadge: false,
+    }),
+  });
+}
 
 // One client for the whole app. The spec calls for optimistic pick saves
 // with retry and an offline banner; this is where that behavior will land.
@@ -64,6 +68,7 @@ export default function RootLayout() {
               contentStyle: { backgroundColor: colors.ink },
             }}
           />
+          <DialogHost />
         </View>
       </SafeAreaProvider>
     </QueryClientProvider>

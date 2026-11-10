@@ -25,6 +25,7 @@ import { bearerToken, createSession, playerForToken, revokeSession } from "@/lib
 import { TALK_KEYS, TALK_LINES } from "@/lib/sportsbook/talk";
 import { featuredWeekNumber, loadWeekView } from "@/lib/sportsbook/view";
 import { getPicks, getWeek, listWeeks } from "@/lib/sportsbook/data";
+import { episodeForWeek } from "@/lib/app-api/episode";
 import {
   apiLeague,
   apiLeagues,
@@ -73,6 +74,30 @@ class HttpError extends Error {
 
 const json = (data: unknown, status = 200) => NextResponse.json(data, { status, headers: { "Cache-Control": "no-store" } });
 const ok = () => json({ ok: true });
+
+/**
+ * Dev-only CORS for the Expo web build (`npx expo start --web` in mobile/), which
+ * runs on localhost and calls this API from the browser. The Authorization header
+ * makes the browser preflight. Only these exact origins get CORS headers; any other
+ * origin sees the API exactly as before. No credentials flag: the API is bearer
+ * token, not cookies.
+ */
+const DEV_ORIGINS = new Set(["http://localhost:8081", "http://127.0.0.1:8081", "http://localhost:19006"]);
+
+const devOrigin = (req: Request) => {
+  const origin = req.headers.get("origin");
+  return origin && DEV_ORIGINS.has(origin) ? origin : null;
+};
+
+/** The one place CORS headers go on a response: success and error paths both pass through here. */
+function withCors(req: Request, res: Response): Response {
+  const origin = devOrigin(req);
+  if (origin) {
+    res.headers.set("Access-Control-Allow-Origin", origin);
+    res.headers.append("Vary", "Origin");
+  }
+  return res;
+}
 
 async function body(req: Request): Promise<Body> {
   try {
@@ -205,7 +230,7 @@ async function handle(method: string, path: string[], req: Request): Promise<Res
       if (bd.push_enabled && typeof bd.push_enabled === "object") {
         const cur = apiPlayer(me).push_enabled;
         const next = { ...cur };
-        for (const k of ["lock", "reveal", "graded", "recap"] as const) {
+        for (const k of ["open", "lock", "reveal", "graded", "recap"] as const) {
           const v = (bd.push_enabled as Record<string, unknown>)[k];
           if (typeof v === "boolean") next[k] = v;
         }
@@ -357,7 +382,9 @@ async function handle(method: string, path: string[], req: Request): Promise<Res
       const n = await featuredWeekNumber();
       let week = n ? await getWeek(n) : null;
       if (week && !week.recap && n && n > 1) week = await getWeek(n - 1);
-      return json({ week: week?.week_number ?? null, text: week?.recap ?? null, audio_url: null } satisfies RecapResponse);
+      // `week` can be the previous week (its recap is the latest written). The episode is always the
+      // featured week's, so a new week's video shows up as soon as its picks open.
+      return json({ week: week?.week_number ?? null, text: week?.recap ?? null, audio_url: null, episode: episodeForWeek(n) } satisfies RecapResponse);
     }
 
     /* Talk, reactions, safety */
@@ -396,7 +423,7 @@ async function handle(method: string, path: string[], req: Request): Promise<Res
   throw new HttpError(404, "Not found.");
 }
 
-async function run(method: string, req: Request, ctx: Ctx): Promise<Response> {
+async function respond(method: string, req: Request, ctx: Ctx): Promise<Response> {
   const { path } = await ctx.params;
   try {
     return await handle(method, path, req);
@@ -408,6 +435,24 @@ async function run(method: string, req: Request, ctx: Ctx): Promise<Response> {
   }
 }
 
+async function run(method: string, req: Request, ctx: Ctx): Promise<Response> {
+  return withCors(req, await respond(method, req, ctx));
+}
+
+// Next fills in OPTIONS (204 plus Allow) when a route file doesn't export one. This keeps that
+// answer for every origin and adds the preflight headers for the dev origins only.
+export const OPTIONS = (req: Request) => {
+  const res = new Response(null, { status: 204, headers: { Allow: "DELETE, GET, HEAD, OPTIONS, PATCH, POST" } });
+  const origin = devOrigin(req);
+  if (origin) {
+    res.headers.set("Access-Control-Allow-Origin", origin);
+    res.headers.set("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
+    res.headers.set("Access-Control-Allow-Headers", "authorization,content-type");
+    res.headers.set("Access-Control-Max-Age", "600");
+    res.headers.append("Vary", "Origin");
+  }
+  return res;
+};
 export const GET = (req: Request, ctx: Ctx) => run("GET", req, ctx);
 export const POST = (req: Request, ctx: Ctx) => run("POST", req, ctx);
 export const PATCH = (req: Request, ctx: Ctx) => run("PATCH", req, ctx);

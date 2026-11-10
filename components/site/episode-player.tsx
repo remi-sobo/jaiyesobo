@@ -43,6 +43,7 @@ export default function EpisodePlayer({ youtubeId, title, chapters }: { youtubeI
         </div>
       </div>
 
+      {chapters.length ? (
       <section id="chapters" className="mt-16 scroll-mt-24">
         <SectionLabel>Chapters</SectionLabel>
         <ul className="mt-6 list-none">
@@ -67,6 +68,7 @@ export default function EpisodePlayer({ youtubeId, title, chapters }: { youtubeI
           ))}
         </ul>
       </section>
+      ) : null}
     </>
   );
 }

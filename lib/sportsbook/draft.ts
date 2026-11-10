@@ -13,7 +13,7 @@ import { TEAMS, isTeamCode, type TeamCode } from "@/lib/nba/teams";
 import { fetchRoster, type RosterPlayer } from "./espn";
 import { getGamesBetween, syncGames } from "./data";
 import { DEFAULT_POINTS, ITEM_TYPE_LABEL, STAT_LABEL, type ItemOption, type ItemSpec, type ItemType, type PlayerRef, type StatKey } from "./types";
-import { tipLabel, weekBounds, weekWindow, type WeekWindow } from "./weeks";
+import { tipLabel, weekBounds, type WeekWindow } from "./weeks";
 
 const MODELS = ["claude-sonnet-5-5", "claude-sonnet-4-6"];
 
@@ -60,10 +60,51 @@ export function cleanCopy(s: string): string {
     .trim();
 }
 /** Every line ends in .5 so nobody ties. */
+/**
+ * The one stat a prompt names, or null when it names none (or several, which
+ * is too ambiguous to override anything). "three-pointer" and "3s" mean fg3m,
+ * so they are removed before looking for "point".
+ */
+export function statFromPrompt(prompt: string): StatKey | null {
+  const text = prompt.toLowerCase();
+  const threes = /\b(?:3s|3-?(?:pointers?|point|pt)s?|threes|three[- ]?(?:pointers?|point|pt)s?)\b/;
+  // Combos first, then take their words out so "points, rebounds and assists" isn't three stats.
+  const pra = /\bpra\b|\b(?:points?|pts)\s*(?:,|\+|&|and)?\s*(?:and\s+)?(?:rebounds?|reb)\s*(?:,|\+|&|and)?\s*(?:and\s+)?(?:assists?|ast)\b/g;
+  const stocks = /\bstocks?\b|\bsteals?\s*(?:and|\+|&)\s*blocks?\b|\bblocks?\s*(?:and|\+|&)\s*steals?\b/g;
+  const found = new Set<StatKey>();
+  let rest = text;
+  if (pra.test(rest)) found.add("pra");
+  rest = rest.replace(pra, " ");
+  if (stocks.test(rest)) found.add("stocks");
+  rest = rest.replace(stocks, " ");
+  if (threes.test(rest)) found.add("fg3m");
+  rest = rest.replace(new RegExp(threes, "g"), " ");
+  if (/\brebound|\breb\b/.test(rest)) found.add("reb");
+  if (/\bassist/.test(rest)) found.add("ast");
+  if (/\bsteal/.test(rest)) found.add("stl");
+  if (/\bblock/.test(rest)) found.add("blk");
+  if (/\bpoint|\bscor|\bpts\b/.test(rest)) found.add("pts");
+  return found.size === 1 ? [...found][0] : null;
+}
+
+/**
+ * Prompt and stat must agree. If the prompt names a stat that differs from the
+ * one the AI put in `spec.stat`, the prompt wins (it is what people read).
+ */
+export function reconcileStat(prompt: string, stat: StatKey | undefined): StatKey {
+  const named = statFromPrompt(prompt);
+  const chosen = stat ?? "pts";
+  if (named && named !== chosen) {
+    console.warn(JSON.stringify({ scope: "sportsbook.draft", fix: "stat", prompt, was: chosen, now: named }));
+    return named;
+  }
+  return chosen;
+}
+
 export const half = (n: number) => Math.floor(n) + 0.5;
 
-export async function buildContext(weekNumber: number, now = new Date()): Promise<SlateContext> {
-  const week = weekWindow(weekNumber);
+/** `week` is the stored row (or the window a new week will get): its dates decide which games are in play. */
+export async function buildContext(week: WeekWindow, now = new Date()): Promise<SlateContext> {
   const { start, end } = weekBounds(week);
   await syncGames(week.starts_on, week.ends_on);
   const soon = new Date(now.getTime() + 30 * 60_000);
@@ -179,34 +220,42 @@ Item types you can use:
 - weekly_leader: which of 4 players has the biggest single game this week in "stat". Needs candidates (4, with person_id, name, team) and stat.
 - closest: guess a number, closest wins. Needs game_id, measure ("total_points", "total_3s", or "team_points" with team).
 - upset: pick one underdog to win outright. Needs upset_picks: 3 underdogs from different games on the SAME day, each {team, game_id}.
+- blowout: which of 3 or 4 games gets decided by the most points. Needs game_ids (3 or 4 games, ideally on different nights). Name the games and the night in the prompt, like "Which game is the biggest blowout?"
+- nail_biter: will any of 2 to 4 games be decided by "within" points or fewer (3 to 5, default 3)? Needs game_ids and within. Say the margin in the prompt, like "Any game decided by 3 or fewer?"
+- stat_count: how many games this week a star has a double-double, a triple-double or an "at_least" stat line. Needs player (a star with 3 games this week), game_ids (his team's games), check (and stat and threshold for "at_least"), and split: the middle bucket's count, so the buckets are 0 to split-1, split, and split+1 or more. Pick the split so the middle one is a real debate.
 
 Rules:
 - Use ONLY game ids, teams and person_ids from the data. Never invent a player. A player must play in the game you attach them to.
 - Lines come from the numbers: player lines near their season or last 5 average, spreads from records and home court (about 2.5 points), totals around 215 to 235 unless the data says otherwise. Every line ends in .5.
+- VARIETY: include at least one blowout or nail_biter, and at least one stat_count. Rotate stats so not every head-to-head or player over/under is points: use fg3m, ast, reb, stl, blk and the combos "pra" (points + rebounds + assists) and "stocks" (steals + blocks). Once a week frame a weekly_leader as a theme, like rookies, big men on the boards, or point guards' assists.
 - Early in the season (players with no games yet) lean on winner, h2h, week_wins and weekly_leader, and set player lines from what you know about last season.
 - Spread items across different days of the week so there is something to watch most nights.
 - Feature Jaiye's favorite teams and players when they play, but not every item.
 - prompt: the question on the card, short and punchy, no more than 90 characters. Plain words, like "Lakers or Warriors?" or "Will Wemby get 12+ rebounds?"
 - note: one line from Jaiye about the pick, no more than 120 characters, like "Wemby is a cheat code on the boards." No money talk.
+- The stat word in the prompt must match the "stat" field (a prompt that says rebounds needs stat "reb"; points needs "pts"; assists "ast"; threes "fg3m"; steals "stl"; blocks "blk"; points + rebounds + assists or PRA "pra"; steals + blocks or stocks "stocks").
 - Never use em dashes, en dashes or double hyphens (--).
 - VOICE: You are writing as Jaiye, a confident 9 year old Black kid from East Palo Alto who loves hoops. Short sentences. Simple words a 4th grader uses. Swagger and confidence, playful trash talk, but never mean and never a caricature: no forced slang, at most one slang word. Sounds like a kid texting his friends, not a TV announcer or a grown up. No words like slate, matchup narrative, storyline, compelling, showdown, clash, or poised.`;
 
 const PlayerSchema = z.object({ person_id: z.number(), name: z.string(), team: z.string(), game_id: z.string().optional() });
 
 const AiItem = z.object({
-  type: z.enum(["winner", "spread", "total", "team_total", "player_ou", "h2h", "yes_no", "margin", "week_wins", "weekly_leader", "closest", "upset"]),
+  type: z.enum(["winner", "spread", "total", "team_total", "player_ou", "h2h", "yes_no", "margin", "week_wins", "weekly_leader", "closest", "upset", "blowout", "nail_biter", "stat_count"]),
   prompt: z.string(),
   note: z.string(),
   game_id: z.string().optional(),
   team: z.string().optional(),
   line: z.number().optional(),
-  stat: z.enum(["pts", "reb", "ast", "fg3m", "stl", "blk"]).optional(),
+  stat: z.enum(["pts", "reb", "ast", "fg3m", "stl", "blk", "pra", "stocks"]).optional(),
   player: PlayerSchema.optional(),
   players: z.array(PlayerSchema).optional(),
   check: z.enum(["triple_double", "double_double", "at_least"]).optional(),
   threshold: z.number().optional(),
   candidates: z.array(PlayerSchema).optional(),
   measure: z.enum(["total_points", "total_3s", "team_points"]).optional(),
+  game_ids: z.array(z.string()).optional(),
+  within: z.number().optional(),
+  split: z.number().optional(),
   upset_picks: z.array(z.object({ team: z.string(), game_id: z.string() })).optional(),
 });
 type AiItem = z.infer<typeof AiItem>;
@@ -272,7 +321,8 @@ export function toDraftItem(ai: AiItem, ctx: SlateContext): DraftItem | null {
     { key: "yes", label: "Yes" },
     { key: "no", label: "No" },
   ];
-  const stat: StatKey = ai.stat ?? "pts";
+  // Weekly Leader, Player Over/Under and Head to Head: the stat follows the prompt's words.
+  const stat: StatKey = ai.type === "weekly_leader" || ai.type === "player_ou" || ai.type === "h2h" ? reconcileStat(base.prompt, ai.stat) : (ai.stat ?? "pts");
 
   switch (ai.type) {
     case "winner": {
@@ -410,6 +460,63 @@ export function toDraftItem(ai: AiItem, ctx: SlateContext): DraftItem | null {
         locks_at: g.tip_at,
       };
     }
+    case "blowout": {
+      const seen = new Set<string>();
+      const gs = (ai.game_ids ?? [])
+        .map((id) => gameOf(ctx, id))
+        .filter((g): g is Game => !!g)
+        .filter((g) => !seen.has(g.game_id) && !!seen.add(g.game_id))
+        .slice(0, 4);
+      if (gs.length < 3) return null;
+      return {
+        ...base,
+        options: gs.map((g) => ({ key: g.game_id, label: `${TEAMS[g.home].name} vs ${TEAMS[g.away].name}, ${tipLabel(g.tip_at).split(" ")[0]}` })),
+        spec: { type: "blowout", games: gs.map((g) => ({ game_id: g.game_id, home: g.home, away: g.away })) },
+        locks_at: gs.map((g) => g.tip_at).sort()[0],
+      };
+    }
+    case "nail_biter": {
+      const seen = new Set<string>();
+      const gs = (ai.game_ids ?? [])
+        .map((id) => gameOf(ctx, id))
+        .filter((g): g is Game => !!g)
+        .filter((g) => !seen.has(g.game_id) && !!seen.add(g.game_id))
+        .slice(0, 4);
+      if (gs.length < 2) return null;
+      const within = Math.min(5, Math.max(3, Math.round(ai.within ?? 3)));
+      return {
+        ...base,
+        options: yesNo,
+        spec: { type: "nail_biter", game_ids: gs.map((g) => g.game_id), within },
+        locks_at: gs.map((g) => g.tip_at).sort()[0],
+      };
+    }
+    case "stat_count": {
+      const pl = realPlayer(ctx, ai.player);
+      if (!pl) return null;
+      const games = ctx.games.filter((g) => plays(g, pl.team));
+      const n = games.length;
+      if (n < 2) return null;
+      const check = ai.check ?? "double_double";
+      if (check === "at_least" && (!ai.stat || typeof ai.threshold !== "number")) return null;
+      const mid = Math.min(n - 1, Math.max(1, Math.round(ai.split ?? (n === 2 ? 1 : n - 1))));
+      const buckets: Array<[number, number]> = n === 2 ? [[0, 0], [1, 1], [2, 2]] : [[0, mid - 1], [mid, mid], [mid + 1, n]];
+      const label = ([lo, hi]: [number, number]) => (lo === hi ? `${lo}` : hi >= n ? `${lo}+` : hi === lo + 1 ? `${lo} or ${hi}` : `${lo} to ${hi}`);
+      return {
+        ...base,
+        options: buckets.map((b, i) => ({ key: String(i), label: label(b) })),
+        spec: {
+          type: "stat_count",
+          player: { person_id: pl.person_id, name: pl.name, team: pl.team },
+          game_ids: games.map((g) => g.game_id),
+          check,
+          stat: ai.stat,
+          threshold: ai.threshold,
+          buckets,
+        },
+        locks_at: games[0].tip_at,
+      };
+    }
     case "upset": {
       const picks = (ai.upset_picks ?? [])
         .map((p) => ({ team: p.team.toUpperCase(), g: gameOf(ctx, p.game_id) }))
@@ -442,7 +549,7 @@ export async function draftSlate(ctx: SlateContext, avoid: string[] = []): Promi
     SYSTEM,
     `${contextText(ctx, avoid)}
 
-Build this week's slate: 11 or 12 items, at least 6 different types, exactly one "upset". Order them by when they lock.`,
+Build this week's slate: 11 or 12 items, at least 6 different types, exactly one "upset", at least one "blowout" or "nail_biter", and at least one "stat_count". Order them by when they lock.`,
   );
   const items = out.items.map((a) => toDraftItem(a, ctx)).filter((i): i is DraftItem => i !== null);
   const upsets = items.filter((i) => i.type === "upset");

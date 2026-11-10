@@ -50,10 +50,15 @@ export type Episode = {
   titleAccent?: string;
   standfirst: string;
   date: string;
-  /** Display runtime, e.g. "19:24". */
-  runtime: string;
+  /** Display runtime, e.g. "19:24". Leave it out until it's known; the eyebrow skips it. */
+  runtime?: string;
   guests: string;
   youtubeId: string;
+  /**
+   * The Run It Back week this episode breaks down. The week page shows the
+   * episode for its own week, so Week 1's archive keeps the Week 1 video.
+   */
+  sportsbookWeek?: number;
   /** Set once an audio-only cut exists; the player renders it alongside. */
   audioUrl?: string;
   chapters: Chapter[];

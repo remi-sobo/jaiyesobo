@@ -11,6 +11,7 @@ import type {
   ApiRivalDetail,
   ApiWeek,
   CreateLeagueRequest,
+  InviteResponse,
   JoinLeagueRequest,
   JoinRequest,
   LeaguePatch,
@@ -18,6 +19,7 @@ import type {
   MeResponse,
   MuteRequest,
   PickRequest,
+  ReactRequest,
   RecapResponse,
   ReportRequest,
   RestoreRequest,
@@ -115,6 +117,11 @@ export function postTalk(req: TalkRequest): Promise<ApiOk> {
   return appApi<ApiOk>("/talk", { method: "POST", body: req });
 }
 
+/** POST /react — set, swap, or clear my reaction on Jaiye's or Remi's locked pick. 400 before lock. */
+export function react(req: ReactRequest): Promise<ApiOk> {
+  return appApi<ApiOk>("/react", { method: "POST", body: req });
+}
+
 /** POST /report — flag a player's name, a talk line, or a league name. 429 when rate-limited. */
 export function reportPlayer(req: ReportRequest): Promise<ApiOk> {
   return appApi<ApiOk>("/report", { method: "POST", body: req });
@@ -138,6 +145,11 @@ export function createLeague(req: CreateLeagueRequest): Promise<{ league: ApiLea
 /** POST /leagues/join — join with a league code like WORD-1234. */
 export function joinLeague(req: JoinLeagueRequest): Promise<{ league: ApiLeague }> {
   return appApi<{ league: ApiLeague }>("/leagues/join", { method: "POST", body: req });
+}
+
+/** GET /invite/:code — public league invite preview: name, member count, featured week. Anonymous. 404 "That invite doesn't work anymore." for an unknown or archived code. */
+export function getInvite(code: string, signal?: AbortSignal): Promise<InviteResponse> {
+  return appApi<InviteResponse>(`/invite/${encodeURIComponent(code)}`, { anonymous: true, signal });
 }
 
 /** GET /leagues/:id — league, its week and season boards, and members. */

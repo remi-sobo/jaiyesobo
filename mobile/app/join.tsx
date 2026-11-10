@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, router } from "expo-router";
+import { Link, router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -15,6 +15,7 @@ import type { AgeBand } from "@shared/types";
  * On success, the token is in the Keychain and we replace onto This Week.
  */
 export default function Join() {
+  const { invite } = useLocalSearchParams<{ invite?: string }>();
   const [name, setName] = useState("");
   const [age, setAge] = useState<AgeBand | null>(null);
   const qc = useQueryClient();
@@ -27,7 +28,9 @@ export default function Join() {
       // Seed the cached gate so Home doesn't bounce back here on a stale `false`.
       qc.setQueryData(["session", "has-token"], true);
       qc.invalidateQueries();
-      router.replace("/");
+      // Came from an invite link: go back to it (now signed in) instead of Home.
+      if (typeof invite === "string" && invite.length > 0) router.replace({ pathname: "/l/[code]", params: { code: invite } });
+      else router.replace("/");
     },
   });
 
@@ -82,7 +85,8 @@ export default function Join() {
         {join.isPending ? <ActivityIndicator color={colors.ink} /> : <Text style={styles.primaryText}>I&apos;m in</Text>}
       </Pressable>
 
-      <Link replace href="/restore" style={styles.restoreLink}>
+      {/* Keep the invite code when switching screens, so signing in still lands back on it. */}
+      <Link replace href={typeof invite === "string" && invite.length > 0 ? { pathname: "/restore", params: { invite } } : "/restore"} style={styles.restoreLink}>
         <Text style={styles.restoreLinkText}>Already playing? Use your code</Text>
       </Link>
     </SafeAreaView>

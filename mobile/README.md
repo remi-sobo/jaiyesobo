@@ -40,16 +40,53 @@ fast. The simulator opens automatically.
 
 ## Browser
 
-Not supported right now. We haven't installed `react-native-web` or
-`@expo/metro-runtime`, so `expo start --web` won't work. If you want a
-laptop fallback for quick UI tweaks, let us know and we'll add it in a
-follow-up — it comes with its own quirks (SecureStore, keyboard
-behavior, haptics all diverge from the phone, so you still need to test
-on a device before shipping).
+### Hosted build (no laptop needed)
+
+The site serves the app at `https://www.jaiyesobo.com/runitback/app`. Open it in
+Safari on the phone. "Share → Add to Home Screen" gives it a full-screen icon.
+
+Every deploy rebuilds it: `scripts/build-app.sh` runs inside `npm run build`.
+Vercel previews get the same at `<preview-url>/runitback/app`. In the browser
+the app talks to whatever origin serves it, so the hosted build on a preview
+hits that preview's backend.
+
+### Local dev server
+
+```bash
+cd mobile
+npx expo start --web
+```
+
+Opens `http://localhost:8081` (Expo's default). It's the same app, handy for
+quick UI checks and for driving the flows headlessly with Chrome.
+
+**What works:** every screen: join and restore, This Week picks and submit,
+the boards, leagues (create, join, rename, share), rivals, results, and
+settings.
+
+**What's phone-only or different in the browser:**
+
+- **Sign-in token** lives in the browser's storage (`localStorage`) instead of
+  the Keychain. Clearing site data signs you out. If the browser blocks
+  storage (some private windows), the token is kept in memory and you'll
+  sign in again after a reload.
+- **No local reminders and no push.** The tip-off reminder never schedules and
+  there is no permission prompt; the alert toggles in Settings save but no push
+  token is requested.
+- **Share** uses the system share sheet only where the browser supports it
+  (`navigator.share`); elsewhere it quietly does nothing.
+- **Confirms and the report / mute sheets are an in-app bottom sheet** on the
+  web (`components/DialogHost.tsx`) and `Alert` on the phone.
+
+**Same origin, no CORS.** Served from the site itself, the calls are
+same-origin. The CORS allow-list in `app/api/app/v1` (`http://localhost:8081`,
+`http://127.0.0.1:8081`, `http://localhost:19006`) only matters for
+`expo start --web`. As on the phone, the backend is production by default, so
+picks made in the browser are real picks.
 
 ## Which backend does it talk to?
 
-`app.json` → `expo.extra.apiBaseUrl` is set to `https://jaiyesobo.com`,
+`app.json` → `expo.extra.apiBaseUrl` is set to `https://www.jaiyesobo.com`
 so by default the app hits **production**. Any pick you make with Expo
 Go is a real pick on the real leaderboard. Options:
 
@@ -74,9 +111,10 @@ For a mobile-only PR:
 3. `npx expo start` → scan QR with Expo Go
 4. Walk the flows the PR touches. Shake → "Reload" to restart cleanly.
 
-Vercel preview URLs don't apply here: `vercel.json`'s `ignoreCommand`
-skips the web build on mobile-only commits. Pure mobile PRs test
-locally, not on a preview URL.
+Every PR gets a Vercel preview that includes the app at `/runitback/app`, so a
+mobile PR can be checked from a phone browser without a laptop. Expo Go is
+still the way to check native-only things (push, reminders, Keychain, share
+sheet).
 
 ## Ship to TestFlight
 
@@ -151,7 +189,8 @@ app registers tokens but nothing is sent.
 ## Where things live
 
 - `app/` — Expo Router screens. `app/index.tsx` is This Week.
-- `lib/api.ts` — `fetch` wrapper, Keychain token storage, `ApiError`.
+- `app/l/[code].tsx` — the league invite screen ("You've been challenged"). Reached from `/runitback/app/l/<code>` on the site and from the website invite page's "Open in the app" link.
+- `lib/api.ts` — `fetch` wrapper, token storage (Keychain; `localStorage` in the browser), `ApiError`.
 - `lib/routes.ts` — typed route helpers, one per `/api/app/v1` endpoint.
 - `lib/brand.ts` — colors, fonts, radii.
 - `components/` — shared pieces (e.g. `Lockup`).

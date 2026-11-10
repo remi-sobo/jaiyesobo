@@ -18,6 +18,7 @@ export const LIMITS = {
   react: 120,
   mute: 60,
   name: 10,
+  pass: 10,
 } as const;
 
 export type LimitKind = keyof typeof LIMITS;

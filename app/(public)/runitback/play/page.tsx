@@ -59,6 +59,14 @@ export default async function PlayPage() {
         ) : (
           <PlayBoard me={me} items={view.items} picks={view.picks} now={view.now} week={view.week.week_number} submitted={view.submitted.includes(me.id)} />
         )}
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-x-2 font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">
+          <span>Prefer the app?</span>
+          {/* A plain anchor, not next/link: the app is a separate single-page build, and typed routes don't know it. */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+          <a href="/runitback/app" className="inline-flex min-h-11 items-center text-[var(--color-bone)] underline underline-offset-4 hover:text-[var(--color-red)]">
+            Open it
+          </a>
+        </div>
       </div>
     </main>
   );

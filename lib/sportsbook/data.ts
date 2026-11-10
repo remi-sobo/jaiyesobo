@@ -2,8 +2,9 @@ import { createServiceClient } from "@/lib/supabase/server";
 import type { TeamCode } from "@/lib/nba/teams";
 import { fetchBox, fetchGames } from "./espn";
 import { gradeItem, scoreWeek, weekWinner, type GameBox, type PlayerWeekScore } from "./grade";
+import { openPushMessage, sendPush, type PushResult } from "./push";
 import type { ItemSpec, SbItem, SbPick, SbPlayer, SbWeek } from "./types";
-import { SB_SEASON, pacificDate, weekBounds, weekWindow } from "./weeks";
+import { SB_SEASON, pacificDate, weekBounds } from "./weeks";
 
 const supa = () => createServiceClient();
 
@@ -161,7 +162,11 @@ function specGameIds(spec: ItemSpec): string[] {
     case "h2h":
       return spec.players.map((p) => p.game_id);
     case "week_wins":
+    case "nail_biter":
+    case "stat_count":
       return spec.game_ids;
+    case "blowout":
+      return spec.games.map((g) => g.game_id);
     case "upset":
       return spec.picks.map((p) => p.game_id);
     default:
@@ -174,31 +179,78 @@ export async function gradeWeek(week: SbWeek, now = new Date()): Promise<number>
   if (week.status === "final" || week.status === "draft") return 0;
   const items = await getItems(week.id);
   const open = items.filter((i) => i.status === "open" && i.type !== "custom");
-  const bounds = weekBounds(weekWindow(week.week_number));
+  const bounds = weekBounds(week); // the row's own dates, not recomputed from the season start
   const weekOver = now >= bounds.end;
 
   const needsWeek = open.some((i) => i.type === "weekly_leader");
   const weekGameRows = needsWeek ? await getGamesBetween(bounds.start, bounds.end) : [];
   const ids = new Set<string>([...open.flatMap((i) => specGameIds(i.spec)), ...weekGameRows.map((g) => g.game_id)]);
   const boxes = await loadBoxes([...ids]);
-  const ctx = { games: boxes, weekGames: weekGameRows.map((g) => boxes.get(g.game_id)!).filter(Boolean), weekOver };
+  const ctx = {
+    games: boxes,
+    weekGames: weekGameRows.map((g) => boxes.get(g.game_id)!).filter(Boolean),
+    weekOver,
+    now: now.getTime(),
+    weekEnd: bounds.end.getTime(),
+  };
 
+  // One bad item must never keep the week from flipping to graded below.
   let changed = 0;
   for (const item of open) {
-    const out = gradeItem(item, ctx);
-    if (out.state === "pending") continue;
-    const patch =
-      out.state === "void"
-        ? { status: "void", result: { winners: [], actual: null, display: out.display } }
-        : { status: "graded", result: out.result };
-    const { error } = await supa().from("sb_items").update(patch).eq("id", item.id);
-    if (error) throw error;
-    changed++;
+    try {
+      const out = gradeItem(item, ctx);
+      if (out.state === "pending") continue;
+      const patch =
+        out.state === "void"
+          ? { status: "void", result: { winners: [], actual: null, display: out.display } }
+          : { status: "graded", result: out.result };
+      const { error } = await supa().from("sb_items").update(patch).eq("id", item.id);
+      if (error) throw error;
+      changed++;
+    } catch (err) {
+      console.error(JSON.stringify({ scope: "sportsbook.grade", item: item.id, err: String(err) }));
+    }
   }
   if (weekOver && week.status === "open") {
     await supa().from("sb_weeks").update({ status: "graded" }).eq("id", week.id);
   }
   return changed;
+}
+
+/**
+ * Tells players the open week is up. Keyed by week, so it sends once however
+ * many callers (admin open, live sync) run it. Never throws; null if no week is open.
+ */
+export async function pushOpen(): Promise<PushResult | null> {
+  try {
+    const open = (await listWeeks()).filter((w) => w.status === "open");
+    if (open.length === 0) return null;
+    const n = Math.max(...open.map((w) => w.week_number));
+    return await sendPush("open", openPushMessage(n), `open:${SB_SEASON}:${n}`);
+  } catch (e) {
+    console.error(JSON.stringify({ scope: "push", kind: "open", err: String(e) }));
+    return null;
+  }
+}
+
+/**
+ * Tells players the latest graded (or final) week is done. Keyed by week, so
+ * it sends once however many jobs call it. Never throws; null if nothing to announce.
+ */
+export async function pushGraded(): Promise<PushResult | null> {
+  try {
+    const done = (await listWeeks()).filter((w) => w.status === "graded" || w.status === "final");
+    if (done.length === 0) return null;
+    const n = Math.max(...done.map((w) => w.week_number));
+    return await sendPush(
+      "graded",
+      { title: `Week ${n} is graded`, body: "See how you did against Jaiye and Remi.", data: { route: "/results" } },
+      `graded:${SB_SEASON}:${n}`,
+    );
+  } catch (e) {
+    console.error(JSON.stringify({ scope: "push", kind: "graded", err: String(e) }));
+    return null;
+  }
 }
 
 /** The nightly job: refresh recent games and box scores, then grade open weeks. */
@@ -211,7 +263,16 @@ export async function nightlySync(now = new Date()) {
   const { data: weeks } = await supa().from("sb_weeks").select(WEEK_COLS).in("status", ["open", "graded"]);
   let graded = 0;
   for (const w of (weeks ?? []) as SbWeek[]) graded += await gradeWeek(w, now);
-  return { today, games, boxes, graded };
+  // Publish weeks whose every pick has a result. Lives in actions.ts (it needs
+  // makeRecap), which imports this file, so it is loaded lazily.
+  let closed: number[] = [];
+  try {
+    closed = await (await import("./actions")).closeOutWeeks(now);
+  } catch (err) {
+    console.error(JSON.stringify({ scope: "sportsbook.closeout", err: String(err) }));
+  }
+  const push = await pushGraded();
+  return { today, games, boxes, graded, closed, push };
 }
 
 /* Standings */

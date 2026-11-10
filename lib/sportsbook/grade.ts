@@ -3,8 +3,8 @@
  * nightly job and any test all agree. The AI never decides a result.
  */
 
-import type { TeamCode } from "@/lib/nba/teams";
-import type { ItemResult, ItemSpec, PlayerRef, SbItem, SbPick, StatKey } from "./types";
+import { TEAMS, type TeamCode } from "@/lib/nba/teams";
+import { STAT_LABEL, type ItemResult, type ItemSpec, type PlayerRef, type SbItem, type SbPick, type StatKey } from "./types";
 
 export type PlayerLine = {
   person_id: number;
@@ -37,9 +37,22 @@ export type GradeContext = {
   games: Map<string, GameBox>;
   /** Every game in the week, for week long items. */
   weekGames: GameBox[];
-  /** True once the week's Sunday is over. */
+  /** True once the week's last day is over. */
   weekOver: boolean;
+  /** The grading clock, in ms. Graders read this instead of the wall clock. */
+  now: number;
+  /** When the week ended (its row's last day plus one, Pacific midnight), in ms. */
+  weekEnd: number;
 };
+
+/**
+ * How long a result that needs player lines waits for ESPN's box score before
+ * it is given up on. Counted from the week's end for Weekly Leader and from the
+ * game's tip-off for Closest Guess. ESPN sometimes never provides the lines.
+ */
+export const BOX_GRACE_MS = 36 * 3_600_000;
+
+const NO_BOX = "No box score available";
 
 export type GradeOutcome =
   | { state: "pending" }
@@ -98,13 +111,59 @@ function needGame(ctx: GradeContext, id: string): GameBox | "void" | null {
   return final(g) ? g : null;
 }
 
-function playerStat(ctx: GradeContext, ref: PlayerRef, stat: StatKey): { value: number; line: PlayerLine } | "void" | null {
+/**
+ * The one lookup every player-stat grader goes through. A non-final game waits
+ * (null). A final game with no player lines waits until 36h after tip-off, then
+ * is "nobox" (no result can ever be computed). A player who didn't play is "void".
+ */
+function playerLine(ctx: GradeContext, ref: PlayerRef): PlayerLine | "void" | "nobox" | null {
   const g = needGame(ctx, ref.game_id);
   if (g === "void") return "void";
-  if (!g || g.players.length === 0) return null;
+  if (!g) return null;
+  if (g.players.length === 0) return ctx.now >= Date.parse(g.tip_at) + BOX_GRACE_MS ? "nobox" : null;
   const p = findPlayer(g, ref);
-  if (!p || !p.played) return "void";
-  return { value: p[stat], line: p };
+  return !p || !p.played ? "void" : p;
+}
+
+/** One stat off a line. pra and stocks are sums of the stored columns. */
+export function statValue(p: PlayerLine, stat: StatKey): number {
+  if (stat === "pra") return p.pts + p.reb + p.ast;
+  if (stat === "stocks") return p.stl + p.blk;
+  return p[stat];
+}
+
+/** Does one player line pass a yes_no style check? */
+export function lineHolds(
+  p: PlayerLine,
+  check: "triple_double" | "double_double" | "at_least",
+  stat?: StatKey,
+  threshold?: number,
+): boolean {
+  const cats = [p.pts, p.reb, p.ast, p.stl, p.blk].filter((v) => v >= 10).length;
+  if (check === "triple_double") return cats >= 3;
+  if (check === "double_double") return cats >= 2;
+  return !!stat && threshold != null && statValue(p, stat) >= threshold;
+}
+
+function playerStat(ctx: GradeContext, ref: PlayerRef, stat: StatKey): { value: number; line: PlayerLine } | "void" | "nobox" | null {
+  const p = playerLine(ctx, ref);
+  return p === null || p === "void" || p === "nobox" ? p : { value: statValue(p, stat), line: p };
+}
+
+function teamNick(t: TeamCode): string {
+  return TEAMS[t].name;
+}
+
+function lastName(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  return parts[parts.length - 1] ?? name;
+}
+
+function countNoun(spec: Extract<ItemSpec, { type: "stat_count" }>, n: number): string {
+  const s = n === 1 ? "" : "s";
+  if (spec.check === "double_double") return `double-double${s}`;
+  if (spec.check === "triple_double") return `triple-double${s}`;
+  return `${spec.threshold ?? ""}+ ${spec.stat ? STAT_LABEL[spec.stat] : "stat"} game${s}`.replace(/^\+/, "").trim();
 }
 
 const ok = (winners: string[], display: string, actual: number | null = null): GradeOutcome => ({
@@ -165,6 +224,7 @@ export function gradeItem(item: Pick<SbItem, "spec" | "options" | "locks_at">, c
     case "player_ou": {
       const s = playerStat(ctx, spec.player, spec.stat);
       if (s === "void") return { state: "void", display: `${spec.player.name} didn't play` };
+      if (s === "nobox") return { state: "void", display: NO_BOX };
       if (!s) return { state: "pending" };
       return ok([s.value > spec.line ? "over" : "under"], `${spec.player.name} had ${s.value}.`, s.value);
     }
@@ -172,6 +232,7 @@ export function gradeItem(item: Pick<SbItem, "spec" | "options" | "locks_at">, c
       const a = playerStat(ctx, spec.players[0], spec.stat);
       const b = playerStat(ctx, spec.players[1], spec.stat);
       if (a === "void" || b === "void") return { state: "void", display: "One of them didn't play" };
+      if (a === "nobox" || b === "nobox") return { state: "void", display: NO_BOX };
       if (!a || !b) return { state: "pending" };
       const [pa, pb] = spec.players;
       const disp = `${pa.name} ${a.value}, ${pb.name} ${b.value}.`;
@@ -181,14 +242,11 @@ export function gradeItem(item: Pick<SbItem, "spec" | "options" | "locks_at">, c
     case "yes_no": {
       const g = needGame(ctx, spec.player.game_id);
       if (g === "void") return { state: "void", display: "Game postponed" };
-      if (!g || g.players.length === 0) return { state: "pending" };
-      const p = findPlayer(g, spec.player);
-      if (!p || !p.played) return { state: "void", display: `${spec.player.name} didn't play` };
-      const cats = [p.pts, p.reb, p.ast, p.stl, p.blk].filter((v) => v >= 10).length;
-      let yes = false;
-      if (spec.check === "triple_double") yes = cats >= 3;
-      else if (spec.check === "double_double") yes = cats >= 2;
-      else if (spec.stat && spec.threshold != null) yes = p[spec.stat] >= spec.threshold;
+      const p = playerLine(ctx, spec.player);
+      if (p === "nobox") return { state: "void", display: NO_BOX };
+      if (p === null) return { state: "pending" };
+      if (p === "void") return { state: "void", display: `${spec.player.name} didn't play` };
+      const yes = lineHolds(p, spec.check, spec.stat, spec.threshold);
       return ok([yes ? "yes" : "no"], `${p.name}: ${p.pts} pts, ${p.reb} reb, ${p.ast} ast.`);
     }
     case "week_wins": {
@@ -205,16 +263,24 @@ export function gradeItem(item: Pick<SbItem, "spec" | "options" | "locks_at">, c
     }
     case "weekly_leader": {
       if (!ctx.weekOver) return { state: "pending" };
-      // Only games after the pick locked count.
+      // Only games after the pick locked, and only ones a candidate's team played in.
       const lockMs = Date.parse(item.locks_at);
-      const games = ctx.weekGames.filter((g) => Date.parse(g.tip_at) >= lockMs);
-      if (games.some((g) => !g.postponed && (g.status !== 3 || g.players.length === 0))) return { state: "pending" };
+      const teams = new Set<TeamCode>(spec.candidates.map((c) => c.team));
+      const games = ctx.weekGames.filter(
+        (g) => !g.postponed && Date.parse(g.tip_at) >= lockMs && (teams.has(g.home) || teams.has(g.away)),
+      );
+      const ready = games.filter((g) => g.status === 3 && g.players.length > 0);
+      if (ready.length < games.length) {
+        // Some relevant game isn't final, or is final without player lines.
+        if (ctx.now < ctx.weekEnd + BOX_GRACE_MS) return { state: "pending" };
+        if (ready.length === 0) return { state: "void", display: NO_BOX };
+      }
       const best = spec.candidates.map((c) => {
         let top = -1;
-        for (const g of games) {
+        for (const g of ready) {
           if (g.home !== c.team && g.away !== c.team) continue;
           const p = findPlayer(g, c);
-          if (p?.played) top = Math.max(top, p[spec.stat]);
+          if (p?.played) top = Math.max(top, statValue(p, spec.stat));
         }
         return top;
       });
@@ -232,10 +298,88 @@ export function gradeItem(item: Pick<SbItem, "spec" | "options" | "locks_at">, c
       if (spec.measure === "total_points") actual = g.home_score! + g.away_score!;
       else if (spec.measure === "team_points" && spec.team) actual = score(g, spec.team);
       else {
-        if (g.players.length === 0) return { state: "pending" };
+        // total_3s needs player lines: wait for them, then give up 36h after tip-off.
+        if (g.players.length === 0) {
+          return ctx.now >= Date.parse(g.tip_at) + BOX_GRACE_MS ? { state: "void", display: NO_BOX } : { state: "pending" };
+        }
         actual = g.players.reduce((s, p) => s + p.fg3m, 0);
       }
       return ok([], `The answer was ${actual}.`, actual);
+    }
+    case "blowout": {
+      const played: Array<{ g: GameBox; diff: number }> = [];
+      for (const ref of spec.games) {
+        const g = ctx.games.get(ref.game_id);
+        if (!g) return { state: "pending" };
+        if (g.postponed) continue;
+        if (!final(g)) return { state: "pending" };
+        played.push({ g, diff: Math.abs(g.home_score! - g.away_score!) });
+      }
+      if (played.length < 2) return { state: "void", display: "Not enough games played" };
+      const max = Math.max(...played.map((x) => x.diff));
+      const top = played.filter((x) => x.diff === max);
+      const winners = top.map((x) => x.g.game_id);
+      const names = top
+        .map((x) => `${teamNick(x.g.home_score! > x.g.away_score! ? x.g.home : x.g.away)} by ${max}`)
+        .join(" and ");
+      return ok(winners, `${names}.`, max);
+    }
+    case "nail_biter": {
+      const within = spec.within;
+      let pending = false;
+      let played = 0;
+      let closest: { g: GameBox; diff: number } | null = null;
+      for (const id of spec.game_ids) {
+        const g = ctx.games.get(id);
+        if (!g) {
+          pending = true;
+          continue;
+        }
+        if (g.postponed) continue;
+        if (!final(g)) {
+          pending = true;
+          continue;
+        }
+        played++;
+        const diff = Math.abs(g.home_score! - g.away_score!);
+        if (!closest || diff < closest.diff) closest = { g, diff };
+      }
+      if (closest && closest.diff <= within) {
+        const w = closest.g.home_score! > closest.g.away_score! ? closest.g.home : closest.g.away;
+        return ok(["yes"], `Closest: ${teamNick(w)} by ${closest.diff}.`, closest.diff);
+      }
+      if (pending) return { state: "pending" };
+      if (played === 0 || !closest) return { state: "void", display: "Games postponed" };
+      return ok(["no"], `Closest finish was ${closest.diff} ${closest.diff === 1 ? "point" : "points"}.`, closest.diff);
+    }
+    case "stat_count": {
+      let count = 0;
+      let waiting = false;
+      for (const id of spec.game_ids) {
+        const g = ctx.games.get(id);
+        if (!g) {
+          waiting = true;
+          continue;
+        }
+        if (g.postponed) continue;
+        if (!final(g)) {
+          waiting = true;
+          continue;
+        }
+        if (g.players.length === 0) {
+          // Final with no lines: wait out the grace period, then it counts as 0.
+          if (ctx.now < Date.parse(g.tip_at) + BOX_GRACE_MS) waiting = true;
+          continue;
+        }
+        const p = findPlayer(g, spec.player);
+        if (p?.played && lineHolds(p, spec.check, spec.stat, spec.threshold)) count++;
+      }
+      const topHi = Math.max(...spec.buckets.map(([, hi]) => hi));
+      if (waiting && count <= topHi) return { state: "pending" };
+      const i = spec.buckets.findIndex(([lo, hi]) => count >= lo && count <= hi);
+      // Past the top bucket (early grade) lands in the last bucket.
+      const key = i >= 0 ? i : count > topHi ? spec.buckets.length - 1 : 0;
+      return ok([String(key)], `${lastName(spec.player.name)}: ${count} ${countNoun(spec, count)} this week.`, count);
     }
     case "custom":
       // Graded by hand from admin.

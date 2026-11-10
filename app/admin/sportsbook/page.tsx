@@ -40,7 +40,7 @@ export default async function AdminSportsbookPage(props: { searchParams: Promise
     loadError = "Couldn't load Run It Back Picks. The tables may not exist yet (migration 025).";
   }
   const [reports, leagues] = await Promise.all([openReports().catch(() => []), allLeagues().catch(() => [])]);
-  const w = weekWindow(n);
+  const w = view?.week ?? weekWindow(n); // existing weeks keep the dates on their row
   const status = view?.week.status ?? "none";
 
   return (
@@ -80,6 +80,12 @@ export default async function AdminSportsbookPage(props: { searchParams: Promise
             className="font-[family-name:var(--font-jetbrains)] text-[0.62rem] uppercase tracking-[0.15em] text-[var(--color-red)]"
           >
             Public page
+          </Link>
+          <Link
+            href={`/me/pod?week=${n}`}
+            className="font-[family-name:var(--font-jetbrains)] text-[0.62rem] uppercase tracking-[0.15em] text-[var(--color-red)]"
+          >
+            On The Court prep
           </Link>
         </div>
       </div>

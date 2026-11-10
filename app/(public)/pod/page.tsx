@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { latestEpisode, SEGMENTS } from "@/lib/content/episodes";
+import { episodeMeta, latestEpisode, SEGMENTS } from "@/lib/content/episodes";
 import { getVaultEntry } from "@/lib/content/vault";
 import { schedule } from "@/lib/content/publishing";
-import { formatDate, formatShortDate, pad } from "@/lib/content/format";
+import { formatShortDate, pad } from "@/lib/content/format";
 import { Accent, Badge, SectionLabel } from "@/components/site/type";
 import { GhostButton, PlayButton } from "@/components/site/buttons";
 import { VaultSection } from "@/components/site/vault";
@@ -82,7 +82,7 @@ export default function PodPage() {
                 EP.{pad(ep.number)}
               </span>
               <span className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">
-                {formatDate(ep.date)} · {ep.runtime} · {ep.guests}
+                {episodeMeta(ep)}
               </span>
             </div>
 
@@ -96,7 +96,7 @@ export default function PodPage() {
 
             <div className="mt-8 flex flex-wrap gap-3">
               <PlayButton href={`/pod/${ep.slug}`}>Play episode</PlayButton>
-              <GhostButton href={`/pod/${ep.slug}#chapters`}>Chapters</GhostButton>
+              {ep.chapters.length ? <GhostButton href={`/pod/${ep.slug}#chapters`}>Chapters</GhostButton> : null}
             </div>
 
             <div className="mt-12 flex flex-wrap gap-2">

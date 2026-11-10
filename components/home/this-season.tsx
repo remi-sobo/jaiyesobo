@@ -3,14 +3,14 @@ import { getJaiye } from "@/lib/data";
 import { getLatestPublishedPrediction } from "@/lib/nba/data";
 import { CURRENT_SEASON, deriveBracket } from "@/lib/nba/logic";
 import { TEAMS, type TeamCode } from "@/lib/nba/teams";
-import { featuredWeekNumber, loadSeason, loadWeekView } from "@/lib/sportsbook/view";
+import { featuredWeekNumber, lastWeekRow, loadWeekView } from "@/lib/sportsbook/view";
 import { scheduleLiveSync } from "@/lib/sportsbook/live";
 import { currentWeekNumber, weekRangeLabel } from "@/lib/sportsbook/weeks";
 import { SectionLabel } from "@/components/site/type";
 import { TeamTile } from "@/components/predictions/team-tile";
 import { BrandLockup } from "@/components/sportsbook/public/brand-lockup";
 import { CourtLines, ScoreBox } from "@/components/sportsbook/public/hero";
-import { LastWeekBanner, type LastWeekRow } from "@/components/sportsbook/public/last-week";
+import { LastWeekCard, type LastWeekRow } from "@/components/sportsbook/public/last-week";
 import VideoPopout from "@/components/site/video-popout";
 import { sportsbookEpisode } from "@/lib/content/episodes";
 import { pad } from "@/lib/content/format";
@@ -38,11 +38,10 @@ async function loadBook(): Promise<BookState> {
   try {
     const n = await featuredWeekNumber();
     if (!n) return null;
-    const [view, season] = await Promise.all([loadWeekView(n), loadSeason().catch(() => null)]);
+    const [view, lastWeek] = await Promise.all([loadWeekView(n), lastWeekRow(n).catch(() => null)]);
     if (!view) return null;
     const pts = (kind: "jaiye" | "remi") => view.board.find((b) => b.player.kind === kind)?.score.points ?? 0;
     const upset = view.items.find((i) => i.type === "upset") ?? view.items[0];
-    const priorWeek = season?.summary.weekly.filter((w) => w.week < n).sort((a, b) => b.week - a.week)[0] ?? null;
     return {
       week: n,
       range: weekRangeLabel(view.week),
@@ -52,9 +51,7 @@ async function loadBook(): Promise<BookState> {
       opening: n === 1 && currentWeekNumber(new Date(view.now)) === 1,
       teaser: upset?.prompt ?? null,
       challengers: view.challengerCount,
-      lastWeek: priorWeek
-        ? { week: priorWeek.week, jaiye: priorWeek.jaiye, remi: priorWeek.remi, winnerName: priorWeek.winner }
-        : null,
+      lastWeek,
     };
   } catch {
     return null;
@@ -100,7 +97,7 @@ export function SportsbookPanel({ book }: { book: BookState }) {
       </div>
       {book?.lastWeek ? (
         <div className="relative mt-3">
-          <LastWeekBanner prior={book.lastWeek} variant="compact" />
+          <LastWeekCard last={book.lastWeek} variant="compact" />
         </div>
       ) : null}
 
