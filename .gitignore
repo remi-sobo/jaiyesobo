@@ -48,3 +48,7 @@ next-env.d.ts
 /podcast/episodes/*/raw/
 /podcast/episodes/*/output/
 /podcast/episodes/*/work/
+
+# Licensed Epidemic Sound files stay local. This repo is public and the license does not allow sharing the raw files.
+/podcast/sfx/*.wav
+/podcast/sfx/*.mp3

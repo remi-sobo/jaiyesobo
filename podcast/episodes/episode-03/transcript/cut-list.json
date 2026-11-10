@@ -1,40 +1,247 @@
 {
-  "episode": "episode-03",
-  "status": "approved",
-  "approved_by": "Remi",
-  "approved_on": "2026-11-10",
-  "source": "raw/episode-03-raw.mp4",
-  "source_runtime_seconds": 1019.75,
-  "note": "Times are seconds in the raw file. 'remove' takes out the words and the silence in the range. 'tighten' keeps every word and shortens only the silence in the range. The length a tightened pause is cut down to is a stage 2 style decision, so 'target_seconds' is empty. No edit has been built from this list yet. Check each edge by ear before rendering: word times next to a silence can be off by a few tenths.",
-  "tighten_target_seconds": null,
-  "cuts": [
-    {"id": 1, "action": "tighten", "ranges": [[82.67, 85.17], [86.61, 91.91]], "label": "Two pauses after \"I'll take it\"", "type": "long pause"},
-    {"id": 2, "action": "remove", "ranges": [[113.68, 125.16]], "label": "\"Oh, whoops.\" and the 11s silence after it", "type": "lost his place"},
-    {"id": 3, "action": "remove", "ranges": [[165.08, 168.28]], "label": "\"Um. OKC won by.\" Keep the clean \"OKC won.\" that follows", "type": "false start"},
-    {"id": 4, "action": "remove", "ranges": [[216.60, 225.28]], "label": "\"I'm going to I'm going to look at. I'm going to look at this. I'm going to set\". Keep \"I'm going to look at other people's picks.\"", "type": "false starts"},
-    {"id": 5, "action": "remove", "ranges": [[255.90, 267.10]], "label": "Reads the Lakers and Clippers question and drops it. The real take is at 05:27", "type": "repeated take"},
-    {"id": 6, "action": "tighten", "ranges": [[408.78, 419.73]], "label": "11s pause inside \"It could be better.\"", "type": "long pause"},
-    {"id": 7, "action": "tighten", "ranges": [[427.61, 432.55], [433.69, 438.83]], "label": "Two 5s pauses around \"Doing horrible\"", "type": "long pause"},
-    {"id": 8, "action": "remove", "ranges": [[492.00, 517.36]], "label": "Working out why everyone shows \"Best Week Zero\", plus the 6.7s pause", "type": "thinking out loud"},
-    {"id": 9, "action": "remove", "ranges": [[557.20, 566.60]], "label": "Second read of over/under 228.5 (\"I mean, over and under 228.5 points, yeah.\") and the pause before it", "type": "repeated take"},
-    {"id": 10, "action": "tighten", "ranges": [[712.67, 717.92], [726.21, 730.20]], "label": "Pauses around the grandma line. Words stay", "type": "interruption, kept"},
-    {"id": 11, "action": "tighten", "ranges": [[800.98, 807.78], [807.79, 810.82]], "label": "Pause in the middle of the Luka line", "type": "long pause"},
-    {"id": 12, "action": "tighten", "ranges": [[825.62, 834.17]], "label": "8.6s pause after \"I was hoping better from you\"", "type": "long pause"},
-    {"id": 13, "action": "remove", "ranges": [[859.04, 889.52]], "label": "\"What the heck?\" through \"Finally got back to it.\"", "type": "lost his place"},
-    {"id": 14, "action": "tighten", "ranges": [[901.70, 903.95]], "label": "Pause in the negative nine confession. Words stay", "type": "repeated take, kept"},
-    {"id": 15, "action": "tighten", "ranges": [[909.57, 914.48], [920.08, 925.54], [926.21, 928.94]], "label": "Pauses before and after \"My best call was the Portland upset\"", "type": "long pause"},
-    {"id": 16, "action": "tighten", "ranges": [[961.73, 965.39], [966.03, 973.04]], "label": "Pauses around \"See if I win\"", "type": "long pause"},
-    {"id": 17, "action": "remove", "ranges": [[981.76, 1017.64]], "label": "\"Ah get off of this\" through \"Oh yeah, I'm back. Okay.\" Keep the final \"Peace.\"", "type": "off-show chatter"}
-  ],
-  "totals": {
-    "removed_seconds": 135.7,
-    "silence_inside_tighten_ranges_seconds": 82.5,
-    "other_pauses_over_2s_not_in_this_list": 48,
-    "other_pauses_seconds": 138.9
+ "episode": "episode-03",
+ "status": "approved",
+ "approved_by": "Remi",
+ "approved_on": "2026-11-10",
+ "source": "raw/episode-03-raw.mp4",
+ "source_runtime_seconds": 1019.75,
+ "note": "Times are seconds in the raw file. 'remove' takes out the words and the silence in the range. 'tighten' keeps every word and shortens only the silence in the range. Pause length and music come from the skill's style.json. Tighten ranges were re-measured at -50 dB after -35 dB turned out to catch quiet speech. Check each edge by ear before rendering: word times next to a silence can be off by a few tenths.",
+ "tighten_target_seconds": 0.6,
+ "cuts": [
+  {
+   "id": 1,
+   "action": "tighten",
+   "ranges": [
+    [
+     82.68,
+     85.16
+    ],
+    [
+     86.69,
+     91.9
+    ]
+   ],
+   "label": "Two pauses after \"I'll take it\"",
+   "type": "long pause"
   },
-  "open_for_stage_2": [
-    "How long a tightened pause should be left.",
-    "Whether the other pauses over 2 seconds in pauses.json get the same tightening.",
-    "Where the intro music sits at the start and the finish."
-  ]
+  {
+   "id": 2,
+   "action": "remove",
+   "ranges": [
+    [
+     113.68,
+     125.16
+    ]
+   ],
+   "label": "\"Oh, whoops.\" and the 11s silence after it",
+   "type": "lost his place"
+  },
+  {
+   "id": 3,
+   "action": "remove",
+   "ranges": [
+    [
+     165.08,
+     168.28
+    ]
+   ],
+   "label": "\"Um. OKC won by.\" Keep the clean \"OKC won.\" that follows",
+   "type": "false start"
+  },
+  {
+   "id": 4,
+   "action": "remove",
+   "ranges": [
+    [
+     216.6,
+     225.28
+    ]
+   ],
+   "label": "\"I'm going to I'm going to look at. I'm going to look at this. I'm going to set\". Keep \"I'm going to look at other people's picks.\"",
+   "type": "false starts"
+  },
+  {
+   "id": 5,
+   "action": "remove",
+   "ranges": [
+    [
+     255.9,
+     267.1
+    ]
+   ],
+   "label": "Reads the Lakers and Clippers question and drops it. The real take is at 05:27",
+   "type": "repeated take"
+  },
+  {
+   "id": 6,
+   "action": "tighten",
+   "ranges": [
+    [
+     408.85,
+     419.65
+    ]
+   ],
+   "label": "11s pause inside \"It could be better.\"",
+   "type": "long pause"
+  },
+  {
+   "id": 7,
+   "action": "tighten",
+   "ranges": [
+    [
+     427.63,
+     432.55
+    ],
+    [
+     433.73,
+     438.75
+    ]
+   ],
+   "label": "Two 5s pauses around \"Doing horrible\"",
+   "type": "long pause"
+  },
+  {
+   "id": 8,
+   "action": "remove",
+   "ranges": [
+    [
+     492.0,
+     517.36
+    ]
+   ],
+   "label": "Working out why everyone shows \"Best Week Zero\", plus the 6.7s pause",
+   "type": "thinking out loud"
+  },
+  {
+   "id": 9,
+   "action": "remove",
+   "ranges": [
+    [
+     557.2,
+     566.6
+    ]
+   ],
+   "label": "Second read of over/under 228.5 (\"I mean, over and under 228.5 points, yeah.\") and the pause before it",
+   "type": "repeated take"
+  },
+  {
+   "id": 10,
+   "action": "tighten",
+   "ranges": [
+    [
+     714.0,
+     717.92
+    ],
+    [
+     728.08,
+     730.19
+    ]
+   ],
+   "label": "Pauses around the grandma line. Words stay",
+   "type": "interruption, kept"
+  },
+  {
+   "id": 11,
+   "action": "tighten",
+   "ranges": [
+    [
+     803.12,
+     807.52
+    ]
+   ],
+   "label": "Pause in the middle of the Luka line",
+   "type": "long pause"
+  },
+  {
+   "id": 12,
+   "action": "tighten",
+   "ranges": [
+    [
+     825.7,
+     834.16
+    ]
+   ],
+   "label": "8.6s pause after \"I was hoping better from you\"",
+   "type": "long pause"
+  },
+  {
+   "id": 13,
+   "action": "remove",
+   "ranges": [
+    [
+     859.04,
+     889.52
+    ]
+   ],
+   "label": "\"What the heck?\" through \"Finally got back to it.\"",
+   "type": "lost his place"
+  },
+  {
+   "id": 14,
+   "action": "tighten",
+   "ranges": [
+    [
+     901.78,
+     903.94
+    ]
+   ],
+   "label": "Pause in the negative nine confession. Words stay",
+   "type": "repeated take, kept"
+  },
+  {
+   "id": 15,
+   "action": "tighten",
+   "ranges": [
+    [
+     909.75,
+     914.42
+    ],
+    [
+     920.14,
+     925.54
+    ],
+    [
+     926.26,
+     928.86
+    ]
+   ],
+   "label": "Pauses before and after \"My best call was the Portland upset\"",
+   "type": "long pause"
+  },
+  {
+   "id": 16,
+   "action": "tighten",
+   "ranges": [
+    [
+     961.74,
+     965.3
+    ],
+    [
+     966.14,
+     973.03
+    ]
+   ],
+   "label": "Pauses around \"See if I win\"",
+   "type": "long pause"
+  },
+  {
+   "id": 17,
+   "action": "remove",
+   "ranges": [
+    [
+     981.76,
+     1017.64
+    ]
+   ],
+   "label": "\"Ah get off of this\" through \"Oh yeah, I'm back. Okay.\" Keep the final \"Peace.\"",
+   "type": "off-show chatter"
+  }
+ ],
+ "totals": {
+  "removed_seconds": 135.7,
+  "silence_inside_tighten_ranges_seconds": 72.6,
+  "other_pauses_over_2s_not_in_this_list": 41,
+  "other_pauses_seconds": 114.7
+ },
+ "open_for_stage_2": []
 }

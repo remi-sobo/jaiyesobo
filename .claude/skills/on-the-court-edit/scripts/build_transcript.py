@@ -27,7 +27,7 @@ import sys
 from pathlib import Path
 
 PAUSE_SECONDS = 2.0      # gaps longer than this get listed as likely trims
-SILENCE_DB = -35         # quieter than this counts as silence (raise toward -30 for a noisy room)
+SILENCE_DB = -50         # the Riverside export gates room noise to digital silence, so quiet speech sits near -45. -35 cut real words.
 BLOCK_GAP = 2.0         # a pause this long starts a new transcript block
 BLOCK_MAX_SECONDS = 35   # or a block this long, at the next sentence end
 CAPTION_MAX_CHARS = 42
