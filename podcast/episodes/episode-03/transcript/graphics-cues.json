@@ -1,0 +1,105 @@
+{
+ "episode": "episode-03",
+ "status": "draft",
+ "note": "Each cue is one picture on screen from raw_from to raw_to (seconds in the raw file; the build moves them to the edited time). layout is 'full' (takes over the screen) or 'side' (card by his head). Questions, options, picks, and finals come from the Run It Back data for week 2. A result is only shown at the moment Jaiye says it, never before, and never if he did not know it when he recorded. Set \"off\": true to drop a cue.",
+ "cues": [
+  {"id": "matchup", "layout": "full", "raw_from": 18.6, "raw_to": 22.3,
+   "kicker": "Run It Back Picks / Week 2", "left": "Jaiye", "right": "Remi", "footer": "On The Court / jaiyesobo.com"},
+
+  {"id": "pick1", "layout": "side", "raw_from": 24.3, "raw_to": 40.0,
+   "kicker": "Pick 1 / 1 point", "title": ["Timberwolves", "or Cavaliers"],
+   "rows": [["Jaiye", "Minnesota"], ["Dad", "Minnesota"]]},
+  {"id": "pick1-result", "layout": "side", "raw_from": 40.0, "raw_to": 47.0,
+   "kicker": "Pick 1 / 1 point", "title": ["Timberwolves", "or Cavaliers"],
+   "rows": [["Jaiye", "Minnesota", "miss"], ["Dad", "Minnesota", "miss"]],
+   "result": ["Final", "CLE 127", "MIN 125"]},
+
+  {"id": "pick2", "layout": "side", "raw_from": 56.4, "raw_to": 67.5,
+   "kicker": "Pick 2 / 3 points", "title": ["Biggest scoring", "game this week"],
+   "options": ["Damian Lillard", "Jayson Tatum", "Donovan Mitchell", "Kevin Durant"]},
+  {"id": "pick2-picks", "layout": "side", "raw_from": 67.5, "raw_to": 80.0,
+   "kicker": "Pick 2 / 3 points", "title": ["Biggest scoring", "game this week"],
+   "rows": [["Jaiye", "Damian Lillard"], ["Dad", "Donovan Mitchell"]]},
+
+  {"id": "pick3", "layout": "side", "raw_from": 138.9, "raw_to": 159.4,
+   "kicker": "Pick 3 / 2 points", "title": ["OKC by more", "than 7.5?"], "sub": "Monday vs Phoenix",
+   "rows": [["Jaiye", "Yes, OKC by 8+"], ["Dad", "Yes, OKC by 8+"]]},
+  {"id": "pick3-result", "layout": "side", "raw_from": 159.4, "raw_to": 174.0,
+   "kicker": "Pick 3 / 2 points", "title": ["OKC by more", "than 7.5?"], "sub": "Monday vs Phoenix",
+   "rows": [["Jaiye", "Yes, OKC by 8+", "hit"], ["Dad", "Yes, OKC by 8+", "hit"]],
+   "result": ["Final", "OKC 125", "PHX 114"]},
+
+  {"id": "pick4", "layout": "side", "raw_from": 187.1, "raw_to": 202.7,
+   "kicker": "Pick 4 / 2 points", "title": ["Rockets vs Hawks"], "sub": "Over or under 228.5 points",
+   "rows": [["Jaiye", "Over"], ["Dad", "Over"]]},
+  {"id": "pick4-result", "layout": "side", "raw_from": 202.7, "raw_to": 209.0,
+   "kicker": "Pick 4 / 2 points", "title": ["Rockets vs Hawks"], "sub": "Over or under 228.5 points",
+   "rows": [["Jaiye", "Over", "hit"], ["Dad", "Over", "hit"]],
+   "result": ["Final", "HOU 120", "ATL 110"]},
+
+  {"id": "leaderboard", "layout": "side", "raw_from": 227.6, "raw_to": 241.0,
+   "kicker": "Leaderboard / as recorded", "title": ["The top five"],
+   "rows": [["1", "LeTwinjamin Taiye"], ["2", "Jaiye"], ["3", "Auntie Cassie"], ["4", "Kelz"], ["5", "Remi"]]},
+
+  {"id": "pick5", "layout": "side", "raw_from": 267.2, "raw_to": 284.0,
+   "kicker": "Pick 5 / 3 points", "title": ["Rockets wins", "this week"], "sub": "They play three",
+   "rows": [["Jaiye", "0 or 1"], ["Dad", "2"]]},
+
+  {"id": "pick6", "layout": "side", "raw_from": 285.2, "raw_to": 294.2,
+   "kicker": "Pick 6 / 2 points", "title": ["Julius Randle", "or Cade"], "sub": "Who scores more Tuesday",
+   "rows": [["Jaiye", "Cade Cunningham"], ["Dad", "Julius Randle"]]},
+  {"id": "pick6-result", "layout": "side", "raw_from": 294.2, "raw_to": 303.5,
+   "kicker": "Pick 6 / 2 points", "title": ["Julius Randle", "or Cade"], "sub": "Who scores more Tuesday",
+   "rows": [["Jaiye", "Cade Cunningham", "miss"], ["Dad", "Julius Randle", "hit"]],
+   "result": ["Final", "Randle 24", "Cade 19"]},
+
+  {"id": "pick7", "layout": "side", "raw_from": 305.4, "raw_to": 320.0,
+   "kicker": "Pick 7 / 3 points", "title": ["Luka", "double-double?"], "sub": "Tuesday vs Portland",
+   "rows": [["Jaiye", "No"], ["Dad", "Yes"]]},
+
+  {"id": "pick8", "layout": "side", "raw_from": 332.4, "raw_to": 345.5,
+   "kicker": "Pick 8 / 3 points", "title": ["Lakers vs Clippers"], "sub": "How much does LAL win by",
+   "rows": [["Jaiye", "LAL by 6 to 10"], ["Dad", "LAL by 6 to 10"]]},
+  {"id": "pick8-result", "layout": "side", "raw_from": 345.5, "raw_to": 356.0,
+   "kicker": "Pick 8 / 3 points", "title": ["Lakers vs Clippers"], "sub": "How much does LAL win by",
+   "rows": [["Jaiye", "LAL by 6 to 10", "miss"], ["Dad", "LAL by 6 to 10", "miss"]],
+   "result": ["Final", "LAL 103", "LAC 87"]},
+
+  {"id": "pick9", "layout": "side", "raw_from": 358.7, "raw_to": 368.6,
+   "kicker": "Upset special / 5 points", "title": ["Pick one", "underdog"],
+   "options": ["Miami Heat over DAL", "Milwaukee Bucks over IND", "Golden State Warriors over DEN"]},
+  {"id": "pick9-result", "layout": "side", "raw_from": 368.6, "raw_to": 385.5,
+   "kicker": "Upset special / 5 points", "title": ["Pick one", "underdog"],
+   "rows": [["Jaiye", "Bucks over IND", "hit"], ["Dad", "Heat over DAL", "miss"]],
+   "result": ["Upsets that hit", "MIL", "GSW"]},
+
+  {"id": "pick10", "layout": "side", "raw_from": 386.1, "raw_to": 397.0,
+   "kicker": "Pick 10 / 3 points", "title": ["Total threes"], "sub": "OKC vs Houston, Saturday",
+   "rows": [["Jaiye", "26"], ["Dad", "28"]]},
+
+  {"id": "standings", "layout": "side", "raw_from": 422.3, "raw_to": 434.0,
+   "kicker": "Week 2 / so far", "title": ["Jaiye vs Dad"],
+   "big": [["Jaiye", "5", "2nd place"], ["Dad", "-11", "3rd to last"]]},
+
+  {"id": "two-accounts", "layout": "side", "raw_from": 619.7, "raw_to": 627.5,
+   "kicker": "Breaking", "title": ["Dad made", "two accounts"],
+   "rows": [["Account 1", "No. 5"], ["Account 2", "No. 10"]]},
+
+  {"id": "dad-lock", "layout": "side", "raw_from": 642.2, "raw_to": 653.5,
+   "kicker": "Dad's lock / upset special", "title": ["Heat over", "Dallas"],
+   "rows": [["Result", "Missed", "miss"], ["Lock penalty", "Double"]],
+   "result": ["Points", "-10", ""]},
+
+  {"id": "pick7-result", "layout": "side", "raw_from": 792.1, "raw_to": 806.5,
+   "kicker": "Pick 7 / 3 points", "title": ["Luka", "double-double?"], "sub": "Tuesday vs Portland",
+   "rows": [["Jaiye", "No", "hit"], ["Dad", "Yes", "miss"]],
+   "result": ["Luka", "41 pts", "5 reb, 9 ast"]},
+
+  {"id": "week1", "layout": "side", "raw_from": 889.6, "raw_to": 905.4,
+   "kicker": "Week 1 / final", "title": ["Week one", "went to Dad"],
+   "big": [["Dad", "18", ""], ["Jaiye", "?", ""]]},
+  {"id": "week1-real", "layout": "side", "raw_from": 905.4, "raw_to": 913.5,
+   "kicker": "Week 1 / final", "title": ["Week one", "went to Dad"],
+   "big": [["Dad", "18", ""], ["Jaiye", "-9", ""]]}
+ ]
+}

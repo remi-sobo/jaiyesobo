@@ -1,0 +1,43 @@
+{
+  "note": "Jaiye's editing style. Chosen by Remi on 2026-11-10 for episode 03. Change a number here and rebuild; do not hardcode style in the scripts.",
+  "pauses": {
+    "leave_seconds": 0.6,
+    "tighten_every_pause_over_2s": true
+  },
+  "audio": {
+    "voice_loudness_lufs": -16,
+    "true_peak_db": -1.5,
+    "highpass_hz": 70,
+    "cut_fade_seconds": 0.012
+  },
+  "music": {
+    "style": "short sting, then duck",
+    "file": "raw/on-the-court-intro.mp3",
+    "open_alone_seconds": 6.0,
+    "open_under_voice_until_seconds": 19.0,
+    "open_fade_out_seconds": 4.0,
+    "close_starts_before_end_seconds": 20.0,
+    "close_alone_seconds": 8.0,
+    "full_gain": 0.6,
+    "ducked_gain": 0.09
+  },
+  "cards": {
+    "image": "public/on-the-court-cover.png",
+    "background": "0x0a0a0a",
+    "image_height": 900,
+    "note": "Placeholder. The show cover on near-black. A branded title card (Fraunces, red accent) is a later stage."
+  },
+  "video": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 24,
+    "crf": 19,
+    "preset": "veryfast"
+  },
+  "sfx": {
+    "gain": 0.25,
+    "note": "Approved by Jaiye on 2026-11-10 from the episode 03 preview. Each sound is first brought to the same peak, then multiplied by this. 0.25 puts sound effect peaks about 12 dB under his voice peaks.",
+    "lead_in_seconds": 0.12,
+    "room_after_seconds": 0.35
+  }
+}

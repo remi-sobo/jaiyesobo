@@ -1,0 +1,15 @@
+{
+  "note": "Episode 03 spelling fixes. Each one is a place the transcriber misheard a name or a term Jaiye clearly said. Raw text is kept in words.json under 'raw'.",
+  "rules": [
+    {"from": "Okay, see by eight plus", "to": "OKC by eight plus"},
+    {"from": "Okay, C1 by", "to": "OKC won by"},
+    {"from": "Okay, C won", "to": "OKC won"},
+    {"from": "Zero force for", "to": "Zero votes for"},
+    {"from": "Kate", "to": "Cade"},
+    {"from": "Julius Randler K'd", "to": "Julius Randle or Cade"},
+    {"from": "K'd", "to": "Cade"},
+    {"from": "two counts, bro", "to": "two accounts, bro"},
+    {"from": "your luck makes", "to": "your lock makes"},
+    {"from": "Gius Shobo", "to": "K. Sobo"}
+  ]
+}
