@@ -2521,18 +2521,20 @@
    "speaker": "JAIYE"
   },
   {
-   "word": "Latwinjamin",
+   "word": "LeTwinjamin",
    "start": 229.2,
-   "end": 230.24,
+   "end": 230.0,
    "confidence": 0.788,
-   "speaker": "JAIYE"
+   "speaker": "JAIYE",
+   "raw": "Latwinjamin Taye."
   },
   {
-   "word": "Taye.",
-   "start": 230.4,
+   "word": "Taiye.",
+   "start": 230.0,
    "end": 230.8,
-   "confidence": 0.796,
-   "speaker": "JAIYE"
+   "confidence": 0.788,
+   "speaker": "JAIYE",
+   "raw": "Latwinjamin Taye."
   },
   {
    "word": "I'm",
@@ -2591,11 +2593,12 @@
    "speaker": "JAIYE"
   },
   {
-   "word": "Kells.",
+   "word": "Kelz.",
    "start": 236.48,
    "end": 239.44,
    "confidence": 0.938,
-   "speaker": "JAIYE"
+   "speaker": "JAIYE",
+   "raw": "Kells."
   },
   {
    "word": "Oh,",
@@ -4829,25 +4832,28 @@
    "speaker": "JAIYE"
   },
   {
-   "word": "Twineman",
+   "word": "Twinnamin",
    "start": 439.36,
-   "end": 440.0,
+   "end": 439.84,
    "confidence": 0.707,
-   "speaker": "JAIYE"
+   "speaker": "JAIYE",
+   "raw": "Twineman Roll Tae"
   },
   {
    "word": "Roll",
-   "start": 440.08,
+   "start": 439.84,
    "end": 440.32,
-   "confidence": 0.902,
-   "speaker": "JAIYE"
+   "confidence": 0.707,
+   "speaker": "JAIYE",
+   "raw": "Twineman Roll Tae"
   },
   {
-   "word": "Tae",
-   "start": 440.48,
+   "word": "Taiye",
+   "start": 440.32,
    "end": 440.8,
-   "confidence": 0.776,
-   "speaker": "JAIYE"
+   "confidence": 0.707,
+   "speaker": "JAIYE",
+   "raw": "Twineman Roll Tae"
   },
   {
    "word": "three.",
@@ -5083,16 +5089,18 @@
   {
    "word": "Big",
    "start": 453.36,
-   "end": 453.92,
-   "confidence": 0.984,
-   "speaker": "JAIYE"
+   "end": 453.96,
+   "confidence": 0.857,
+   "speaker": "JAIYE",
+   "raw": "Big tune,"
   },
   {
-   "word": "tune,",
-   "start": 453.92,
+   "word": "Tune,",
+   "start": 453.96,
    "end": 454.56,
    "confidence": 0.857,
-   "speaker": "JAIYE"
+   "speaker": "JAIYE",
+   "raw": "Big tune,"
   },
   {
    "word": "best",
@@ -5418,25 +5426,20 @@
    "speaker": "JAIYE"
   },
   {
-   "word": "La",
+   "word": "LeTwinjamin",
    "start": 480.88,
-   "end": 481.04,
-   "confidence": 0.857,
-   "speaker": "JAIYE"
+   "end": 481.88,
+   "confidence": 0.812,
+   "speaker": "JAIYE",
+   "raw": "La Twingerman Tae."
   },
   {
-   "word": "Twingerman",
-   "start": 481.12,
-   "end": 481.84,
-   "confidence": 0.862,
-   "speaker": "JAIYE"
-  },
-  {
-   "word": "Tae.",
-   "start": 482.0,
+   "word": "Taiye.",
+   "start": 481.88,
    "end": 482.88,
    "confidence": 0.812,
-   "speaker": "JAIYE"
+   "speaker": "JAIYE",
+   "raw": "La Twingerman Tae."
   },
   {
    "word": "Best",
@@ -5460,25 +5463,20 @@
    "speaker": "JAIYE"
   },
   {
-   "word": "Raise",
+   "word": "Reezy",
    "start": 485.52,
-   "end": 486.08,
-   "confidence": 0.819,
-   "speaker": "JAIYE"
-  },
-  {
-   "word": "the",
-   "start": 486.08,
    "end": 486.16,
    "confidence": 0.815,
-   "speaker": "JAIYE"
+   "speaker": "JAIYE",
+   "raw": "Raise the Animal."
   },
   {
-   "word": "Animal.",
-   "start": 486.32,
+   "word": "animal.",
+   "start": 486.16,
    "end": 486.8,
-   "confidence": 0.899,
-   "speaker": "JAIYE"
+   "confidence": 0.815,
+   "speaker": "JAIYE",
+   "raw": "Raise the Animal."
   },
   {
    "word": "Best",
@@ -5502,18 +5500,20 @@
    "speaker": "JAIYE"
   },
   {
-   "word": "Gius",
+   "word": "K.",
    "start": 488.08,
-   "end": 488.64,
+   "end": 488.68,
    "confidence": 0.721,
-   "speaker": "JAIYE"
+   "speaker": "JAIYE",
+   "raw": "Gius Shobo."
   },
   {
-   "word": "Shobo.",
-   "start": 488.64,
+   "word": "Sobo.",
+   "start": 488.68,
    "end": 489.28,
-   "confidence": 0.842,
-   "speaker": "JAIYE"
+   "confidence": 0.721,
+   "speaker": "JAIYE",
+   "raw": "Gius Shobo."
   },
   {
    "word": "Best",
@@ -6034,25 +6034,20 @@
    "speaker": "JAIYE"
   },
   {
-   "word": "La",
+   "word": "LeTwinjamin",
    "start": 521.2,
-   "end": 521.36,
+   "end": 521.84,
    "confidence": 0.82,
-   "speaker": "JAIYE"
+   "speaker": "JAIYE",
+   "raw": "La Twingerman Ty"
   },
   {
-   "word": "Twingerman",
-   "start": 521.44,
-   "end": 522.08,
-   "confidence": 0.894,
-   "speaker": "JAIYE"
-  },
-  {
-   "word": "Ty",
-   "start": 522.32,
+   "word": "Taiye",
+   "start": 521.84,
    "end": 522.48,
-   "confidence": 0.868,
-   "speaker": "JAIYE"
+   "confidence": 0.82,
+   "speaker": "JAIYE",
+   "raw": "La Twingerman Ty"
   },
   {
    "word": "in",

@@ -90,7 +90,13 @@ Known limit: Parakeet stretches a word's end time across a silence that follows 
 Always: **Jaiye** (never Jai, Jaye), **On The Court** (capital T), **Remi** (never Remy), **Sobomehin**, **jaiyesobo.com**.
 The picks game is **Run It Back Picks**. It was called **Sobo Sportsbook** before week two of the first season.
 Jaiye is a Portland fan. Expect Dame (Damian Lillard), Blazers, and Ant (Anthony Edwards).
-The full rule list is in `names.json`. Leaderboard nicknames from the picks game are the usual trouble spot. Parakeet cannot guess them, so list them for Remi every time.
+The full rule list is in `names.json`. Leaderboard nicknames from the picks game are the usual trouble spot. Parakeet cannot guess them, so check them against the real game every time:
+
+- The game's data is in the Supabase project named "Jaiye's Website". Read only.
+- Player names: `select kind, display_name from sb_players order by created_at;` Never select the `code` column. It is each player's login.
+- That week's questions, options, and results: join `sb_weeks` to `sb_items` on `week_id` and filter by `week_number`. Use the prompts to settle misheard teams, players, and scores.
+- Spell a nickname the way the player typed it (for example "LeTwinjamin Taiye", "Kelz", "Reezy animal"). Add recurring ones to `names.json`.
+- Anything still unmatched after that goes to Remi as a short list.
 
 ## Music
 
