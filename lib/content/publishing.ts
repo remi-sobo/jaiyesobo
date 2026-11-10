@@ -8,7 +8,7 @@ import type { Schedule } from "./types";
  * itself. If a date needs to change, it changes once, here.
  */
 export const schedule: Schedule = {
-  latestColumnSlug: "ja-to-the-blazers",
+  latestColumnSlug: "grizzlies-4-0-without-ja",
   nextColumnTopic: "The rookies who actually matter",
   latestEpisodeSlug: "sportsbook-week-1",
   inStudio: "Ep. 003 · the full Blazers preview",
