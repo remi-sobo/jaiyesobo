@@ -11,7 +11,9 @@ On The Court is Jaiye's podcast on jaiyesobo.com. Jaiye is 9 and he is the host.
 - Stage 2, the cut, pause tightening, and theme music: DONE (see "Building the cut")
 - Stage 3, funny sound effects: DONE. Jaiye approved the first cue sheet and level on 2026-11-10 (see "Sound effects")
 - Stage 4, on-screen graphics: BUILT for episode 03 on 2026-11-10, waiting on notes from Remi and Jaiye (see "On-screen graphics")
-- Stage 5+, branded open and close cards, captions on video, publishing: NOT WRITTEN YET.
+- Stage 5, vertical clips for YouTube Shorts: BUILT for episode 03 on 2026-11-10, waiting on notes (see "Shorts")
+- Publishing: episode 03 went up by hand on 2026-11-10. Remi drags the file into YouTube Studio (the Chrome extension cannot upload files over 10 MB), then the title, description, and settings can be filled in through Chrome. The site entry is in `lib/content/episodes.ts`.
+- Branded open and close cards for the full episode: NOT WRITTEN YET.
 
 Start an episode from one sentence, for example: "New On The Court episode, ~/Downloads/ep4.mp4, Jaiye solo."
 If the file path or who is speaking is missing, ask once. Everything else follows this file.
@@ -159,6 +161,24 @@ Rules:
 - Never show a result before he says it. Never show a result he did not know when he recorded, even if the data has it now. In episode 03 that meant no result on picks 2, 5, and 10.
 - Standings and week totals at recording time are not in the data. Use what he says and mark the card "as recorded" or "so far".
 - He calls Remi "my dad", so cards say "Dad". The matchup card says "Remi" because that is the game's name for it.
+
+## Shorts
+
+Remi asked on 2026-11-10 for three vertical clips per episode "that could go viral on YouTube", with good footage and good sound clips.
+
+- Plan: `<episode>/transcript/shorts.json`. Each short is a list of pieces: `clip` (raw start and end), `hold` (freeze on his face, zoomed in, while a sound plays), and `end` (closing card with an optional sound).
+- Build: `python3 .claude/skills/on-the-court-edit/scripts/build_shorts.py podcast/episodes/<slug> [short-id]` writes `output/shorts/<id>.mp4` (1080x1920) and a `.json` with the caption and sound times. About 30 seconds per clip to build.
+- Look and levels are in `style.json` under `shorts`: hook title band on top, his picture in the middle, big captions two or three words at a time, jaiyesobo.com at the bottom. Voice at -14 LUFS, sounds at 0.5 (louder than the full episode on purpose).
+- Picking moments: 25 to 40 seconds, one idea, a line that works with no setup, and a payoff. Dad getting roasted and Jaiye admitting something are the best ones so far.
+- A sound only plays on a `hold` or the end card, so it never covers his words.
+- Remi's direction (2026-11-10): think about the sounds, the words on screen, and the stat screens together, and keep his face visible the whole time. So a clip can carry a `card` (the pick, both picks, the final) that shows in a strip under the picture. Nothing is ever drawn over his face. A result card only appears on the clip where he says the result.
+- Three is not a limit. Make as many clips as there are good moments. Episode 03 has six.
+- The first three episode 03 clips (dont-tell-my-dad, negative-nine, zero-votes-for-dad) were built with the earlier layout, before the card strip. Remi said they are great as they are. Do not rebuild them without asking.
+
+Sound sources for Shorts:
+- The Epidemic kit in `podcast/sfx/`.
+- `podcast/sfx/memes/`: meme clips Remi hands over himself. On 2026-11-10 he supplied `spongebob-fail`, `you-are-an-idiot`, `rizz`, `aww`, `yeah-boiii`, `huh`, `bruh-meme`, and `faaah` (his pick for the FAHHH). He also approved downloading `fahhh.mp3` (the trending FAHHH, from myinstants.com) that day. This loosens his earlier "Epidemic only" rule for files he provides. These are not licensed, so YouTube may put a claim on a video that uses them. The folder is gitignored.
+- Trending list: myinstants.com/en/index/us/ shows what is trending. Do not download from it without Remi saying which sounds, each time.
 
 ## Name spellings
 
