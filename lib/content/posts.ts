@@ -9,6 +9,57 @@ import type { Post } from "./types";
  */
 export const posts: Post[] = [
   {
+    number: 4,
+    slug: "grizzlies-4-0-without-ja",
+    title: "The Grizzlies are 4-0 without Ja. Was I wrong?",
+    titleAccent: "wrong?",
+    standfirst:
+      "Before the season I said Memphis would be last in the West. They're 4-0. I owe them one — but only one.",
+    dek: "Ty Jerome is cooking and a rookie is going for a 10-10. I'll admit I was wrong about the team. The trade I still stand on.",
+    topic: "Grizzlies",
+    date: "2026-11-10",
+    readMinutes: 3,
+    myTake:
+      "I was wrong about the team. I was right about the trade. Bums for an All-Star still stands.",
+    status: "published",
+    body: [
+      {
+        kind: "p",
+        text: "The Grizzlies are 4-0 without Ja. I admit it — I was wrong to say they'd be bad. Before the season I said they'd be last in the West (see Episode 1), and I said they'd be buns. They turned out to be really good.",
+      },
+      {
+        kind: "p",
+        text: "And you'd never guess who's cooking. Ty Jerome, averaging 29.8 points through four games. And Cam Boozer at the top of the rookie ladder: 14.8 points, 10.5 rebounds, 4.8 assists, also in four games. His best game he had 25, 13 and 6.",
+      },
+      {
+        kind: "p",
+        text: "On the flipside, Jerami Grant and Kris Murray are doing terrible. And Ja is doing solid — 16 a game in three.",
+      },
+      {
+        kind: "p",
+        text: "So I still say I was right that the trade did nothing to help the Grizzlies. I'll admit they're not buns. But I still say:",
+      },
+      {
+        kind: "pull",
+        lines: [
+          "Bums for an All-Star.",
+          "Bums for an All-Star.",
+          "Bums for an All-Star.",
+        ],
+        accentLast: true,
+      },
+      {
+        kind: "p",
+        text: "So in the Grizzlies–Blazers game, I've got the Blazers 127-123.",
+      },
+      { kind: "note", text: "Write it down." },
+      {
+        kind: "p",
+        text: "And about was I wrong — there were two things I could've been wrong about. The team, and the trade. Can we agree I was wrong about the team? I'll say that. But I was right about the trade.",
+      },
+    ],
+  },
+  {
     number: 3,
     slug: "ja-to-the-blazers",
     title: "Ja to the Blazers. Bad move on the Grizzlies' part?",
@@ -141,7 +192,7 @@ export const posts: Post[] = [
     ],
   },
   {
-    number: 4,
+    number: 5,
     slug: "rookies-who-actually-matter",
     title: "The rookies who are actually going to matter this season",
     standfirst: "Not finished. Visible here in dev only.",
