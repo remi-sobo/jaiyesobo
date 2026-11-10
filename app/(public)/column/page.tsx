@@ -3,7 +3,8 @@ import Link from "next/link";
 import { visiblePosts } from "@/lib/content/posts";
 import { schedule } from "@/lib/content/publishing";
 import { formatDate, pad } from "@/lib/content/format";
-import { SectionLabel } from "@/components/site/type";
+import { Accent, SectionLabel } from "@/components/site/type";
+import ColumnList, { type ColumnRow } from "@/components/column/column-list";
 
 export const metadata: Metadata = {
   title: "The Column · Jaiye Sobo",
@@ -13,10 +14,23 @@ export const metadata: Metadata = {
 
 export default function ColumnPage() {
   const posts = visiblePosts();
+  const lead = posts.find((p) => p.status === "published");
+  const rows: ColumnRow[] = posts.map((p) => ({
+    slug: p.slug,
+    number: pad(p.number),
+    title: p.title,
+    titleAccent: p.titleAccent,
+    summary: p.dek ?? p.standfirst,
+    topic: p.topic,
+    date: formatDate(p.date),
+    readMinutes: p.readMinutes,
+    isDraft: p.status === "draft",
+  }));
+  const published = rows.filter((r) => !r.isDraft).length;
 
   return (
     <main>
-      <section className="px-5 py-[clamp(44px,6vw,88px)] min-[760px]:px-10">
+      <section className="px-5 pt-[clamp(44px,6vw,88px)] min-[760px]:px-10">
         <div className="mx-auto max-w-[1200px]">
           <SectionLabel>On The Court</SectionLabel>
           <h1 className="mt-6 font-[family-name:var(--font-fraunces)] text-[clamp(3rem,8vw,6rem)] font-black leading-[0.85] tracking-[-0.045em]">
@@ -26,54 +40,52 @@ export default function ColumnPage() {
             I pick one thing that happened in basketball and I say what I think about
             it. New writing throughout the season.
           </p>
+          <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 font-[family-name:var(--font-jetbrains)] text-[0.62rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">
+            <span>By Jaiye Sobo · Age 9</span>
+            <span className="text-[var(--color-red)]">{published} columns so far</span>
+            <a href="#all" className="hover:text-[var(--color-bone)]">
+              Jump to all of them ↓
+            </a>
+          </div>
         </div>
       </section>
 
-      <section className="px-5 min-[760px]:px-10">
+      {lead && (
+        <section className="px-5 py-[clamp(36px,5vw,64px)] min-[760px]:px-10">
+          <div className="mx-auto max-w-[1200px]">
+            <Link
+              href={`/column/${lead.slug}`}
+              className="group block border border-[var(--color-line-strong)] bg-[var(--color-off-black)] p-[clamp(24px,4vw,56px)] transition-colors duration-300 hover:border-[var(--color-red)]"
+            >
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 font-[family-name:var(--font-jetbrains)] text-[0.62rem] uppercase tracking-[0.2em]">
+                <span className="bg-[var(--color-red)] px-2 py-1 text-[var(--color-black)]">New</span>
+                <span className="text-[var(--color-red)]">No. {pad(lead.number)} · {lead.topic}</span>
+                <span className="text-[var(--color-mute)]">
+                  {formatDate(lead.date)} · {lead.readMinutes} min read
+                </span>
+              </div>
+              <h2 className="mt-6 max-w-[18ch] font-[family-name:var(--font-fraunces)] text-[clamp(2.4rem,6.4vw,5rem)] font-black leading-[0.9] tracking-[-0.04em] text-pretty">
+                <Accent text={lead.title} accent={lead.titleAccent} />
+              </h2>
+              <p className="mt-6 max-w-[56ch] font-[family-name:var(--font-fraunces)] text-[clamp(1.1rem,2vw,1.35rem)] italic leading-[1.45] text-[var(--color-mute)]">
+                {lead.standfirst}
+              </p>
+              <span className="mt-8 inline-flex min-h-12 items-center bg-[var(--color-red)] px-[26px] font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.2em] text-[var(--color-black)] transition-colors duration-300 group-hover:bg-[var(--color-bone)]">
+                Read the new one ↗
+              </span>
+            </Link>
+          </div>
+        </section>
+      )}
+
+      <section id="all" className="scroll-mt-24 px-5 min-[760px]:px-10">
         <div className="mx-auto max-w-[1200px]">
-          <div className="grid gap-px bg-[var(--color-line-strong)]">
-            {posts.map((post) => {
-              const isDraft = post.status === "draft";
-              const row = (
-                <div
-                  className={`grid gap-[clamp(16px,3vw,48px)] bg-[var(--color-black)] p-[clamp(24px,3vw,40px)] transition-colors duration-300 lg:grid-cols-3 ${
-                    isDraft ? "opacity-60" : "hover:bg-[var(--color-off-black)]"
-                  }`}
-                >
-                  <div className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase leading-relaxed tracking-[0.2em]">
-                    <div className="text-[var(--color-red)]">
-                      {isDraft
-                        ? `Draft · No. ${pad(post.number)}`
-                        : `No. ${pad(post.number)} · ${formatDate(post.date)}`}
-                    </div>
-                    <div className="mt-2 text-[var(--color-mute)]">
-                      {post.topic} · {isDraft ? "Preseason" : `${post.readMinutes} min`}
-                    </div>
-                  </div>
-
-                  <div className="lg:col-span-2">
-                    <h2 className="font-[family-name:var(--font-fraunces)] text-[clamp(1.7rem,3.4vw,2.6rem)] font-black leading-[0.98] tracking-[-0.025em] text-pretty">
-                      {post.title}
-                    </h2>
-                    <p className="mt-4 max-w-[58ch] text-[1rem] leading-[1.7] text-[var(--color-mute)]">
-                      {post.dek ?? post.standfirst}
-                    </p>
-                  </div>
-                </div>
-              );
-
-              // A draft has nowhere to go yet, so it isn't a link.
-              return isDraft ? (
-                <div key={post.slug}>{row}</div>
-              ) : (
-                <Link key={post.slug} href={`/column/${post.slug}`} className="block">
-                  {row}
-                </Link>
-              );
-            })}
+          <SectionLabel>Every column</SectionLabel>
+          <div className="mt-6">
+            <ColumnList rows={rows} />
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 py-8 font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-line-strong)] py-8 font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">
             <span>Up next: {schedule.nextColumnTopic}</span>
             <a href="/feed.xml" className="text-[var(--color-red)]">
               RSS ↗
