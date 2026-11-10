@@ -39,5 +39,25 @@
     "note": "Approved by Jaiye on 2026-11-10 from the episode 03 preview. Each sound is first brought to the same peak, then multiplied by this. 0.25 puts sound effect peaks about 12 dB under his voice peaks.",
     "lead_in_seconds": 0.12,
     "room_after_seconds": 0.35
+  },
+  "shorts": {
+    "note": "Vertical clips for YouTube Shorts, 1080x1920. Hook title on top, his face in the middle and never covered, captions over the lower part of the picture, and a stat card strip under the picture. Built 2026-11-10 for episode 03. Not yet reviewed by Jaiye.",
+    "video_top": 300,
+    "video_height": 1280,
+    "crop": {
+      "width": 912,
+      "x": 604
+    },
+    "face": {
+      "x": 1060,
+      "y": 400
+    },
+    "hold_zoom": 1.35,
+    "caption_size": 92,
+    "caption_bottom_margin": 50,
+    "end_card_seconds": 2.2,
+    "voice_loudness_lufs": -14,
+    "sfx_gain": 0.5,
+    "hook_size": 100
   }
 }
