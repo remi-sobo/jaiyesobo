@@ -3,6 +3,7 @@ import LatestDrop from "@/components/home/latest-drop";
 import OnTheCourt from "@/components/home/on-the-court";
 import PlaySomething from "@/components/home/play-something";
 import RightNow from "@/components/home/right-now";
+import Shorts from "@/components/home/shorts";
 import Archive from "@/components/home/archive";
 import Reveal from "@/components/site/reveal";
 import ThisSeason from "@/components/home/this-season";
@@ -14,6 +15,9 @@ export default function Home() {
   return (
     <main>
       <Hero />
+      <Reveal>
+        <Shorts />
+      </Reveal>
       <Reveal>
         <ThisSeason />
       </Reveal>
