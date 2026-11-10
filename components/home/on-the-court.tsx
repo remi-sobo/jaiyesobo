@@ -52,7 +52,7 @@ export default function OnTheCourt() {
 
             <div className="mt-8 flex flex-wrap gap-3">
               <PlayButton href={`/pod/${ep.slug}`}>Play episode</PlayButton>
-              <GhostButton href="/pod">All episodes</GhostButton>
+              <GhostButton href="/pod#episodes">All episodes</GhostButton>
             </div>
           </div>
 
