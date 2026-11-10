@@ -1,0 +1,21 @@
+{
+  "note": "Show-wide spelling fixes, applied to every episode. Spelling only. Never reword what Jaiye said. Add a rule when the transcriber keeps getting a name wrong.",
+  "rules": [
+    {"from": "On the Court", "to": "On The Court"},
+    {"from": "Jai", "to": "Jaiye"},
+    {"from": "Jaye", "to": "Jaiye"},
+    {"from": "Remy", "to": "Remi"},
+    {"from": "JaiShowboy.com", "to": "jaiyesobo.com"},
+    {"from": "Shovel Sportsbook", "to": "Sobo Sportsbook"},
+    {"from": "Sobomahin", "to": "Sobomehin"},
+    {"from": "Jason Tatum", "to": "Jayson Tatum"},
+    {"from": "Damon Leard", "to": "Damian Lillard"},
+    {"from": "Luca", "to": "Luka"},
+    {"from": "Luka Dodgett", "to": "Luka Dončić"},
+    {"from": "Luka Doncic", "to": "Luka Dončić"},
+    {"from": "Julius Randall", "to": "Julius Randle"},
+    {"from": "OKZ", "to": "OKC"},
+    {"from": "OK C", "to": "OKC"},
+    {"from": "Clivers", "to": "Clippers"}
+  ]
+}
