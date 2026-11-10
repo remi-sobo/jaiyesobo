@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { latestPost } from "@/lib/content/posts";
 import { formatDate, pad } from "@/lib/content/format";
-import { HandNote, SectionLabel } from "@/components/site/type";
+import { Accent, SectionLabel } from "@/components/site/type";
 
 export default function LatestDrop() {
   const post = latestPost();
@@ -25,16 +25,10 @@ export default function LatestDrop() {
               On The Court · The Column · No. {pad(post.number)}
             </div>
             <h2 className="mt-5 font-[family-name:var(--font-fraunces)] text-[clamp(2.2rem,4.4vw,3.6rem)] font-black leading-[0.92] tracking-[-0.03em] text-pretty">
-              Ja to the Blazers.
-              <br />
-              Bad move on the{" "}
-              <em className="font-normal italic text-[var(--color-red)]">
-                Grizzlies&apos; part?
-              </em>
+              <Accent text={post.title} accent={post.titleAccent} />
             </h2>
             <p className="mt-5 max-w-[42ch] text-[1rem] leading-[1.7] text-[var(--color-mute)]">
-              Portland got an All-Star for Jerami Grant and Kris Murray. I&apos;m a
-              Blazers fan, so yeah, I&apos;m happy.
+              {post.dek ?? post.standfirst}
             </p>
           </div>
 
@@ -55,8 +49,6 @@ export default function LatestDrop() {
             </span>
           </div>
         </Link>
-
-        <HandNote className="mt-8">Dad thinks this take is crazy.</HandNote>
       </div>
     </section>
   );
