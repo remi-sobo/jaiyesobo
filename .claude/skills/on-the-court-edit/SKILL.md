@@ -183,6 +183,13 @@ Phone videos shot for Shorts (first batch 2026-11-10, `podcast/episodes/shorts-2
 - Trim Dad's question to one sentence. Skip long thinking pauses. If a number or name in the answer is unclear, cut around it instead of guessing. In the first batch that meant leaving out a Wemby stat line that came through as "524".
 - Outdoor phone audio has no clean silences, so sounds still only go on a `hold` or the end card.
 
+Story edits from phone video with little talking (first batch 2026-11-10, `podcast/episodes/shorts-2026-11-10-blazers-game/`, Jaiye meeting players backstage):
+- Remi asked for these to be fun and funny in Jaiye's style but sweet, showing how happy he was. Funny on the way in, no jokes over the moment itself, then his face.
+- Pieces can carry `say` (story text written for the edit, or a quoted line from Dad marked `DAD:`), `source` (each piece from its own video), `speed` (0.5 to 0.6 for a slow walk-up), `sfx` (a sound over a silent or slowed clip), and `photo` (a still with a slow push in). A `hold` can take `at` and `face` because he moves around the frame; pick the sharpest frame of his smile by looking at frames first.
+- `music` on a short puts the show theme quietly under the whole thing.
+- Videos sent through Messages can't be read from the Messages folder (macOS blocks it). Ask Remi to save them to Desktop or Downloads.
+- Never work out who a person is from their face. Use what Remi says, what Dad says out loud on the video, and readable text like a jersey. Tell Remi which clip you assumed was which player so he can correct it.
+
 Sound sources for Shorts:
 - The Epidemic kit in `podcast/sfx/`.
 - `podcast/sfx/memes/`: meme clips Remi hands over himself. On 2026-11-10 he supplied `spongebob-fail`, `you-are-an-idiot`, `rizz`, `aww`, `yeah-boiii`, `huh`, `bruh-meme`, and `faaah` (his pick for the FAHHH). A second batch that day added `yay`, `heavenly`, `vine-boom`, `shocked`, `fart-reverb`, `womp-womp`, `core`, and `emotional-damage`. He also sent `hub-intro-sound`; it was left out because that sound is the intro of an adult site and this is a kid's show. Do not add it unless Remi says so knowing that. He also approved downloading `fahhh.mp3` (the trending FAHHH, from myinstants.com) that day. This loosens his earlier "Epidemic only" rule for files he provides. These are not licensed, so YouTube may put a claim on a video that uses them. The folder is gitignored.

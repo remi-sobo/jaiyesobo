@@ -76,6 +76,7 @@ def build(ep, short, style, words, raw, kit):
     W, H, vy, vh = 1080, 1920, S["video_top"], S["video_height"]
     cw, ch, cx, cy = S["crop"]["width"], S["crop"].get("height", 1080), S["crop"]["x"], S["crop"].get("y", 0)
     z = S["hold_zoom"]
+    pre = f"scale={S['prescale'][0]}:{S['prescale'][1]}," if S.get("prescale") else ""  # bring mixed phone sizes to one size first
     work = ep / "work" / "shorts" / short["id"]
     work.mkdir(parents=True, exist_ok=True)
     out = ep / "output" / "shorts"
@@ -93,36 +94,66 @@ def build(ep, short, style, words, raw, kit):
         return dst, min(length, cap, kit.get(name, {}).get("max_seconds", 99))
 
     inputs, g, vlabels, alabels, sfx, caps, t = [], [], [], [], [], [], 0.0
-    last_end, strips, card_now = None, [], None
+    last_end, last_src, strips, card_now = None, raw, [], None
     for p in short["pieces"]:
         i = len(vlabels)
         if "clip" in p:
             a, b = p["clip"]
-            d = round((b - a) * FPS) / FPS
+            src = ep / p["source"] if "source" in p else raw  # a piece can come from its own video
+            speed = p.get("speed", 1)  # 0.5 is slow motion
+            d = round((b - a) / speed * FPS) / FPS
             n = len(inputs)
-            inputs.append(["-ss", f"{a:.3f}", "-t", f"{d:.4f}", "-i", str(raw)])
-            g.append(f"[{n}:v]crop={cw}:{ch}:{cx}:{cy},scale={W}:{vh},setsar=1,fps={FPS},format=yuv420p,"
-                     f"trim=duration={d:.4f},setpts=PTS-STARTPTS[v{i}]")
-            g.append(f"[{n}:a:0]aresample=48000,aformat=channel_layouts=stereo,atrim=duration={d:.4f},asetpts=PTS-STARTPTS,"
-                     f"afade=t=in:st=0:d=0.012,afade=t=out:st={d - 0.012:.4f}:d=0.012[a{i}]")
-            caps += [{**c, "voice": p.get("voice", "jaiye")} for c in caption_chunks(words, a, b, t)]
+            inputs.append(["-ss", f"{a:.3f}", "-t", f"{b - a + 0.1:.4f}", "-i", str(src)])
+            g.append(f"[{n}:v]{pre}crop={cw}:{ch}:{cx}:{cy},scale={W}:{vh},setsar=1,setpts=(PTS-STARTPTS)/{speed},fps={FPS},"
+                     f"format=yuv420p,trim=duration={d:.4f},setpts=PTS-STARTPTS[v{i}]")
+            if speed != 1 or p.get("mute"):
+                g.append(f"anullsrc=r=48000:cl=stereo,atrim=duration={d:.4f}[a{i}]")
+            else:
+                g.append(f"[{n}:a:0]aresample=48000,aformat=channel_layouts=stereo,atrim=duration={d:.4f},asetpts=PTS-STARTPTS,"
+                         f"volume={p.get('gain', 1)},afade=t=in:st=0:d=0.012,afade=t=out:st={d - 0.012:.4f}:d=0.012,"
+                         f"apad=whole_dur={d:.4f}[a{i}]")
+            if "sfx" in p:  # a sound that plays over the moving picture, for clips with no talking to cover
+                wav, length = sound(p["sfx"], min(p.get("max", 99), d))
+                sfx.append({"wav": wav, "at": t + 0.05, "len": length, "name": p["sfx"]})
+            if "say" in p:  # story text written for the edit, not spoken words
+                says = p["say"] if isinstance(p["say"], list) else [p["say"]]
+                for k, line in enumerate(says):
+                    caps.append({"text": line, "voice": "story", "from": round(t + 0.1 + k * d / len(says), 3),
+                                 "to": round(t + (k + 1) * d / len(says) - 0.05, 3)})
+            elif p.get("captions", True) and words:
+                caps += [{**c, "voice": p.get("voice", "jaiye")} for c in caption_chunks(words, a, b, t)]
             card_now = p.get("card")
             if card_now:
                 strips.append({"card": card_now, "from": t, "to": t + d})
-            last_end, t = b, t + d
+            last_end, last_src, t = b, src, t + d
+        elif "photo" in p:  # a still picture with a slow push in
+            d = round(p.get("seconds", 2.5) * FPS) / FPS
+            N = int(d * FPS)
+            n = len(inputs)
+            inputs.append(["-i", str(ep / p["photo"])])
+            g.append(f"[{n}:v]scale={W * 2}:{vh * 2}:force_original_aspect_ratio=increase,crop={W * 2}:{vh * 2},"
+                     f"zoompan=z='1+0.12*on/{N}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={N}:s={W}x{vh}:fps={FPS},"
+                     f"trim=duration={d:.4f},setsar=1,format=yuv420p,setpts=PTS-STARTPTS[v{i}]")
+            g.append(f"anullsrc=r=48000:cl=stereo,atrim=duration={d:.4f}[a{i}]")
+            if "say" in p:
+                caps.append({"text": p["say"], "voice": "story", "from": round(t + 0.1, 3), "to": round(t + d - 0.05, 3)})
+            t += d
         elif "hold" in p:
             wav, length = sound(p["hold"], p.get("max", 99))
             d = round((length + 0.2) * FPS) / FPS
             n = len(inputs)
-            inputs.append(["-ss", f"{last_end - 2 / FPS:.3f}", "-t", "0.2", "-i", str(raw)])
+            inputs.append(["-ss", f"{p.get('at', last_end - 2 / FPS):.3f}", "-t", "0.2", "-i", str(last_src)])
             zw, zh = int(cw / z) // 2 * 2, int(ch / z) // 2 * 2
-            zx = min(max(S["face"]["x"] - zw // 2, cx), cx + cw - zw)
-            zy = min(max(S["face"]["y"] - zh // 2, cy), cy + ch - zh)
-            g.append(f"[{n}:v]trim=end_frame=1,crop={zw}:{zh}:{zx}:{zy},scale={W}:{vh},setsar=1,"
+            face = p.get("face", S["face"])  # he moves around in phone video, so a hold can say where his face is
+            zx = min(max(face["x"] - zw // 2, cx), cx + cw - zw)
+            zy = min(max(face["y"] - zh // 2, cy), cy + ch - zh)
+            g.append(f"[{n}:v]trim=end_frame=1,{pre}crop={zw}:{zh}:{zx}:{zy},scale={W}:{vh},setsar=1,"
                      f"tpad=stop_mode=clone:stop_duration={d + 1:.3f},fps={FPS},trim=duration={d:.4f},"
                      f"setpts=PTS-STARTPTS,format=yuv420p[v{i}]")
             g.append(f"anullsrc=r=48000:cl=stereo,atrim=duration={d:.4f}[a{i}]")
             sfx.append({"wav": wav, "at": t + 0.05, "len": length, "name": p["hold"]})
+            if "say" in p:
+                caps.append({"text": p["say"], "voice": "story", "from": round(t + 0.05, 3), "to": round(t + d - 0.05, 3)})
             if card_now:
                 strips[-1]["to"] = t + d
             t += d
@@ -165,6 +196,15 @@ def build(ep, short, style, words, raw, kit):
     punch = {re.sub(r"[^a-z0-9]", "", w.lower()) for w in short.get("punch", [])}
 
     def cap_html(c):
+        if c["voice"] == "story":  # text written for the edit
+            out = []
+            for line in c["text"].split("\n"):
+                ws = []
+                for w in line.split():
+                    hot = re.sub(r"[^a-z0-9]", "", w.lower()) in punch
+                    ws.append(f'<span style="color:{"#FF2D3D" if hot else "#F5F1EA"}">{html.escape(w)}</span>')
+                out.append(" ".join(ws))
+            return f'<span style="font-size:{int(S["caption_size"] * 0.8)}px">' + "<br>".join(out) + "</span>"
         if c["voice"] != "jaiye":  # the person asking, off camera
             return (f'<span style="font-size:{int(S["caption_size"] * 0.62)}px;font-weight:800;color:#d8d3ca;'
                     f'-webkit-text-stroke:10px #0a0a0a;paint-order:stroke fill">{html.escape(c["text"])}</span>')
@@ -240,7 +280,14 @@ def build(ep, short, style, words, raw, kit):
     g.append("".join(alabels) + f"concat=n={n_body}:v=0:a=1,highpass=f={a['highpass_hz']},"
              f"loudnorm=I={S['voice_loudness_lufs']}:TP={a['true_peak_db']}:LRA=11,aresample=48000,"
              f"aformat=channel_layouts=stereo,apad=pad_dur={end_len}[voice]")
-    mix = "[voice]"
+    mix, extra = "[voice]", 0
+    if short.get("music"):  # a quiet bed under the whole thing
+        n = len(inputs)
+        inputs.append(["-i", str(ep / short["music"]["file"])])
+        g.append(f"[{n}:a]atrim=start={short['music'].get('start', 0)}:duration={total:.3f},asetpts=PTS-STARTPTS,aresample=48000,"
+                 f"aformat=channel_layouts=stereo,volume={short['music'].get('gain', 0.15)},afade=t=in:st=0:d=0.4,"
+                 f"afade=t=out:st={total - 1.2:.3f}:d=1.2[music]")
+        mix, extra = "[voice][music]", 1
     for j, s in enumerate(sfx):
         n = len(inputs)
         inputs.append(["-i", str(s["wav"])])
@@ -249,7 +296,7 @@ def build(ep, short, style, words, raw, kit):
         g.append(f"[{n}:a]atrim=duration={s['len']:.3f},afade=t=out:st={max(0, s['len'] - 0.15):.3f}:d=0.15,"
                  f"volume={gain:.3f},adelay={ms}|{ms}[x{j}]")
         mix += f"[x{j}]"
-    g.append(f"{mix}amix=inputs={len(sfx) + 1}:normalize=0:duration=first,atrim=duration={total:.3f},alimiter=limit=0.89[aout]")
+    g.append(f"{mix}amix=inputs={len(sfx) + 1 + extra}:normalize=0:duration=first,atrim=duration={total:.3f},alimiter=limit=0.89[aout]")
 
     script = work / "graph.filter"
     script.write_text(";\n".join(g))
@@ -277,8 +324,9 @@ def main():
     kit = json.loads((REPO / "podcast" / "sfx" / "kit.json").read_text())["sounds"]
     for s in json.loads((ep / "transcript" / "shorts.json").read_text())["shorts"]:
         if not only or s["id"] == only:
-            words = json.loads((ep / s["words"] if "words" in s else default_words).read_text())["words"]
-            raw = ep / (s["source"] if "source" in s else json.loads(cut.read_text())["source"])
+            wpath = ep / s["words"] if "words" in s else default_words
+            words = json.loads(wpath.read_text())["words"] if wpath.exists() else []
+            raw = ep / (s["source"] if "source" in s else json.loads(cut.read_text())["source"]) if ("source" in s or cut.exists()) else None
             build(ep, s, style, words, raw, kit)
 
 
