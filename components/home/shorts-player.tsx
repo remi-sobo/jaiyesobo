@@ -151,10 +151,10 @@ export default function ShortsPlayer({ shorts }: { shorts: ShortWithEpisode[] })
                 {s.title}
               </p>
               <Link
-                href={`/pod/${s.episodeSlug}`}
+                href={s.href}
                 className="mt-2 inline-block font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-red)] hover:text-[var(--color-bone)]"
               >
-                Watch all of EP.{String(s.episodeNumber).padStart(2, "0")} ↗
+                {s.linkLabel} ↗
               </Link>
             </div>
           );

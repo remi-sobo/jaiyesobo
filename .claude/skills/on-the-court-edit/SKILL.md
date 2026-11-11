@@ -175,9 +175,17 @@ Remi asked on 2026-11-10 for three vertical clips per episode "that could go vir
 - Three is not a limit. Make as many clips as there are good moments. Episode 03 has six.
 - The first three episode 03 clips (dont-tell-my-dad, negative-nine, zero-votes-for-dad) were built with the earlier layout, before the card strip. Remi said they are great as they are. Do not rebuild them without asking.
 
+Phone videos shot for Shorts (first batch 2026-11-10, `podcast/episodes/shorts-2026-11-10/`):
+- Remi films Jaiye on a phone, vertical, and asks one question from off camera. These are not episodes. Put each batch in its own `shorts-<date>` folder with the same `raw/`, `transcript/`, `work/`, `output/` layout so the gitignore rules apply. Copy the videos in read-only.
+- Transcribe each video on its own (`work/<name>-16k.wav`, then Parakeet), apply `names.json`, and save `transcript/<name>.words.json`. Captions must be the actual words.
+- In `shorts.json` each short sets its own `source`, `words`, `fps` (iPhone is 30), and a `layout` override. The first batch used a 300 px title band, the top 1500 px of the picture, and captions over the table so they never touch his face.
+- Format that worked: kicker "On The Court / Hot Seat", the question as the hook title, a trimmed version of Dad's question with `"voice": "dad"` (smaller grey captions), Jaiye's answer with red `punch` words, and a `verdict` closing card.
+- Trim Dad's question to one sentence. Skip long thinking pauses. If a number or name in the answer is unclear, cut around it instead of guessing. In the first batch that meant leaving out a Wemby stat line that came through as "524".
+- Outdoor phone audio has no clean silences, so sounds still only go on a `hold` or the end card.
+
 Sound sources for Shorts:
 - The Epidemic kit in `podcast/sfx/`.
-- `podcast/sfx/memes/`: meme clips Remi hands over himself. On 2026-11-10 he supplied `spongebob-fail`, `you-are-an-idiot`, `rizz`, `aww`, `yeah-boiii`, `huh`, `bruh-meme`, and `faaah` (his pick for the FAHHH). He also approved downloading `fahhh.mp3` (the trending FAHHH, from myinstants.com) that day. This loosens his earlier "Epidemic only" rule for files he provides. These are not licensed, so YouTube may put a claim on a video that uses them. The folder is gitignored.
+- `podcast/sfx/memes/`: meme clips Remi hands over himself. On 2026-11-10 he supplied `spongebob-fail`, `you-are-an-idiot`, `rizz`, `aww`, `yeah-boiii`, `huh`, `bruh-meme`, and `faaah` (his pick for the FAHHH). A second batch that day added `yay`, `heavenly`, `vine-boom`, `shocked`, `fart-reverb`, `womp-womp`, `core`, and `emotional-damage`. He also sent `hub-intro-sound`; it was left out because that sound is the intro of an adult site and this is a kid's show. Do not add it unless Remi says so knowing that. He also approved downloading `fahhh.mp3` (the trending FAHHH, from myinstants.com) that day. This loosens his earlier "Epidemic only" rule for files he provides. These are not licensed, so YouTube may put a claim on a video that uses them. The folder is gitignored.
 - Trending list: myinstants.com/en/index/us/ shows what is trending. Do not download from it without Remi saying which sounds, each time.
 
 ## Name spellings
