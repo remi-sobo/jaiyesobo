@@ -22,7 +22,7 @@ export default function Shorts() {
               on the <em className="font-normal italic text-[var(--color-red)]">court.</em>
             </h2>
             <p className="mt-4 max-w-[44ch] text-[1rem] leading-[1.7] text-[var(--color-mute)]">
-              The best moments from the podcast. Tap one. If you like it, the whole episode is one more tap.
+              Hot takes and the best moments from the podcast. Tap one. If you like it, the whole episode is one more tap.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">

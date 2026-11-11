@@ -7,12 +7,15 @@ export type Short = {
   title: string;
   /** Length in seconds. */
   seconds: number;
-  /** The episode it was cut from. The clip links to the full thing. */
-  episodeSlug: string;
+  /** The episode it was cut from, so the clip can link to the full thing. Leave out for a clip shot on its own. */
+  episodeSlug?: string;
 };
 
 /** Newest first. Built by the on-the-court-edit skill (build_shorts.py). */
 export const shorts: Short[] = [
+  { id: "hotseat-wemby-or-luka", title: "Is Wemby the best player in the NBA right now?", seconds: 26 },
+  { id: "hotseat-how-far-blazers", title: "How far can the Blazers actually get this year?", seconds: 22 },
+  { id: "hotseat-warriors-hot-start", title: "Are the Warriors the real deal?", seconds: 16 },
   { id: "ep03-dont-tell-my-dad", title: "Don't tell my dad I made a second account", seconds: 38, episodeSlug: "sportsbook-week-2" },
   { id: "ep03-negative-nine", title: "I finished at 19. I mean 17. I mean...", seconds: 30, episodeSlug: "sportsbook-week-2" },
   { id: "ep03-zero-votes-for-dad", title: "Zero votes for my dad", seconds: 30, episodeSlug: "sportsbook-week-2" },
@@ -26,10 +29,16 @@ export const shortPoster = (s: Short) => `/shorts/${s.id}.jpg`;
 
 /** What the player needs about each clip's episode, resolved on the server. */
 export function shortsWithEpisodes() {
-  return shorts.flatMap((s) => {
-    const ep = getEpisode(s.episodeSlug);
-    if (!ep) return [];
-    return [{ ...s, video: shortVideo(s), poster: shortPoster(s), episodeNumber: ep.number, episodeTitle: ep.title }];
+  return shorts.map((s) => {
+    const ep = s.episodeSlug ? getEpisode(s.episodeSlug) : undefined;
+    return {
+      ...s,
+      video: shortVideo(s),
+      poster: shortPoster(s),
+      // A clip with no episode still gets a way into the podcast.
+      href: ep ? `/pod/${ep.slug}` : "/pod#episodes",
+      linkLabel: ep ? `Watch all of EP.${String(ep.number).padStart(2, "0")}` : "Watch the podcast",
+    };
   });
 }
 
