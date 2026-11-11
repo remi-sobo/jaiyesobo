@@ -267,7 +267,7 @@ export async function nightlySync(now = new Date()) {
   // makeRecap), which imports this file, so it is loaded lazily.
   let closed: number[] = [];
   try {
-    closed = await (await import("./actions")).closeOutWeeks(now);
+    closed = await (await import("./actions")).closeOutWeeks(now, { recap: true });
   } catch (err) {
     console.error(JSON.stringify({ scope: "sportsbook.closeout", err: String(err) }));
   }

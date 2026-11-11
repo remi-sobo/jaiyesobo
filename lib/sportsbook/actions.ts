@@ -313,20 +313,17 @@ export async function finalizeWeek(n: number): Promise<void> {
  * alone. Remi can still finalize early by hand. Safe to run any number of
  * times, from any job; returns the week numbers it closed.
  */
-export async function closeOutWeeks(now = new Date()): Promise<number[]> {
+export async function closeOutWeeks(now = new Date(), opts: { recap?: boolean } = {}): Promise<number[]> {
   const closed: number[] = [];
-  for (const week of (await listWeeks()).filter((w) => w.status === "graded")) {
+  const weeks = await listWeeks();
+  for (const week of weeks.filter((w) => w.status === "graded")) {
     try {
       const items = await getItems(week.id);
       if (items.some((i) => i.status === "open")) continue;
-      if (!week.recap) {
-        // A recap failure must not keep the week from publishing.
-        try {
-          await makeRecap(week.week_number);
-        } catch (e) {
-          console.error(JSON.stringify({ scope: "sportsbook.closeout", week: week.week_number, recapError: String(e) }));
-        }
-      }
+      // Finalize first: it is one quick update. The recap is an AI call that
+      // can outlive a page's after-response budget, so it comes after and only
+      // when the caller has time (the cron jobs); a missed recap is written on
+      // the next run below.
       await finalizeWeek(week.week_number);
       closed.push(week.week_number);
       console.log(JSON.stringify({ scope: "sportsbook.closeout", week: week.week_number, closed: true, at: now.toISOString() }));
@@ -336,6 +333,20 @@ export async function closeOutWeeks(now = new Date()): Promise<number[]> {
   }
   // The recap push went out with the recap. This is the idempotent graded push.
   if (closed.length) await pushGraded();
+  if (opts.recap) {
+    // Final weeks still missing their recap: the ones closed just now and any
+    // earlier close-out that ran out of time. One at a time, newest first.
+    const missing = (await listWeeks())
+      .filter((w) => w.status === "final" && !w.recap)
+      .sort((a, b) => b.week_number - a.week_number);
+    for (const week of missing) {
+      try {
+        await makeRecap(week.week_number);
+      } catch (e) {
+        console.error(JSON.stringify({ scope: "sportsbook.closeout", week: week.week_number, recapError: String(e) }));
+      }
+    }
+  }
   return closed;
 }
 
@@ -357,7 +368,7 @@ export async function weeklyJob(now = new Date()) {
       }
     }
   }
-  out.closed = await closeOutWeeks(now);
+  out.closed = await closeOutWeeks(now, { recap: true });
   // Backstop for the pushes: no-ops if nightlySync and saveRecap already sent them.
   out.push = {
     graded: await pushGraded(),
