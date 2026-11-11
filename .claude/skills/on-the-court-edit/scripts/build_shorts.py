@@ -25,7 +25,6 @@ from build_cut import prepare_sound  # noqa: E402
 SKILL = Path(__file__).resolve().parent.parent
 REPO = SKILL.parent.parent.parent
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-FPS = 24
 FONTS = ('<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,900;1,9..144,900'
          '&family=Inter:wght@800;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">')
 
@@ -72,9 +71,10 @@ def caption_chunks(words, a, b, shift):
 
 
 def build(ep, short, style, words, raw, kit):
-    S = style["shorts"]
+    FPS = short.get("fps", 24)
+    S = {**style["shorts"], **short.get("layout", {})}  # a short can override the layout, e.g. for phone video
     W, H, vy, vh = 1080, 1920, S["video_top"], S["video_height"]
-    cw, ch, cx = S["crop"]["width"], 1080, S["crop"]["x"]
+    cw, ch, cx, cy = S["crop"]["width"], S["crop"].get("height", 1080), S["crop"]["x"], S["crop"].get("y", 0)
     z = S["hold_zoom"]
     work = ep / "work" / "shorts" / short["id"]
     work.mkdir(parents=True, exist_ok=True)
@@ -101,11 +101,11 @@ def build(ep, short, style, words, raw, kit):
             d = round((b - a) * FPS) / FPS
             n = len(inputs)
             inputs.append(["-ss", f"{a:.3f}", "-t", f"{d:.4f}", "-i", str(raw)])
-            g.append(f"[{n}:v]crop={cw}:{ch}:{cx}:0,scale={W}:{vh},setsar=1,fps={FPS},format=yuv420p,"
+            g.append(f"[{n}:v]crop={cw}:{ch}:{cx}:{cy},scale={W}:{vh},setsar=1,fps={FPS},format=yuv420p,"
                      f"trim=duration={d:.4f},setpts=PTS-STARTPTS[v{i}]")
-            g.append(f"[{n}:a]aresample=48000,aformat=channel_layouts=stereo,atrim=duration={d:.4f},asetpts=PTS-STARTPTS,"
+            g.append(f"[{n}:a:0]aresample=48000,aformat=channel_layouts=stereo,atrim=duration={d:.4f},asetpts=PTS-STARTPTS,"
                      f"afade=t=in:st=0:d=0.012,afade=t=out:st={d - 0.012:.4f}:d=0.012[a{i}]")
-            caps += caption_chunks(words, a, b, t)
+            caps += [{**c, "voice": p.get("voice", "jaiye")} for c in caption_chunks(words, a, b, t)]
             card_now = p.get("card")
             if card_now:
                 strips.append({"card": card_now, "from": t, "to": t + d})
@@ -116,8 +116,8 @@ def build(ep, short, style, words, raw, kit):
             n = len(inputs)
             inputs.append(["-ss", f"{last_end - 2 / FPS:.3f}", "-t", "0.2", "-i", str(raw)])
             zw, zh = int(cw / z) // 2 * 2, int(ch / z) // 2 * 2
-            zx = min(max(S["face"]["x"] - zw // 2, 0), 1920 - zw)
-            zy = min(max(S["face"]["y"] - zh // 2, 0), 1080 - zh)
+            zx = min(max(S["face"]["x"] - zw // 2, cx), cx + cw - zw)
+            zy = min(max(S["face"]["y"] - zh // 2, cy), cy + ch - zh)
             g.append(f"[{n}:v]trim=end_frame=1,crop={zw}:{zh}:{zx}:{zy},scale={W}:{vh},setsar=1,"
                      f"tpad=stop_mode=clone:stop_duration={d + 1:.3f},fps={FPS},trim=duration={d:.4f},"
                      f"setpts=PTS-STARTPTS,format=yuv420p[v{i}]")
@@ -151,18 +151,33 @@ def build(ep, short, style, words, raw, kit):
     card = shot(
         f'<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 42%,#1a1a1a 0%,#0a0a0a 70%);'
         f'display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">'
-        f'<div class="mono" style="font-size:34px;color:#8a8a8a">Full episode</div>'
-        f'<div class="disp" style="font-size:170px;margin-top:30px">On The<br>Court</div>'
+        + ("".join([f'<div class="mono" style="font-size:34px;color:#E63946">{html.escape(short.get("verdict_label", "The verdict"))}</div>',
+                    f'<div class="disp" style="font-size:150px;margin:26px 50px 70px;font-style:italic">' + "<br>".join(html.escape(x) for x in short["verdict"]) + "</div>"])
+           if short.get("verdict") else "") +
+        f'<div class="mono" style="font-size:34px;color:#8a8a8a">{"More on" if short.get("verdict") else "Full episode"}</div>'
+        f'<div class="disp" style="font-size:{90 if short.get("verdict") else 170}px;margin-top:30px">On The{" " if short.get("verdict") else "<br>"}Court</div>'
         f'<div style="width:200px;height:10px;background:#E63946;margin-top:50px"></div>'
         f'<div class="mono" style="font-size:38px;margin-top:46px">jaiyesobo.com</div></div>',
         work / "card.png", W, H, work)
     cap_h = 300
 
     # All captions are drawn on one tall sheet in a single Chrome run, then sliced.
+    punch = {re.sub(r"[^a-z0-9]", "", w.lower()) for w in short.get("punch", [])}
+
+    def cap_html(c):
+        if c["voice"] != "jaiye":  # the person asking, off camera
+            return (f'<span style="font-size:{int(S["caption_size"] * 0.62)}px;font-weight:800;color:#d8d3ca;'
+                    f'-webkit-text-stroke:10px #0a0a0a;paint-order:stroke fill">{html.escape(c["text"])}</span>')
+        out = []
+        for w in c["text"].split():
+            hot = re.sub(r"[^a-z0-9]", "", w.lower()) in punch
+            out.append(f'<span style="color:{"#FF2D3D" if hot else "#F5F1EA"}">{html.escape(w)}</span>')
+        return " ".join(out)
+
     rows = "".join(
         f'<div style="height:{cap_h}px;display:flex;align-items:center;justify-content:center;text-align:center;'
         f'font-family:Inter,sans-serif;font-weight:900;font-size:{S["caption_size"]}px;line-height:1.05;text-transform:uppercase;'
-        f'color:#F5F1EA;-webkit-text-stroke:14px #0a0a0a;paint-order:stroke fill;padding:0 50px">{html.escape(c["text"])}</div>'
+        f'-webkit-text-stroke:14px #0a0a0a;paint-order:stroke fill;padding:0 50px"><div>{cap_html(c)}</div></div>'
         for c in caps)
     sheet = shot(rows, work / "captions.png", W, cap_h * len(caps), work)
     cap_pngs = []
@@ -257,11 +272,13 @@ def main():
     ep = Path(sys.argv[1]).resolve()
     only = sys.argv[2] if len(sys.argv) > 2 else None
     style = json.loads((SKILL / "style.json").read_text())
-    words = json.loads((ep / "transcript" / "words.json").read_text())["words"]
-    raw = ep / json.loads((ep / "transcript" / "cut-list.json").read_text())["source"]
+    default_words = ep / "transcript" / "words.json"
+    cut = ep / "transcript" / "cut-list.json"
     kit = json.loads((REPO / "podcast" / "sfx" / "kit.json").read_text())["sounds"]
     for s in json.loads((ep / "transcript" / "shorts.json").read_text())["shorts"]:
         if not only or s["id"] == only:
+            words = json.loads((ep / s["words"] if "words" in s else default_words).read_text())["words"]
+            raw = ep / (s["source"] if "source" in s else json.loads(cut.read_text())["source"])
             build(ep, s, style, words, raw, kit)
 
 

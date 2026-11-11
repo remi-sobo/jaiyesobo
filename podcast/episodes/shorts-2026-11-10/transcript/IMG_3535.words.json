@@ -1,0 +1,502 @@
+{
+ "words": [
+  {
+   "word": "Alright,",
+   "start": 0.32,
+   "end": 0.88,
+   "confidence": 0.919
+  },
+  {
+   "word": "Jaiye,",
+   "start": 0.88,
+   "end": 1.52,
+   "confidence": 0.873,
+   "raw": "Jay,"
+  },
+  {
+   "word": "are",
+   "start": 1.52,
+   "end": 1.68,
+   "confidence": 0.998
+  },
+  {
+   "word": "you",
+   "start": 1.68,
+   "end": 1.92,
+   "confidence": 1.0
+  },
+  {
+   "word": "taking",
+   "start": 1.92,
+   "end": 2.56,
+   "confidence": 1.0
+  },
+  {
+   "word": "Wemby",
+   "start": 2.8,
+   "end": 3.52,
+   "confidence": 0.946
+  },
+  {
+   "word": "right",
+   "start": 3.84,
+   "end": 4.16,
+   "confidence": 1.0
+  },
+  {
+   "word": "now",
+   "start": 4.16,
+   "end": 4.48,
+   "confidence": 1.0
+  },
+  {
+   "word": "over",
+   "start": 4.48,
+   "end": 4.8,
+   "confidence": 0.999
+  },
+  {
+   "word": "Shai",
+   "start": 4.8,
+   "end": 5.44,
+   "confidence": 0.921,
+   "raw": "Shay"
+  },
+  {
+   "word": "Jokić",
+   "start": 5.84,
+   "end": 6.64,
+   "confidence": 0.967,
+   "raw": "Jokic"
+  },
+  {
+   "word": "Giannis",
+   "start": 6.96,
+   "end": 7.68,
+   "confidence": 0.906
+  },
+  {
+   "word": "Luka?",
+   "start": 8.16,
+   "end": 9.44,
+   "confidence": 0.899,
+   "raw": "Luca?"
+  },
+  {
+   "word": "Is",
+   "start": 9.44,
+   "end": 9.76,
+   "confidence": 0.995
+  },
+  {
+   "word": "Wemby",
+   "start": 11.28,
+   "end": 12.0,
+   "confidence": 0.939
+  },
+  {
+   "word": "the",
+   "start": 12.16,
+   "end": 12.4,
+   "confidence": 0.995
+  },
+  {
+   "word": "best",
+   "start": 12.4,
+   "end": 12.56,
+   "confidence": 1.0
+  },
+  {
+   "word": "player",
+   "start": 12.56,
+   "end": 12.88,
+   "confidence": 1.0
+  },
+  {
+   "word": "in",
+   "start": 12.88,
+   "end": 12.96,
+   "confidence": 0.998
+  },
+  {
+   "word": "the",
+   "start": 12.96,
+   "end": 13.12,
+   "confidence": 0.943
+  },
+  {
+   "word": "NBA",
+   "start": 13.12,
+   "end": 13.6,
+   "confidence": 0.988
+  },
+  {
+   "word": "right",
+   "start": 13.6,
+   "end": 13.92,
+   "confidence": 1.0
+  },
+  {
+   "word": "now?",
+   "start": 13.92,
+   "end": 15.92,
+   "confidence": 0.931
+  },
+  {
+   "word": "Um",
+   "start": 16.96,
+   "end": 17.28,
+   "confidence": 0.959
+  },
+  {
+   "word": "I'll",
+   "start": 20.48,
+   "end": 20.96,
+   "confidence": 0.967
+  },
+  {
+   "word": "tell",
+   "start": 20.96,
+   "end": 21.12,
+   "confidence": 1.0
+  },
+  {
+   "word": "you",
+   "start": 21.12,
+   "end": 21.36,
+   "confidence": 1.0
+  },
+  {
+   "word": "one",
+   "start": 21.36,
+   "end": 21.52,
+   "confidence": 1.0
+  },
+  {
+   "word": "thing",
+   "start": 21.52,
+   "end": 21.76,
+   "confidence": 1.0
+  },
+  {
+   "word": "straight.",
+   "start": 21.76,
+   "end": 22.32,
+   "confidence": 0.915
+  },
+  {
+   "word": "He",
+   "start": 22.32,
+   "end": 22.48,
+   "confidence": 0.996
+  },
+  {
+   "word": "has",
+   "start": 22.48,
+   "end": 22.64,
+   "confidence": 0.998
+  },
+  {
+   "word": "not",
+   "start": 22.64,
+   "end": 22.96,
+   "confidence": 0.982
+  },
+  {
+   "word": "been",
+   "start": 22.96,
+   "end": 23.28,
+   "confidence": 1.0
+  },
+  {
+   "word": "playing",
+   "start": 23.28,
+   "end": 23.84,
+   "confidence": 0.999
+  },
+  {
+   "word": "like",
+   "start": 23.84,
+   "end": 24.16,
+   "confidence": 0.999
+  },
+  {
+   "word": "it.",
+   "start": 24.16,
+   "end": 24.72,
+   "confidence": 0.884
+  },
+  {
+   "word": "Other",
+   "start": 24.8,
+   "end": 25.2,
+   "confidence": 0.996
+  },
+  {
+   "word": "than",
+   "start": 25.2,
+   "end": 25.36,
+   "confidence": 1.0
+  },
+  {
+   "word": "his,",
+   "start": 25.36,
+   "end": 25.76,
+   "confidence": 0.919
+  },
+  {
+   "word": "of",
+   "start": 25.76,
+   "end": 25.84,
+   "confidence": 0.999
+  },
+  {
+   "word": "course,",
+   "start": 25.84,
+   "end": 26.24,
+   "confidence": 0.946
+  },
+  {
+   "word": "524,",
+   "start": 26.24,
+   "end": 27.92,
+   "confidence": 0.937
+  },
+  {
+   "word": "which",
+   "start": 27.92,
+   "end": 28.24,
+   "confidence": 0.999
+  },
+  {
+   "word": "is",
+   "start": 28.24,
+   "end": 28.56,
+   "confidence": 0.991
+  },
+  {
+   "word": "crazy.",
+   "start": 29.2,
+   "end": 30.24,
+   "confidence": 0.96
+  },
+  {
+   "word": "He",
+   "start": 30.24,
+   "end": 30.48,
+   "confidence": 0.996
+  },
+  {
+   "word": "had",
+   "start": 30.48,
+   "end": 30.64,
+   "confidence": 1.0
+  },
+  {
+   "word": "eight",
+   "start": 30.64,
+   "end": 30.96,
+   "confidence": 0.975
+  },
+  {
+   "word": "blocks",
+   "start": 30.96,
+   "end": 31.36,
+   "confidence": 0.999
+  },
+  {
+   "word": "in",
+   "start": 31.36,
+   "end": 31.44,
+   "confidence": 0.995
+  },
+  {
+   "word": "that",
+   "start": 31.44,
+   "end": 31.6,
+   "confidence": 0.998
+  },
+  {
+   "word": "game",
+   "start": 31.6,
+   "end": 31.84,
+   "confidence": 0.999
+  },
+  {
+   "word": "too.",
+   "start": 31.92,
+   "end": 32.24,
+   "confidence": 0.935
+  },
+  {
+   "word": "That",
+   "start": 32.24,
+   "end": 32.4,
+   "confidence": 0.977
+  },
+  {
+   "word": "was",
+   "start": 32.4,
+   "end": 32.56,
+   "confidence": 0.965
+  },
+  {
+   "word": "wild.",
+   "start": 32.88,
+   "end": 34.32,
+   "confidence": 0.939
+  },
+  {
+   "word": "But",
+   "start": 34.32,
+   "end": 34.64,
+   "confidence": 0.996
+  },
+  {
+   "word": "oh",
+   "start": 34.88,
+   "end": 35.12,
+   "confidence": 0.901
+  },
+  {
+   "word": "no,",
+   "start": 35.28,
+   "end": 35.76,
+   "confidence": 0.903
+  },
+  {
+   "word": "Luka",
+   "start": 35.76,
+   "end": 36.24,
+   "confidence": 0.89,
+   "raw": "Luca"
+  },
+  {
+   "word": "is",
+   "start": 36.24,
+   "end": 36.48,
+   "confidence": 0.932
+  },
+  {
+   "word": "on",
+   "start": 36.48,
+   "end": 36.72,
+   "confidence": 0.999
+  },
+  {
+   "word": "fire",
+   "start": 36.72,
+   "end": 37.04,
+   "confidence": 1.0
+  },
+  {
+   "word": "right",
+   "start": 37.04,
+   "end": 37.2,
+   "confidence": 0.999
+  },
+  {
+   "word": "now.",
+   "start": 37.2,
+   "end": 37.36,
+   "confidence": 0.884
+  },
+  {
+   "word": "And",
+   "start": 37.36,
+   "end": 37.52,
+   "confidence": 0.896
+  },
+  {
+   "word": "Luka",
+   "start": 37.52,
+   "end": 38.0,
+   "confidence": 0.951,
+   "raw": "Luca"
+  },
+  {
+   "word": "is",
+   "start": 38.0,
+   "end": 38.24,
+   "confidence": 1.0
+  },
+  {
+   "word": "the",
+   "start": 38.24,
+   "end": 38.4,
+   "confidence": 1.0
+  },
+  {
+   "word": "runner,",
+   "start": 38.4,
+   "end": 38.88,
+   "confidence": 0.879
+  },
+  {
+   "word": "lead",
+   "start": 38.88,
+   "end": 39.2,
+   "confidence": 0.993
+  },
+  {
+   "word": "runner",
+   "start": 39.2,
+   "end": 39.52,
+   "confidence": 0.998
+  },
+  {
+   "word": "in",
+   "start": 39.52,
+   "end": 39.6,
+   "confidence": 0.998
+  },
+  {
+   "word": "the",
+   "start": 39.6,
+   "end": 39.76,
+   "confidence": 1.0
+  },
+  {
+   "word": "MVP",
+   "start": 39.76,
+   "end": 40.32,
+   "confidence": 0.915
+  },
+  {
+   "word": "race",
+   "start": 40.32,
+   "end": 40.64,
+   "confidence": 0.928
+  },
+  {
+   "word": "right",
+   "start": 40.72,
+   "end": 40.88,
+   "confidence": 0.999
+  },
+  {
+   "word": "now,",
+   "start": 40.88,
+   "end": 41.12,
+   "confidence": 0.892
+  },
+  {
+   "word": "in",
+   "start": 41.12,
+   "end": 41.28,
+   "confidence": 0.923
+  },
+  {
+   "word": "my",
+   "start": 41.28,
+   "end": 41.6,
+   "confidence": 0.999
+  },
+  {
+   "word": "book.",
+   "start": 41.6,
+   "end": 42.48,
+   "confidence": 0.94
+  }
+ ]
+}
