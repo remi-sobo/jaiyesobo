@@ -9,6 +9,7 @@ import { Accent, Badge, SectionLabel } from "@/components/site/type";
 import { GhostButton, PlayButton } from "@/components/site/buttons";
 import { VaultSection } from "@/components/site/vault";
 import Reveal from "@/components/site/reveal";
+import { InstagramLine } from "@/components/site/instagram";
 
 export const metadata: Metadata = {
   title: "On The Court · Jaiye Sobo",
@@ -32,6 +33,7 @@ export default function PodPage() {
             Me and my dad talking basketball for about twenty minutes. New episodes
             throughout the season.
           </p>
+          <InstagramLine className="mt-6">Follow the show on Instagram:</InstagramLine>
         </div>
       </section>
 

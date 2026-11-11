@@ -2,6 +2,7 @@ import { latestEpisode } from "@/lib/content/episodes";
 import { shortsWithEpisodes } from "@/lib/content/shorts";
 import { SectionLabel } from "@/components/site/type";
 import { GhostButton, PlayButton } from "@/components/site/buttons";
+import { InstagramButton } from "@/components/site/instagram";
 import ShortsPlayer from "./shorts-player";
 
 /** The quick way in: thirty-second clips, each one a door to the full episode. */
@@ -28,6 +29,7 @@ export default function Shorts() {
           <div className="flex flex-wrap gap-3">
             <PlayButton href={`/pod/${ep.slug}`}>Watch the full episode</PlayButton>
             <GhostButton href="/pod#episodes">All episodes</GhostButton>
+            <InstagramButton />
           </div>
         </div>
 
