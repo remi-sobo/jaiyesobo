@@ -13,6 +13,9 @@ export type Short = {
 
 /** Newest first. Built by the on-the-court-edit skill (build_shorts.py). */
 export const shorts: Short[] = [
+  { id: "game-dame-time", title: "He met his favorite player. Dame Time.", seconds: 27 },
+  { id: "game-old-folk-high-five", title: "He called Steph old folk. Then this happened.", seconds: 16 },
+  { id: "game-rip-city-backstage", title: "Backstage with the Blazers", seconds: 21 },
   { id: "hotseat-wemby-or-luka", title: "Is Wemby the best player in the NBA right now?", seconds: 26 },
   { id: "hotseat-how-far-blazers", title: "How far can the Blazers actually get this year?", seconds: 22 },
   { id: "hotseat-warriors-hot-start", title: "Are the Warriors the real deal?", seconds: 16 },
