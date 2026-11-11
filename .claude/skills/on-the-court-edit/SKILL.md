@@ -18,6 +18,10 @@ On The Court is Jaiye's podcast on jaiyesobo.com. Jaiye is 9 and he is the host.
 Start an episode from one sentence, for example: "New On The Court episode, ~/Downloads/ep4.mp4, Jaiye solo."
 If the file path or who is speaking is missing, ask once. Everything else follows this file.
 
+## Before any video: the style bank
+
+Remi's standing rule (2026-11-10): every time he asks for a video or clip, read `style-bank.md` in this skill folder, do a short research pass on what is working now across YouTube, Shorts, TikTok, and Reels, and only then design the style. Say which style you picked and why. When he or Jaiye likes a clip, add it to the bank and its log. The goal is variety, so the clips do not all look and sound the same.
+
 ## Hard rules
 
 - Never modify, move, or delete the original recording. Copy it, then make the copy read-only.
