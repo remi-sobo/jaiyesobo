@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, type ReactNode } from "react";
 import type { Chapter } from "@/lib/content/types";
 import { Badge, SectionLabel } from "./type";
 
@@ -16,7 +16,18 @@ function toSeconds(t: string) {
 }
 
 /** The episode video plus chapters you can tap to jump the video to that moment. */
-export default function EpisodePlayer({ youtubeId, title, chapters }: { youtubeId: string; title: string; chapters: Chapter[] }) {
+export default function EpisodePlayer({
+  youtubeId,
+  title,
+  chapters,
+  belowVideo,
+}: {
+  youtubeId: string;
+  title: string;
+  chapters: Chapter[];
+  /** Something small to show right under the video, above the chapters. */
+  belowVideo?: ReactNode;
+}) {
   const frame = useRef<HTMLIFrameElement>(null);
 
   function jump(time: string) {
@@ -42,6 +53,8 @@ export default function EpisodePlayer({ youtubeId, title, chapters }: { youtubeI
           />
         </div>
       </div>
+
+      {belowVideo}
 
       {chapters.length ? (
       <section id="chapters" className="mt-16 scroll-mt-24">

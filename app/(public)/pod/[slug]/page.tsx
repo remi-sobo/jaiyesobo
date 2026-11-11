@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import ArticleBody from "@/components/site/article-body";
 import EpisodePlayer from "@/components/site/episode-player";
+import { InstagramLine } from "@/components/site/instagram";
 import { notFound } from "next/navigation";
 import { episodeMeta, episodes, getEpisode } from "@/lib/content/episodes";
 import { getVaultEntry } from "@/lib/content/vault";
@@ -69,7 +70,12 @@ export default async function EpisodePage(props: PageProps<"/pod/[slug]">) {
           {ep.standfirst}
         </p>
 
-        <EpisodePlayer youtubeId={ep.youtubeId} title={ep.title} chapters={ep.chapters} />
+        <EpisodePlayer
+          youtubeId={ep.youtubeId}
+          title={ep.title}
+          chapters={ep.chapters}
+          belowVideo={<InstagramLine className="mt-4">Clips from the show are on Instagram:</InstagramLine>}
+        />
 
         {ep.audioUrl && (
           <audio controls preload="none" src={ep.audioUrl} className="mt-4 w-full">

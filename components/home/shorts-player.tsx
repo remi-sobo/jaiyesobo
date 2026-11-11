@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { ShortWithEpisode } from "@/lib/content/shorts";
+import { instagram } from "@/lib/content/social";
 
 const clock = (s: number) => `0:${String(Math.round(s)).padStart(2, "0")}`;
 
@@ -159,6 +160,31 @@ export default function ShortsPlayer({ shorts }: { shorts: ShortWithEpisode[] })
             </div>
           );
         })}
+
+        <a
+          href={instagram.url}
+          target="_blank"
+          rel="noreferrer"
+          className="group w-[min(72vw,300px)] shrink-0 snap-center"
+        >
+          <div className="relative flex aspect-[9/16] w-full flex-col items-center justify-center gap-6 border border-[var(--color-line-strong)] bg-[var(--color-black)] p-6 text-center transition-colors duration-300 group-hover:border-[var(--color-red)]">
+            <span className="relative block h-28 w-28 overflow-hidden rounded-full">
+              <Image src={instagram.icon} alt="" fill sizes="112px" className="object-cover" />
+            </span>
+            <span className="font-[family-name:var(--font-fraunces)] text-[1.9rem] font-black leading-[1] tracking-[-0.03em]">
+              More clips on <em className="font-normal italic text-[var(--color-red)]">Instagram.</em>
+            </span>
+            <span className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">
+              {instagram.handle}
+            </span>
+          </div>
+          <p className="mt-3 font-[family-name:var(--font-fraunces)] text-[1.05rem] font-black leading-[1.15] tracking-[-0.02em]">
+            Follow the show
+          </p>
+          <span className="mt-2 inline-block font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.2em] text-[var(--color-red)]">
+            Open Instagram ↗
+          </span>
+        </a>
       </div>
 
       <div className="mt-6 flex items-center justify-between gap-4">

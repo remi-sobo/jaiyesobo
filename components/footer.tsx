@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { instagram } from "@/lib/content/social";
 
 const links = [
   { href: "/column", label: "Column" },
@@ -37,6 +38,16 @@ export default function Footer() {
               </Link>
             </li>
           ))}
+          <li>
+            <a
+              href={instagram.url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-block py-1 text-[var(--color-mute)] transition-colors duration-300 hover:text-[var(--color-red)]"
+            >
+              Instagram ↗
+            </a>
+          </li>
         </ul>
 
         <div className="mt-10 flex flex-col gap-2 border-t border-[var(--color-line)] pt-7 font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)] sm:flex-row sm:justify-between">
