@@ -4,6 +4,27 @@ import type { Episode } from "./types";
 /** On The Court. Newest first. */
 export const episodes: Episode[] = [
   {
+    number: 4,
+    slug: "blazers-thunder-recap",
+    title: "Dame hit a logo three: Blazers vs Thunder",
+    titleAccent: "logo three",
+    standfirst:
+      "The Blazers beat the Thunder 123 to 103 and Dame hit a logo three at the third quarter buzzer. Then the Jaylen Brown cold shoulder, my pick for tonight, and the Run It Back drama.",
+    date: "2026-11-11",
+    runtime: "5:46",
+    guests: "Jaiye",
+    youtubeId: "ZRVWoynCzQs",
+    myTake: "Tonight, I have a feeling the Blazers are gonna come back out on top.",
+    chapters: [
+      { time: "00:00", text: "Cold open. A logo Lillard type shot at the buzzer." },
+      { time: "00:05", text: "3, 2, 1. On The Court." },
+      { time: "00:29", text: "Dame went off. Blazers 123, Thunder 103. Dame and Deni combined for 49." },
+      { time: "02:00", text: "Tonight is the second game of the back to back. I've got the Blazers." },
+      { time: "02:13", text: "The cold shoulder. Tatum went to dap Jaylen Brown up. Then JT went off." },
+      { time: "03:59", text: "Run It Back drama. Me vs LeTwinjamin Taiye, and my dad made more accounts." },
+    ],
+  },
+  {
     number: 3,
     slug: "sportsbook-week-2",
     title: "Run It Back Picks: my Week 2 recap",
