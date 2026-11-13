@@ -6,7 +6,10 @@ import { useEffect, useRef, useState } from "react";
 import type { ShortWithEpisode } from "@/lib/content/shorts";
 import { instagram } from "@/lib/content/social";
 
-const clock = (s: number) => `0:${String(Math.round(s)).padStart(2, "0")}`;
+const clock = (s: number) => {
+  const n = Math.round(s);
+  return `${Math.floor(n / 60)}:${String(n % 60).padStart(2, "0")}`;
+};
 
 /**
  * A rail of vertical clips. One plays at a time, with sound, right where it
