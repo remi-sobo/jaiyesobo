@@ -167,6 +167,32 @@ the same lock rules; the public Supabase keys still can't write anything.
   free stats API if not.
 - AI: Claude via the Anthropic setup the site already uses.
 
+## 7b. Autopilot (weekly, no new crons)
+
+Code: `lib/sportsbook/autopilot.ts`. It reuses the nightly cron, the weekly cron, the live sync
+and the admin actions.
+
+- **Saturday:** next week drafts itself. The nightly cron (10:00 UTC, which is Saturday and Sunday
+  early morning Pacific) calls `prepNextWeek`: on a Saturday or Sunday Pacific, if next week has no
+  row or is a draft with no picks, the AI drafts it. A week that already has picks is never redrafted.
+  Failures are logged and retried by the next night's run.
+- **Approve:** Remi opens `/admin/sportsbook` (it lands on next week Saturday and Sunday, and a
+  red banner at the top of every admin week points to it) and taps **Approve Week N**, any time.
+  That writes `{ at }` to `app_config` under the key `sb_approved:<season>:<week>` (for example
+  `sb_approved:2026-27:5`). **Undo** deletes the key. Redrafting the whole slate clears it.
+- **Sunday 6:00pm Pacific:** an approved week goes live. `opensAt` is the later of 6:00pm Pacific the
+  evening before the week's `starts_on` (computed from Pacific midnight, so it is DST safe) and the
+  previous week's last pick lock. It opens on the first Sportsbook page view after that (the live sync),
+  the moment Remi approves if that time has already passed, or at the latest the next nightly run.
+- **Monday 12:00am Pacific:** the fallback. A draft week with picks opens at its `starts_on` midnight
+  even if nobody approved it. The weekly cron (Monday 11:00 UTC) also drafts a missing current week
+  first, then opens whatever is ready, so a week with no row is drafted and opened in one run.
+- **Open rule:** open when (approved and now >= `opensAt`) or now >= week start. Only drafts with at
+  least one pick open. **Open now** in admin still opens a week by hand at any time.
+- **Two open weeks:** the new week opens Sunday evening while the old one is still `open` (grading
+  and close-out happen Monday). The featured week is the highest `open` week, so the public page and
+  the app switch to the new week at that moment, and the old week stays reachable at its own URL.
+
 ## 8. Not in v1
 
 - Real sportsbook odds (AI lines from stats only).

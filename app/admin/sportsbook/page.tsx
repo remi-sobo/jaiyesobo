@@ -2,8 +2,9 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/session";
 import { getSettings } from "@/lib/sportsbook/draft";
 import { getHousePlayers } from "@/lib/sportsbook/players";
+import { autopilotStatus, type AutopilotStatus } from "@/lib/sportsbook/autopilot";
 import { loadWeekView } from "@/lib/sportsbook/view";
-import { currentWeekNumber, requestNow, weekRangeLabel, weekWindow } from "@/lib/sportsbook/weeks";
+import { currentWeekNumber, pacificWeekday, requestNow, tipLabel, weekRangeLabel, weekWindow } from "@/lib/sportsbook/weeks";
 import SharedPicks from "@/components/sportsbook/admin/shared-picks";
 import SlateEditor, { AddPropInline } from "@/components/sportsbook/admin/slate-editor-entry";
 import ResultsPanel, { BoardTable, ChallengersPanel, SettingsPanel } from "@/components/sportsbook/admin/results-panel";
@@ -26,8 +27,19 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default async function AdminSportsbookPage(props: { searchParams: Promise<{ week?: string }> }) {
   await requireAdmin("/admin/sportsbook");
   const sp = await props.searchParams;
-  const current = currentWeekNumber();
-  const n = Math.min(40, Math.max(1, Number(sp.week) || current));
+  const now = new Date(requestNow());
+  const current = currentWeekNumber(now);
+  const next = current + 1;
+  // Weekly autopilot: next week's draft waits here. Saturday and Sunday the
+  // page opens on it unless a week was asked for.
+  const nextAuto = await autopilotStatus(next).catch((e: unknown) => {
+    console.error(JSON.stringify({ scope: "sportsbook.admin.autopilot", week: next, err: String(e) }));
+    return null;
+  });
+  const weekend = pacificWeekday(now) === 6 || pacificWeekday(now) === 0;
+  const fallbackWeek = weekend && nextAuto?.status === "draft" ? next : current;
+  const n = Math.min(40, Math.max(1, Number(sp.week) || fallbackWeek));
+  const auto: AutopilotStatus | null = n === next ? nextAuto : await autopilotStatus(n).catch(() => null);
 
   let loadError: string | null = null;
   let view: Awaited<ReturnType<typeof loadWeekView>> = null;
@@ -90,12 +102,42 @@ export default async function AdminSportsbookPage(props: { searchParams: Promise
         </div>
       </div>
 
+      {nextAuto && nextAuto.status === "draft" && nextAuto.items > 0 ? (
+        <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 border border-[var(--color-red)] px-4 py-3">
+          <span className="text-[0.95rem]">
+            {nextAuto.approved
+              ? Date.parse(nextAuto.opensAt) <= now.getTime()
+                ? `Week ${next} is approved and opens on the next sync.`
+                : `Week ${next} is approved and goes live ${tipLabel(nextAuto.opensAt)}.`
+              : `Week ${next} is drafted and waiting for you.`}
+          </span>
+          {!nextAuto.approved && n !== next ? (
+            <Link
+              href={`/admin/sportsbook?week=${next}`}
+              className="font-[family-name:var(--font-jetbrains)] text-[0.62rem] uppercase tracking-[0.15em] text-[var(--color-red)]"
+            >
+              Review Week {next} →
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
+
       {loadError ? (
         <p className="text-[var(--color-warm-mute)]">{loadError}</p>
       ) : (
         <>
           {status === "none" || status === "draft" ? (
-            <SlateEditor week={n} items={view?.items ?? []} status={status === "none" ? "none" : "draft"} now={view?.now ?? requestNow()} />
+            <SlateEditor
+              week={n}
+              items={view?.items ?? []}
+              status={status === "none" ? "none" : "draft"}
+              now={view?.now ?? requestNow()}
+              autopilot={
+                auto && status === "draft"
+                  ? { approved: auto.approved, opensLabel: tipLabel(auto.opensAt), past: Date.parse(auto.opensAt) <= now.getTime() }
+                  : null
+              }
+            />
           ) : null}
 
           {status === "open" && view && house ? (
