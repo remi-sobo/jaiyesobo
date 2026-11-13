@@ -382,5 +382,12 @@ export async function weeklyJob(now = new Date()) {
       out.draftError = String(e);
     }
   }
+  // Open whatever is ready, after the fallback draft above so a missing week is
+  // drafted and opened in this same run. Never throws. Lazy: autopilot loads this file.
+  try {
+    out.opened = await (await import("./autopilot")).maybeOpenWeeks(now);
+  } catch (e) {
+    out.openError = String(e);
+  }
   return out;
 }

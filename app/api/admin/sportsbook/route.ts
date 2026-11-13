@@ -18,6 +18,7 @@ import {
   submitPicks,
   updateItem,
 } from "@/lib/sportsbook/actions";
+import { approveWeek, unapproveWeek } from "@/lib/sportsbook/autopilot";
 import { checkDisplayName, getHousePlayers } from "@/lib/sportsbook/players";
 import { archiveLeague, createLeague } from "@/lib/sportsbook/leagues";
 import { resolveReports } from "@/lib/sportsbook/safety";
@@ -34,7 +35,7 @@ const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : u
  * POST /api/admin/sportsbook { action, ... }
  *
  * Every admin move for Run It Back Picks goes through here: drafting the
- * slate, editing it, opening the week, Jaiye's and Remi's picks on the
+ * slate, editing it, approving it (the weekly autopilot opens it Sunday 6pm), opening the week, Jaiye's and Remi's picks on the
  * shared screen, hand grading, recaps, finalizing, challenger moderation,
  * leagues, reports and Season Pass grants for beta testers.
  */
@@ -49,9 +50,13 @@ export async function POST(req: Request) {
   const week = num(body.week);
   try {
     switch (body.action) {
-      case "draft":
+      case "draft": {
         if (!week) break;
-        return NextResponse.json({ ok: true, count: await draftWeek(week) });
+        const count = await draftWeek(week);
+        // A new slate is a new thing to approve; the Monday fallback still covers it.
+        await unapproveWeek(week);
+        return NextResponse.json({ ok: true, count });
+      }
       case "regenerate":
         await regenerateItem(str(body.item_id));
         return NextResponse.json({ ok: true });
@@ -78,6 +83,13 @@ export async function POST(req: Request) {
       case "open":
         if (!week) break;
         await openWeek(week);
+        return NextResponse.json({ ok: true });
+      case "approve":
+        if (!week) break;
+        return NextResponse.json({ ok: true, ...(await approveWeek(week)) });
+      case "unapprove":
+        if (!week) break;
+        await unapproveWeek(week);
         return NextResponse.json({ ok: true });
       case "pick": {
         const who = body.player === "remi" || body.player === "jaiye" ? body.player : null;

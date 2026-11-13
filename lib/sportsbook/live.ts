@@ -1,6 +1,7 @@
 import { after } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { closeOutWeeks } from "./actions";
+import { maybeOpenWeeks } from "./autopilot";
 import { gradeWeek, pushGraded, pushOpen, syncBoxes, syncGames } from "./data";
 import { sendPush } from "./push";
 import type { SbWeek } from "./types";
@@ -38,6 +39,10 @@ async function maybeSync(now = new Date()) {
   const { data: last } = await db.from("app_config").select("value").eq("key", KEY).maybeSingle();
   const lastAt = Date.parse(String((last?.value as { at?: string } | null)?.at ?? ""));
   if (Number.isFinite(lastAt) && now.getTime() - lastAt < EVERY_MS) return;
+
+  // Weekly autopilot: a drafted week goes live Sunday 6pm (approved) or Monday
+  // 12am (always), from the first page view after that. Cheap when nothing is due.
+  try { await maybeOpenWeeks(now); } catch { /* opening a week never blocks the sync */ }
 
   const { data: weeks } = await db
     .from("sb_weeks")

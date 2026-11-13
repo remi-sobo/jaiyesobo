@@ -253,7 +253,7 @@ export async function pushGraded(): Promise<PushResult | null> {
   }
 }
 
-/** The nightly job: refresh recent games and box scores, then grade open weeks. */
+/** The nightly job: refresh recent games and box scores, grade open weeks, then run the weekly autopilot. */
 export async function nightlySync(now = new Date()) {
   const today = pacificDate(now);
   const back = pacificDate(new Date(now.getTime() - 4 * 86_400_000));
@@ -271,8 +271,19 @@ export async function nightlySync(now = new Date()) {
   } catch (err) {
     console.error(JSON.stringify({ scope: "sportsbook.closeout", err: String(err) }));
   }
+  // Weekly autopilot: Saturday and Sunday the next week drafts itself, and a
+  // drafted week opens when its time comes (see autopilot.ts). Also lazy, since
+  // autopilot loads actions.
+  let autopilot: { prep: unknown; opened: number[] } = { prep: null, opened: [] };
+  try {
+    const ap = await import("./autopilot");
+    const prep = await ap.prepNextWeek(now);
+    autopilot = { prep, opened: await ap.maybeOpenWeeks(now) };
+  } catch (err) {
+    console.error(JSON.stringify({ scope: "sportsbook.autopilot", err: String(err) }));
+  }
   const push = await pushGraded();
-  return { today, games, boxes, graded, closed, push };
+  return { today, games, boxes, graded, closed, autopilot, push };
 }
 
 /* Standings */
