@@ -13,6 +13,10 @@ export type Short = {
 
 /** Newest first. Built by the on-the-court-edit skill (build_shorts.py). */
 export const shorts: Short[] = [
+  { id: "cade-made-history", title: "Cade did something nobody has ever done", seconds: 31 },
+  { id: "bold-prediction-wizards", title: "Bold prediction alert: the Wizards make the playoffs", seconds: 26 },
+  { id: "cade-all-nba", title: "Is Cade All-NBA this year?", seconds: 21 },
+  { id: "me-vs-the-mic", title: "Me vs. my microphone (the mic won)", seconds: 19 },
   { id: "solo-blazers-better-this-year", title: "Why the Blazers are better this year", seconds: 118 },
   { id: "ep04-dame-logo-three", title: "Dame hit a logo three at the buzzer", seconds: 37, episodeSlug: "blazers-thunder-recap" },
   { id: "ep04-cold-shoulder", title: "Jaylen Brown gave Tatum the cold shoulder", seconds: 28, episodeSlug: "blazers-thunder-recap" },
