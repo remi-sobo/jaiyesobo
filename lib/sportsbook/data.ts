@@ -5,6 +5,7 @@ import { gradeItem, scoreWeek, weekWinner, type GameBox, type PlayerWeekScore } 
 import { openPushMessage, sendPush, type PushResult } from "./push";
 import type { ItemSpec, SbItem, SbPick, SbPlayer, SbWeek } from "./types";
 import { SB_SEASON, pacificDate, weekBounds } from "./weeks";
+import { EMAIL_RUN_BUDGET_MS } from "@/lib/email/rules";
 
 const supa = () => createServiceClient();
 
@@ -254,7 +255,9 @@ export async function pushGraded(): Promise<PushResult | null> {
 }
 
 /** The nightly job: refresh recent games and box scores, grade open weeks, then run the weekly autopilot. */
-export async function nightlySync(now = new Date()) {
+export async function nightlySync(now = new Date(), opts: { emailDeadline?: number } = {}) {
+  // All the email sending in this run (results, then catch-up confirms) shares one deadline.
+  const emailDeadline = opts.emailDeadline ?? Date.now() + EMAIL_RUN_BUDGET_MS;
   const today = pacificDate(now);
   const back = pacificDate(new Date(now.getTime() - 4 * 86_400_000));
   const ahead = pacificDate(new Date(now.getTime() + 9 * 86_400_000));
@@ -267,7 +270,7 @@ export async function nightlySync(now = new Date()) {
   // makeRecap), which imports this file, so it is loaded lazily.
   let closed: number[] = [];
   try {
-    closed = await (await import("./actions")).closeOutWeeks(now, { recap: true });
+    closed = await (await import("./actions")).closeOutWeeks(now, { recap: true, emailDeadline });
   } catch (err) {
     console.error(JSON.stringify({ scope: "sportsbook.closeout", err: String(err) }));
   }
@@ -283,7 +286,14 @@ export async function nightlySync(now = new Date()) {
     console.error(JSON.stringify({ scope: "sportsbook.autopilot", err: String(err) }));
   }
   const push = await pushGraded();
-  return { today, games, boxes, graded, closed, autopilot, push };
+  // Confirm emails that never went out (signups before the email key existed).
+  let emailCatchup: unknown = null;
+  try {
+    emailCatchup = await (await import("@/lib/email/subscribers")).sendWaitingConfirmations(50, emailDeadline);
+  } catch (err) {
+    console.error(JSON.stringify({ scope: "email.catchup", err: String(err) }));
+  }
+  return { today, games, boxes, graded, closed, autopilot, emailCatchup, push };
 }
 
 /* Standings */

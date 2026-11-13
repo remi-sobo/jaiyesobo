@@ -3,6 +3,10 @@
 // response shape only needs to be written once.
 import type {
   ApiBoard,
+  EmailPatchRequest,
+  EmailPatchResponse,
+  EmailPutRequest,
+  EmailPutResponse,
   ApiLeague,
   ApiLeagueDetail,
   ApiOk,
@@ -54,6 +58,16 @@ export function signOut(): Promise<ApiOk> {
 /** GET /me — current player, their leagues, the active season. 401 if signed out. */
 export function getMe(signal?: AbortSignal): Promise<MeResponse> {
   return appApi<MeResponse>("/me", { signal });
+}
+
+/** PUT /me/email — add or change the player's email. Under 13, the confirm email goes to a parent. */
+export function putEmail(req: EmailPutRequest): Promise<EmailPutResponse> {
+  return appApi<EmailPutResponse>("/me/email", { method: "PUT", body: req });
+}
+
+/** PATCH /me/email — the two toggles. Both off unsubscribes. */
+export function patchEmail(req: EmailPatchRequest): Promise<EmailPatchResponse> {
+  return appApi<EmailPatchResponse>("/me/email", { method: "PATCH", body: req });
 }
 
 /** PATCH /me — change name, push settings, or push token. Returns the fresh /me payload. */

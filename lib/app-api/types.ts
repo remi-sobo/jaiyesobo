@@ -41,12 +41,36 @@ export type SessionResponse = { token: string; player: ApiPlayer };
 
 /* Me */
 
+/**
+ * The player's email, as the app may see it: a masked hint, never the address.
+ * `status` is `pending` until the address (or, for a player under 13, a parent)
+ * confirms from the link in the email.
+ */
+export type ApiEmail = {
+  /** "r***@gmail.com" */
+  address_hint: string | null;
+  status: "pending" | "confirmed" | "unsubscribed";
+  /** `parent` when the player is under 13 and a parent has to say yes. */
+  relation: "self" | "parent";
+  want_results: boolean;
+  want_newsletter: boolean;
+};
+
+/** PUT /me/email. The player's age band decides whether this goes to a parent. */
+export type EmailPutRequest = { email: string; results: boolean; newsletter: boolean };
+export type EmailPutResponse = { status: "check-your-inbox" | "parent-check"; email: ApiEmail | null };
+/** PATCH /me/email. Both off unsubscribes. */
+export type EmailPatchRequest = { results?: boolean; newsletter?: boolean };
+export type EmailPatchResponse = { email: ApiEmail | null };
+
 export type MeResponse = {
   player: ApiPlayer;
   leagues: ApiLeague[];
   season: string;
   /** Ids of the players this player has muted, so the app can offer "Unmute". */
   muted: string[];
+  /** null until the player adds an email. */
+  email: ApiEmail | null;
 };
 export type MePatch = {
   display_name?: string;

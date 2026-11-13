@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { sendWaitingConfirmations } from "@/lib/email/subscribers";
 import { requireAdmin } from "@/lib/session";
 import { createServiceClient } from "@/lib/supabase/server";
 import { isTeamCode } from "@/lib/nba/teams";
@@ -22,6 +23,8 @@ import { approveWeek, unapproveWeek } from "@/lib/sportsbook/autopilot";
 import { checkDisplayName, getHousePlayers } from "@/lib/sportsbook/players";
 import { archiveLeague, createLeague } from "@/lib/sportsbook/leagues";
 import { resolveReports } from "@/lib/sportsbook/safety";
+import { sendNewsletter, sendNewsletterTest, type NewsletterKind } from "@/lib/email/campaigns";
+import { CONTACT_EMAIL } from "@/lib/sportsbook/contact";
 import { SB_SEASON } from "@/lib/sportsbook/weeks";
 
 export const dynamic = "force-dynamic";
@@ -162,6 +165,24 @@ export async function POST(req: Request) {
           .eq("kind", "challenger");
         if (error) throw error;
         return NextResponse.json({ ok: true });
+      }
+      case "email_catchup": {
+        // Confirm emails for anyone who signed up before RESEND_API_KEY was set.
+        return NextResponse.json({ ok: true, ...(await sendWaitingConfirmations()) });
+      }
+      case "newsletter_test": {
+        // One copy to Remi's address. No dedupe log, so it can be sent as often as needed.
+        const kind: NewsletterKind = body.kind === "column" ? "column" : "episode";
+        const res = await sendNewsletterTest({ kind, slug: str(body.slug), to: CONTACT_EMAIL, note: str(body.note) });
+        if (res.status === "error") throw new ActionError(res.error);
+        return NextResponse.json({ ok: true, status: res.status });
+      }
+      case "newsletter_send": {
+        const kind: NewsletterKind = body.kind === "column" ? "column" : "episode";
+        // Stay inside this route's 120 second limit. Anything left is finished by pressing the button again: nobody gets it twice.
+        const res = await sendNewsletter({ kind, slug: str(body.slug), note: str(body.note), budgetMs: 60_000 });
+        if (res.errors && !res.sent && !res.already) throw new ActionError("Nothing was sent. Check the server log.");
+        return NextResponse.json({ ok: true, ...res });
       }
       case "settings": {
         const fav_teams = (Array.isArray(body.fav_teams) ? body.fav_teams : []).map(str).filter(isTeamCode);

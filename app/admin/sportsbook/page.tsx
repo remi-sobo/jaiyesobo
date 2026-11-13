@@ -12,6 +12,10 @@ import RefreshButton from "@/components/sportsbook/admin/refresh-button";
 import { LeaguesPanel, ReportsPanel } from "@/components/sportsbook/admin/growth-panel";
 import { allLeagues } from "@/lib/sportsbook/leagues";
 import { openReports } from "@/lib/sportsbook/safety";
+import { emailEnabled } from "@/lib/email/send";
+import { subscriberStats } from "@/lib/email/subscribers";
+import { newsletterChoices, newsletterSentCount, previewNewsletter } from "@/lib/email/campaigns";
+import { NewsletterPanel, SubscribersPanel, type NewsletterChoice } from "@/components/sportsbook/admin/email-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +56,20 @@ export default async function AdminSportsbookPage(props: { searchParams: Promise
     loadError = "Couldn't load Run It Back Picks. The tables may not exist yet (migration 025).";
   }
   const [reports, leagues] = await Promise.all([openReports().catch(() => []), allLeagues().catch(() => [])]);
+  const stats = await subscriberStats().catch(() => ({ confirmed: 0, pending: 0, unsubscribed: 0, results: 0, newsletter: 0 }));
+  const choices: NewsletterChoice[] = await Promise.all(
+    newsletterChoices().map(async (c) => {
+      const mail = previewNewsletter(c.kind, c.slug);
+      return {
+        kind: c.kind,
+        slug: c.slug,
+        label: `${c.kind === "episode" ? "Episode" : "Column"}: ${c.title}`,
+        subject: mail?.subject ?? c.title,
+        lines: (mail?.text ?? "").split("\n").map((l) => l.trim()).filter(Boolean).slice(0, 4),
+        alreadySent: await newsletterSentCount(c.kind, c.slug).catch(() => 0),
+      };
+    }),
+  );
   const w = view?.week ?? weekWindow(n); // existing weeks keep the dates on their row
   const status = view?.week.status ?? "none";
 
@@ -165,6 +183,12 @@ export default async function AdminSportsbookPage(props: { searchParams: Promise
           </Section>
           <Section title="Challengers">
             <ChallengersPanel players={view?.players ?? []} />
+          </Section>
+          <Section title="Subscribers">
+            <SubscribersPanel stats={stats} enabled={emailEnabled()} />
+          </Section>
+          <Section title="Newsletter">
+            <NewsletterPanel choices={choices} audience={stats.newsletter} enabled={emailEnabled()} />
           </Section>
           <Section title="Settings">
             <SettingsPanel favTeams={settings.fav_teams} favPlayers={settings.fav_players} />

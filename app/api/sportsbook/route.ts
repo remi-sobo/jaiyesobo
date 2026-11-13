@@ -11,6 +11,8 @@ import {
   setChallengerCookie,
 } from "@/lib/sportsbook/players";
 import { joinLeague, leaveLeague } from "@/lib/sportsbook/leagues";
+import { isValidEmail } from "@/lib/email/rules";
+import { subscribe } from "@/lib/email/subscribers";
 import { overLimit } from "@/lib/sportsbook/limits";
 import { deleteTalk, fileReport, isReportContext, postTalk, setMute } from "@/lib/sportsbook/safety";
 
@@ -20,7 +22,7 @@ type Body = Record<string, unknown>;
 
 /**
  * POST /api/sportsbook { action }
- *   join { name, age_band, league? }   new challenger, sets the cookie, returns their code
+ *   join { name, age_band, league?, email?, email_results?, email_newsletter? }   new challenger, sets the cookie, returns their code
  *   restore { code }     same challenger on another device
  *   pick { item_id, choice?, guess?, is_lock? }
  *   submit { week }      lock this challenger's picks for the week
@@ -47,14 +49,29 @@ export async function POST(req: Request) {
         if (!check.ok) return NextResponse.json({ error: check.error }, { status: 400 });
         if (!isAgeBand(body.age_band)) return NextResponse.json({ error: "Tell us if you're 13 or older." }, { status: 400 });
         if (await overLimit(req, "join")) return NextResponse.json({ error: "Too many new players from here. Try later." }, { status: 429 });
+        // The email is optional. A bad one is refused before the player is made, so they can fix it and retry.
+        const email = typeof body.email === "string" ? body.email.trim() : "";
+        if (email && !isValidEmail(email)) return NextResponse.json({ error: "That email doesn't look right." }, { status: 400 });
         const { id, code } = await createChallenger(check.name, body.age_band);
         await setChallengerCookie(id);
+        let emailStatus: string | null = null;
+        if (email) {
+          const sub = await subscribe({
+            email,
+            playerId: id,
+            ageBand: body.age_band,
+            source: "web-join",
+            wantResults: body.email_results !== false,
+            wantNewsletter: body.email_newsletter !== false,
+          });
+          emailStatus = sub.ok ? sub.status : null;
+        }
         // Joining from an invite link drops you straight into that league.
         if (typeof body.league === "string" && body.league) {
           const inviter = typeof body.from === "string" && body.from ? await challengerByCode(body.from) : null;
           await joinLeague(id, body.league, inviter).catch(() => null);
         }
-        return NextResponse.json({ ok: true, code });
+        return NextResponse.json({ ok: true, code, email: emailStatus });
       }
       case "restore": {
         if (await overLimit(req, "restore")) return NextResponse.json({ error: "Too many tries. Wait a bit." }, { status: 429 });

@@ -1,3 +1,4 @@
+import NewsletterBox from "@/components/site/newsletter-box";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -121,6 +122,8 @@ export default async function EpisodePage(props: PageProps<"/pod/[slug]">) {
             <VaultCompact entry={vault} />
           </div>
         )}
+
+        <NewsletterBox className="mt-16" />
 
         <footer className="mt-16 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-line)] pt-7 font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">
           <span>Jaiye Sobo with his dad</span>

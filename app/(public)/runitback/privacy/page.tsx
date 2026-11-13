@@ -19,14 +19,16 @@ export default function PrivacyPage() {
       </ul>
       <h2>What we don&apos;t do</h2>
       <ul>
-        <li>No email, phone number, birthday, location or contacts.</li>
+        <li>No phone number, birthday, location or contacts.</li>
         <li>No ads and no ad tracking. We don&apos;t sell or share your information.</li>
         <li>No open chat. Trash talk is picked from a short list of preset lines.</li>
       </ul>
+      <h2>Email</h2>
+      <p>Email is optional. If you add one, we use it for two things only: your results every Monday, and a note when Jaiye has a new episode or column. We send nothing until the address is confirmed from a link in an email. We keep the address on our server, show it to no one, and share it only with Resend, the service that delivers the email. Every email has an unsubscribe link, and you can turn either kind off any time.</p>
       <h2>Under 13</h2>
-      <p>Players under 13 can play with a nickname. They can&apos;t post trash talk or start leagues, and the app sends them no push alerts.</p>
+      <p>Players under 13 can play with a nickname. They can&apos;t post trash talk or start leagues, and the app sends them no push alerts. A player under 13 can only get email at a parent&apos;s address, and nothing is sent until that parent taps the button in the email we send them first.</p>
       <h2>Deleting your account</h2>
-      <p>In the app: Settings, then Delete account. On the website, email us. Your name, code, leagues and talk are removed. Old picks stay without a name so other players&apos; points don&apos;t change.</p>
+      <p>In the app: Settings, then Delete account. On the website, email us. Your name, code, leagues, talk and email address are removed. Old picks stay without a name so other players&apos; points don&apos;t change.</p>
       <h2>Contact</h2>
       <p>Email {CONTACT_EMAIL} with any question.</p>
     </PolicyPage>

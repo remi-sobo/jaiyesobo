@@ -5,6 +5,7 @@ import { pickPoints } from "./grade";
 import { recapPreview, sendPush, type PushResult } from "./push";
 import type { ItemOption, SbItem, SbPick, SbWeek } from "./types";
 import { SB_SEASON, currentWeekNumber, weekWindow } from "./weeks";
+import { EMAIL_RUN_BUDGET_MS } from "@/lib/email/rules";
 
 const db = () => createServiceClient();
 
@@ -313,7 +314,7 @@ export async function finalizeWeek(n: number): Promise<void> {
  * alone. Remi can still finalize early by hand. Safe to run any number of
  * times, from any job; returns the week numbers it closed.
  */
-export async function closeOutWeeks(now = new Date(), opts: { recap?: boolean } = {}): Promise<number[]> {
+export async function closeOutWeeks(now = new Date(), opts: { recap?: boolean; emailDeadline?: number } = {}): Promise<number[]> {
   const closed: number[] = [];
   const weeks = await listWeeks();
   for (const week of weeks.filter((w) => w.status === "graded")) {
@@ -346,13 +347,44 @@ export async function closeOutWeeks(now = new Date(), opts: { recap?: boolean } 
         console.error(JSON.stringify({ scope: "sportsbook.closeout", week: week.week_number, recapError: String(e) }));
       }
     }
+    await emailResults(now, opts.emailDeadline ?? Date.now() + EMAIL_RUN_BUDGET_MS);
   }
   return closed;
 }
 
+/**
+ * The Monday results emails, for final weeks published in the last 7 days. The
+ * email carries the recap, so a week still waiting on its recap is held for up
+ * to 36 hours and then sent without it. Every send is deduped per subscriber,
+ * so reruns (the nightly job runs this too) only finish what is left. All the
+ * sends in one cron invocation share `deadline` (epoch ms). Does
+ * nothing until RESEND_API_KEY is set. Never throws into the job.
+ */
+async function emailResults(now: Date, deadline: number) {
+  try {
+    const DAY = 24 * 60 * 60 * 1000;
+    const weeks = (await listWeeks())
+      .filter((w) => w.status === "final" && w.finalized_at && now.getTime() - Date.parse(w.finalized_at) < 7 * DAY)
+      .filter((w) => w.recap || now.getTime() - Date.parse(w.finalized_at!) > 1.5 * DAY)
+      .sort((a, b) => a.week_number - b.week_number);
+    if (weeks.length === 0) return;
+    const { sendResultsEmails } = await import("@/lib/email/campaigns");
+    for (const w of weeks) {
+      // One shared deadline for the whole cron invocation (nightlySync and weeklyJob both come through here).
+      const left = deadline - Date.now();
+      if (left <= 0) break;
+      await sendResultsEmails(w.week_number, { budgetMs: left });
+    }
+  } catch (e) {
+    console.error(JSON.stringify({ scope: "sportsbook.closeout", resultsEmailError: String(e) }));
+  }
+}
+
 /** Monday morning: grade last week, write its recap, draft this week. */
 export async function weeklyJob(now = new Date()) {
-  const sync = await nightlySync(now);
+  // One email budget for the whole invocation: nightlySync's results pass and the one below share it.
+  const emailDeadline = Date.now() + EMAIL_RUN_BUDGET_MS;
+  const sync = await nightlySync(now, { emailDeadline });
   const n = currentWeekNumber(now);
   const out: Record<string, unknown> = { sync, week: n };
   const last = n > 1 ? await getWeek(n - 1) : null;
@@ -368,7 +400,7 @@ export async function weeklyJob(now = new Date()) {
       }
     }
   }
-  out.closed = await closeOutWeeks(now, { recap: true });
+  out.closed = await closeOutWeeks(now, { recap: true, emailDeadline });
   // Backstop for the pushes: no-ops if nightlySync and saveRecap already sent them.
   out.push = {
     graded: await pushGraded(),
