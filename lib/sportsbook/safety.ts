@@ -199,6 +199,9 @@ export async function deleteAccount(playerId: string): Promise<void> {
   await supa.from("sb_trash_talk").delete().eq("player_id", playerId);
   await supa.from("sb_mutes").delete().or(`player_id.eq.${playerId},muted_player_id.eq.${playerId}`);
   await supa.from("sb_app_sessions").delete().eq("player_id", playerId);
+  // Every email row linked to them goes too, a parent's included (the send log goes with it). Deleted, never detached.
+  const { error: subErr } = await supa.from("sb_subscribers").delete().eq("player_id", playerId);
+  if (subErr) throw subErr;
   const { error } = await supa
     .from("sb_players")
     .update({

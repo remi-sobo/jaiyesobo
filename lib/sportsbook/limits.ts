@@ -19,6 +19,7 @@ export const LIMITS = {
   mute: 60,
   name: 10,
   pass: 10,
+  email: 5,
 } as const;
 
 export type LimitKind = keyof typeof LIMITS;

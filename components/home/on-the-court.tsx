@@ -5,6 +5,7 @@ import { schedule } from "@/lib/content/publishing";
 import { formatShortDate, pad } from "@/lib/content/format";
 import { SectionLabel } from "@/components/site/type";
 import { GhostButton, PlayButton } from "@/components/site/buttons";
+import NewsletterBox from "@/components/site/newsletter-box";
 
 export default function OnTheCourt() {
   const ep = latestEpisode();
@@ -100,6 +101,8 @@ export default function OnTheCourt() {
             );
           })}
         </div>
+
+        <NewsletterBox className="mt-[clamp(32px,5vw,64px)] max-w-[640px]" />
       </div>
     </section>
   );

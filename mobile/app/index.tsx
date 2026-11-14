@@ -15,7 +15,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Lockup } from "@/components/Lockup";
 import { MoreButton, usePlayerActions } from "@/components/PlayerActions";
-import { ApiError, clearToken, getToken } from "@/lib/api";
+import { ApiError, clearToken, getFlag, getToken, setFlag } from "@/lib/api";
 import { colors, fonts, radius } from "@/lib/brand";
 import { showDialog } from "@/lib/dialog";
 import { getBoard, getCurrentWeek, getMe, getRecap, getResults, getTalkLines, patchMe, postTalk, react, savePick, submitPicks } from "@/lib/routes";
@@ -114,6 +114,7 @@ export default function ThisWeek() {
       leagueCount={me.data.leagues.length}
       pushLockEnabled={me.data.player.push_enabled.lock}
       needsAge={me.data.player.age_band === null}
+      needsEmail={me.data.email === null}
       onRefresh={() => Promise.all([me.refetch(), week.refetch()])}
     />
   );
@@ -127,6 +128,7 @@ function ThisWeekBody({
   leagueCount,
   pushLockEnabled,
   needsAge,
+  needsEmail,
   onRefresh,
 }: {
   week: ApiWeek;
@@ -136,6 +138,7 @@ function ThisWeekBody({
   leagueCount: number;
   pushLockEnabled: boolean;
   needsAge: boolean;
+  needsEmail: boolean;
   onRefresh: () => Promise<unknown>;
 }) {
   const insets = useSafeAreaInsets();
@@ -280,6 +283,7 @@ function ThisWeekBody({
 
         <View style={styles.cards}>
           {needsAge ? <AgePrompt /> : null}
+          {needsEmail && !needsAge ? <EmailCard /> : null}
           {items.map((item) => (
             <PickCard
               key={item.id}
@@ -313,6 +317,37 @@ function ThisWeekBody({
 }
 
 /** One-time 13+ check for accounts that never answered (the server only takes it while null). */
+const EMAIL_CARD_KEY = "rib_email_card_dismissed";
+
+/** For players with no email: a dismissible nudge that opens Settings, where the email is added. */
+function EmailCard() {
+  const [hidden, setHidden] = useState(true);
+  useEffect(() => {
+    let live = true;
+    getFlag(EMAIL_CARD_KEY).then((v) => { if (live) setHidden(v); });
+    return () => { live = false; };
+  }, []);
+  if (hidden) return null;
+  return (
+    <View style={styles.ageCard}>
+      <Text style={styles.ageLabel}>Results by email</Text>
+      <Text style={styles.ageQuestion}>Never miss your results. Add your email.</Text>
+      <View style={styles.ageRow}>
+        <Pressable onPress={() => router.push("/settings")} accessibilityRole="button" style={[styles.ageBtn, styles.ageBtnSelected]}>
+          <Text style={[styles.ageBtnText, styles.ageBtnTextSelected]}>Add email</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => { setHidden(true); setFlag(EMAIL_CARD_KEY); }}
+          accessibilityRole="button"
+          style={styles.ageBtn}
+        >
+          <Text style={styles.ageBtnText}>Not now</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 function AgePrompt() {
   const qc = useQueryClient();
   const save = useMutation({

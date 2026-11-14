@@ -19,8 +19,8 @@ import { ApiError, clearToken } from "@/lib/api";
 import { colors, fonts, radius } from "@/lib/brand";
 import { showDialog } from "@/lib/dialog";
 import { pushAvailable, registerForPush } from "@/lib/push";
-import { deleteMe, getMe, patchMe, signOut } from "@/lib/routes";
-import type { ApiPlayer, MeResponse, PushSettings } from "@shared/types";
+import { deleteMe, getMe, patchEmail, patchMe, putEmail, signOut } from "@/lib/routes";
+import type { ApiEmail, ApiPlayer, MeResponse, PushSettings } from "@shared/types";
 
 const ALERTS: { key: keyof PushSettings; label: string }[] = [
   { key: "open", label: "When a new week opens" },
@@ -79,7 +79,7 @@ export default function Settings() {
         <Text style={styles.title}>Settings.</Text>
 
         {me.data ? (
-          <SettingsBody player={me.data.player} />
+          <SettingsBody player={me.data.player} email={me.data.email} />
         ) : me.isError ? (
           <View style={styles.errorBox}>
             <Text style={styles.errorText}>{errorText}</Text>
@@ -97,7 +97,7 @@ export default function Settings() {
   );
 }
 
-function SettingsBody({ player }: { player: ApiPlayer }) {
+function SettingsBody({ player, email }: { player: ApiPlayer; email: ApiEmail | null }) {
   const qc = useQueryClient();
 
   const leaveAccount = async () => {
@@ -135,6 +135,7 @@ function SettingsBody({ player }: { player: ApiPlayer }) {
       <NameSection name={player.display_name} />
       {player.code ? <CodeSection code={player.code} /> : null}
       <AlertsSection player={player} />
+      <EmailSection player={player} email={email} />
 
       {out.isPending ? (
         <View style={styles.signOutBtn}>
@@ -337,6 +338,141 @@ function AlertsSection({ player }: { player: ApiPlayer }) {
       {canTalk && !pushAvailable() ? (
         <Text style={styles.hint}>Push alerts arrive with the App Store build. Your choices are saved.</Text>
       ) : null}
+    </View>
+  );
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Email: add or change it, and the two toggles. The app only ever sees a masked
+ * hint like r***@gmail.com. Under 13 the confirm email goes to a parent.
+ */
+function EmailSection({ player, email }: { player: ApiPlayer; email: ApiEmail | null }) {
+  const qc = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [sentNote, setSentNote] = useState<string | null>(null);
+  const under13 = player.age_band !== "13_plus";
+  const active = email && email.status !== "unsubscribed" ? email : null;
+
+  const save = useMutation({
+    mutationFn: (address: string) => putEmail({ email: address, results: active?.want_results ?? true, newsletter: active?.want_newsletter ?? true }),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["me"] });
+      setSentNote(data.status === "parent-check" ? "We sent a note to your parent. They need to tap the button in it." : "Check your inbox and tap the button to confirm.");
+      setEditing(false);
+      setDraft("");
+    },
+  });
+
+  const toggle = useMutation({
+    mutationFn: (patch: { results?: boolean; newsletter?: boolean }) => patchEmail(patch),
+    onMutate: async (patch) => {
+      await qc.cancelQueries({ queryKey: ["me"] });
+      const previous = qc.getQueryData<MeResponse>(["me"]);
+      if (previous?.email) {
+        qc.setQueryData<MeResponse>(["me"], {
+          ...previous,
+          email: { ...previous.email, want_results: patch.results ?? previous.email.want_results, want_newsletter: patch.newsletter ?? previous.email.want_newsletter },
+        });
+      }
+      return { previous };
+    },
+    onError: (_err, _patch, ctx) => {
+      if (ctx?.previous) qc.setQueryData(["me"], ctx.previous);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["me"] }),
+  });
+
+  const trimmed = draft.trim();
+  const canSave = EMAIL_RE.test(trimmed) && !save.isPending;
+  const statusText = !active
+    ? null
+    : active.status === "confirmed"
+      ? "Confirmed"
+      : active.relation === "parent"
+        ? "Waiting for your parent to say yes"
+        : "Waiting for you to confirm. Check your inbox.";
+
+  return (
+    <View>
+      <Text style={styles.label}>Email</Text>
+      {active && !editing ? (
+        <View>
+          <View style={styles.nameRow}>
+            <View style={{ flexShrink: 1 }}>
+              <Text style={styles.nameText} numberOfLines={1}>{active.address_hint}</Text>
+              <Text style={styles.hint}>{statusText}</Text>
+            </View>
+            <Pressable onPress={() => { save.reset(); setSentNote(null); setEditing(true); }} hitSlop={{ left: 8, right: 8 }} style={styles.linkBtn}>
+              <Text style={styles.linkText}>Change</Text>
+            </Pressable>
+          </View>
+          <View style={styles.switchList}>
+            <View style={styles.switchRow}>
+              <Text style={styles.switchLabel}>My results every Monday</Text>
+              <Switch
+                value={active.want_results}
+                onValueChange={(v) => toggle.mutate({ results: v })}
+                trackColor={{ false: colors.line, true: colors.accent }}
+                thumbColor={colors.paper}
+                ios_backgroundColor={colors.line}
+                accessibilityLabel="My results every Monday"
+              />
+            </View>
+            <View style={styles.switchRow}>
+              <Text style={styles.switchLabel}>Jaiye&apos;s newsletter</Text>
+              <Switch
+                value={active.want_newsletter}
+                onValueChange={(v) => toggle.mutate({ newsletter: v })}
+                trackColor={{ false: colors.line, true: colors.accent }}
+                thumbColor={colors.paper}
+                ios_backgroundColor={colors.line}
+                accessibilityLabel="Jaiye's newsletter"
+              />
+            </View>
+          </View>
+          <Text style={styles.hint}>Turn both off to stop all email.</Text>
+        </View>
+      ) : editing || !active ? (
+        <View>
+          <Text style={styles.note}>
+            {under13 ? "Add a parent's email to get your results every Monday. We'll ask them first." : "Get your results every Monday, plus a note when Jaiye has something new."}
+          </Text>
+          <TextInput
+            value={draft}
+            onChangeText={setDraft}
+            placeholder={under13 ? "A parent's email" : "you@example.com"}
+            placeholderTextColor={colors.steel}
+            maxLength={254}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            autoComplete="email"
+            returnKeyType="done"
+            onSubmitEditing={() => { if (canSave) save.mutate(trimmed); }}
+            style={styles.input}
+          />
+          <View style={styles.editActions}>
+            <Pressable
+              disabled={!canSave}
+              onPress={() => save.mutate(trimmed)}
+              style={({ pressed }) => [styles.primary, !canSave && styles.primaryDisabled, pressed && canSave && styles.primaryPressed]}
+            >
+              {save.isPending ? <ActivityIndicator color={colors.ink} /> : <Text style={styles.primaryText}>{under13 ? "Ask my parent" : "Send confirm email"}</Text>}
+            </Pressable>
+            {editing ? (
+              <Pressable onPress={() => { setEditing(false); save.reset(); }} style={styles.linkBtn}>
+                <Text style={styles.linkText}>Cancel</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        </View>
+      ) : null}
+      {sentNote ? <Text style={styles.hint}>{sentNote}</Text> : null}
+      {save.error ? <Text style={styles.error}>{actionError(save.error, "Couldn't save that email. Try again.")}</Text> : null}
+      {toggle.error ? <Text style={styles.error}>{actionError(toggle.error, "Couldn't save that. Try again.")}</Text> : null}
     </View>
   );
 }

@@ -1,3 +1,4 @@
+import NewsletterBox from "@/components/site/newsletter-box";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -128,6 +129,8 @@ export default async function PostPage(props: PageProps<"/column/[slug]">) {
           )}
         </footer>
       </article>
+
+      <NewsletterBox className="mx-auto mt-[clamp(40px,6vw,72px)] max-w-[660px]" />
 
       <nav aria-label="More columns" className="mx-auto mt-[clamp(48px,7vw,88px)] max-w-[960px]">
         {(older || newer) && (

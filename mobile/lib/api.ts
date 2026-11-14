@@ -73,6 +73,29 @@ export async function clearToken(): Promise<void> {
   await SecureStore.deleteItemAsync(TOKEN_KEY);
 }
 
+/**
+ * Tiny on/off flags for "don't show this again" choices. Same storage as the
+ * token (Keychain on the phone, localStorage in the browser). Failures read as
+ * "not set" and write nothing, so a card just comes back next time.
+ */
+export async function getFlag(key: string): Promise<boolean> {
+  try {
+    if (onWeb) return window.localStorage.getItem(key) === "1";
+    return (await SecureStore.getItemAsync(key)) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export async function setFlag(key: string): Promise<void> {
+  try {
+    if (onWeb) window.localStorage.setItem(key, "1");
+    else await SecureStore.setItemAsync(key, "1");
+  } catch {
+    // Not saved; the card comes back next visit.
+  }
+}
+
 export class ApiError extends Error {
   constructor(public status: number, public body: unknown, message?: string) {
     super(message ?? `App API ${status}`);
@@ -81,7 +104,7 @@ export class ApiError extends Error {
 }
 
 type RequestOpts = {
-  method?: "GET" | "POST" | "PATCH" | "DELETE";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
   /** When true, don't send the session token even if we have one. */
   anonymous?: boolean;

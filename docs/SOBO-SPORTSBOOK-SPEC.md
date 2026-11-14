@@ -193,10 +193,42 @@ and the admin actions.
   and close-out happen Monday). The featured week is the highest `open` week, so the public page and
   the app switch to the new week at that moment, and the old week stays reachable at its own URL.
 
+## 7c. Email
+
+Email is opt in, free to send within Resend's free tier, and inert until `RESEND_API_KEY` is set
+(every send logs and skips). Code lives in `lib/email/`; tables are `sb_subscribers` and
+`sb_email_log` (migration 030, RLS on, no policies, server only).
+
+- **Who.** Players (website join form, app join screen, app Settings, a small prompt on the week
+  page and the app's This Week) and fans (the newsletter box on the home page, /pod, each episode
+  and each column). Addresses are stored lowercased, one row per address.
+- **Consent.** Nothing is sent until an address is confirmed from a link in an email. A player under
+  13 (or an old account with no age answer) can only use a parent's address: the first email is a
+  parent consent email ("Yes, send <name>'s results to me"). The fan box asks "I'm 13 or older" or
+  "I'm a parent signing up my kid". Confirm links last 7 days; unsubscribe and preferences links
+  never expire. Account deletion removes the address.
+- **What.** Two kinds, each its own toggle: Monday results and Jaiye's newsletter (new episode or
+  column). Every email has an unsubscribe link, a "Manage what I get" link
+  (`/email/preferences?t=`) and `List-Unsubscribe` one click headers (`POST /api/email/unsubscribe`).
+- **Monday results.** `closeOutWeeks(now, { recap: true })` (the weekly and nightly cron jobs) calls
+  `sendResultsEmails(n)` for final weeks published in the last 7 days, after recaps are written. A
+  week still missing its recap is held up to 36 hours, then sent without it. Subject: "Week N:
+  <winner> won. You finished <ordinal>." for a player who played that week, "Week N: <winner> won"
+  for everyone else. Sends one at a time with a 0.6 second gap and stop after 150 seconds; the next
+  run finishes the rest. `sb_email_log` has a unique (subscriber, dedupe key) index
+  (`results:<season>:<n>`, `newsletter:<kind>:<slug>`), so reruns never send twice.
+- **Newsletter.** Admin, Run It Back Picks page, "Newsletter" section: pick an episode or column,
+  preview, "Send test to me" (to the contact address), "Send to N subscribers".
+- **Env.** `RESEND_API_KEY`, `EMAIL_FROM` (default "Jaiye at Run It Back <picks@jaiyesobo.com>"),
+  `EMAIL_REPLY_TO` (default the contact address), `EMAIL_MAILING_ADDRESS` (printed in the footer).
+  `jaiyesobo.com` must be verified in Resend (SPF and DKIM) before sending.
+- **Later.** `phone` and `want_sms` on `sb_subscribers` are reserved for text messages (Twilio).
+  Nothing reads them yet.
+
 ## 8. Not in v1
 
 - Real sportsbook odds (AI lines from stats only).
-- Push or email notifications.
+- Push notifications (email came later, see 7c).
 - Challenger accounts with email or passwords (display name and player code only).
 - Live in-game updates (results update nightly and on demand, not play by play).
 
@@ -221,6 +253,5 @@ and the admin actions.
 - Fan extras (no free text, nothing to moderate): emoji reactions on revealed picks, a weekly
   fan vote on who wins (Jaiye or Remi), and one optional line of trash talk on Jaiye's and
   Remi's own picks.
-- Phase 2 ideas, not built: a Monday email to challengers (opt in, 13+ or a parent's email,
-  unsubscribe link, needs an email service like Resend), and challenger comments (AI screened
-  and held for approval).
+- Monday email to challengers: built, see section 7c. Phase 2 idea, not built: challenger comments
+  (AI screened and held for approval).

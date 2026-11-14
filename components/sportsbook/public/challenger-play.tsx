@@ -22,6 +22,9 @@ export function JoinForm({ league, from, onJoined }: { league?: string; from?: s
   const router = useRouter();
   const [name, setName] = useState("");
   const [age, setAge] = useState<"13_plus" | "under_13" | null>(null);
+  const [email, setEmail] = useState("");
+  const [wantResults, setWantResults] = useState(true);
+  const [wantNews, setWantNews] = useState(true);
   const [code, setCode] = useState("");
   const [mode, setMode] = useState<"join" | "restore">("join");
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +41,16 @@ export function JoinForm({ league, from, onJoined }: { league?: string; from?: s
     }
     const res =
       mode === "join"
-        ? await post({ action: "join", name, age_band: age, league: league ?? null, from: from ?? null })
+        ? await post({
+            action: "join",
+            name,
+            age_band: age,
+            league: league ?? null,
+            from: from ?? null,
+            email: email.trim() || undefined,
+            email_results: wantResults,
+            email_newsletter: wantNews,
+          })
         : await post({ action: "restore", code });
     if (res.ok && mode === "restore" && league) await post({ action: "league_join", code: league, from: from ?? null });
     setBusy(false);
@@ -76,6 +88,27 @@ export function JoinForm({ league, from, onJoined }: { league?: string; from?: s
               <p className="text-[0.8rem] text-[var(--color-mute)]">You can play and react. Trash talk and starting leagues are for 13 and up.</p>
             ) : null}
           </fieldset>
+          <div className="mt-2 flex flex-col gap-2">
+            <label htmlFor="sb-email" className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">
+              {age === "under_13" ? "A parent's email (optional)" : "Email (optional)"}
+            </label>
+            <input id="sb-email" type="email" inputMode="email" autoComplete="email" className={input} value={email} maxLength={254} placeholder="you@example.com" onChange={(e) => setEmail(e.target.value)} />
+            <p className="text-[0.8rem] text-[var(--color-mute)]">
+              Get your results every Monday.{age === "under_13" ? " We'll ask them first." : ""}
+            </p>
+            {email.trim() ? (
+              <div className="flex flex-col gap-1">
+                <label className="flex min-h-10 items-center gap-3 text-[0.9rem]">
+                  <input type="checkbox" checked={wantResults} onChange={(e) => setWantResults(e.target.checked)} className="h-5 w-5 accent-[var(--color-red)]" />
+                  My results every Monday
+                </label>
+                <label className="flex min-h-10 items-center gap-3 text-[0.9rem]">
+                  <input type="checkbox" checked={wantNews} onChange={(e) => setWantNews(e.target.checked)} className="h-5 w-5 accent-[var(--color-red)]" />
+                  Jaiye&apos;s newsletter: new episodes and columns
+                </label>
+              </div>
+            ) : null}
+          </div>
         </>
       ) : (
         <>

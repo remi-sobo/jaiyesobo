@@ -103,8 +103,10 @@ Every route rate limited like the current join route. Errors are `{ error: "<mes
 | POST `/session/join` | `{ name, age_band }` → new player, returns `{ token, player }` |
 | POST `/session/restore` | `{ code }` → existing player (website players moving to the app) |
 | DELETE `/session` | sign out this device |
-| GET `/me` | player, pass status, settings, leagues |
+| GET `/me` | player, pass status, settings, leagues, and `email` (`{ address_hint, status, relation, want_results, want_newsletter }` or null; the address itself never leaves the server) |
 | PATCH `/me` | display name, push token, push settings |
+| PUT `/me/email` | `{ email, results, newsletter }` add or change the player's email. Sends the confirm email, or the parent consent email when the player's age band is under 13 (or unknown). Returns `{ status: "check-your-inbox" \| "parent-check", email }`. Rate limited (kind `email`, 5 an hour per IP) |
+| PATCH `/me/email` | `{ results?, newsletter? }` the two toggles; both off unsubscribes. 404 when there is no email on file |
 | DELETE `/me` | delete account |
 | GET `/week/current` and `/week/{season}/{n}` | slate with my picks, reveal state, live points, hosts' picks after lock |
 | POST `/picks` | `{ item_id, choice?, guess?, is_lock? }` same rules as website |

@@ -1,12 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Lockup } from "@/components/Lockup";
 import { ApiError } from "@/lib/api";
 import { colors, fonts, radius } from "@/lib/brand";
-import { joinSession } from "@/lib/routes";
+import { joinSession, putEmail } from "@/lib/routes";
 import type { AgeBand } from "@shared/types";
 
 /**
@@ -18,10 +18,17 @@ export default function Join() {
   const { invite } = useLocalSearchParams<{ invite?: string }>();
   const [name, setName] = useState("");
   const [age, setAge] = useState<AgeBand | null>(null);
+  const [email, setEmail] = useState("");
   const qc = useQueryClient();
 
   const join = useMutation({
-    mutationFn: () => joinSession({ name: name.trim(), age_band: age! }),
+    mutationFn: async () => {
+      const res = await joinSession({ name: name.trim(), age_band: age! });
+      // The email is optional and never blocks joining: a bad address or a network blip is fixed later in Settings.
+      const address = email.trim();
+      if (address) await putEmail({ email: address, results: true, newsletter: true }).catch(() => {});
+      return res;
+    },
     onSuccess: () => {
       // Replace instead of push so the back gesture doesn't return here
       // after signing in.
@@ -45,6 +52,7 @@ export default function Join() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
         <Lockup h={48} />
       </View>
@@ -75,6 +83,21 @@ export default function Join() {
         <AgeButton selected={age === "under_13"} label="No" onPress={() => setAge("under_13")} />
       </View>
 
+      <Text style={styles.label}>{age === "under_13" ? "A parent's email (optional)" : "Email (optional)"}</Text>
+      <TextInput
+        value={email}
+        onChangeText={setEmail}
+        placeholder="you@example.com"
+        placeholderTextColor={colors.steel}
+        maxLength={254}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        autoCorrect={false}
+        autoComplete="email"
+        style={styles.input}
+      />
+      <Text style={styles.help}>Get your results every Monday.{age === "under_13" ? " We'll ask them first." : ""}</Text>
+
       {errorText ? <Text style={styles.error}>{errorText}</Text> : null}
 
       <Pressable
@@ -89,6 +112,7 @@ export default function Join() {
       <Link replace href={typeof invite === "string" && invite.length > 0 ? { pathname: "/restore", params: { invite } } : "/restore"} style={styles.restoreLink}>
         <Text style={styles.restoreLinkText}>Already playing? Use your code</Text>
       </Link>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -107,7 +131,8 @@ function AgeButton({ selected, label, onPress }: { selected: boolean; label: str
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.ink, padding: 20 },
+  safe: { flex: 1, backgroundColor: colors.ink },
+  scroll: { padding: 20, paddingBottom: 40 },
   header: { alignItems: "flex-start", marginBottom: 20 },
   title: { color: colors.paper, fontFamily: fonts.displayItalic, fontSize: 40, lineHeight: 42 },
   titleAccent: { color: colors.accent },

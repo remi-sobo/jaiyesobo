@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { getChallenger } from "@/lib/sportsbook/players";
+import { subscriberForPlayer } from "@/lib/email/subscribers";
+import { EmailPrompt } from "./email-prompt";
 import { getVisitor, loadReactions, loadVotes } from "@/lib/sportsbook/fans";
 import { listWeeks } from "@/lib/sportsbook/data";
 import { lastWeekRow, loadWeekView, weekResultRow } from "@/lib/sportsbook/view";
@@ -94,6 +96,8 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
     me ? playerFlags(me.id) : Promise.resolve(null),
     me ? myLeagues(me.id) : Promise.resolve([]),
   ]);
+  // A signed in player with no email on file gets a small nudge. If the email table isn't there yet, say nothing.
+  const needsEmail = me ? await subscriberForPlayer(me.id).then((s) => !s, () => false) : false;
   const nameOf = new Map(view.players.map((p) => [p.id, p.display_name]));
   const talkFor = (itemId: string) => {
     const lines = talkLines.filter((t) => t.item_id === itemId).map((t) => ({ player_id: t.player_id, name: nameOf.get(t.player_id) ?? "Player", text: t.text }));
@@ -115,6 +119,7 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
   return (
     <main className="px-4 py-[clamp(40px,6vw,80px)] min-[760px]:px-10">
       <div className="mx-auto max-w-[1240px]">
+        {needsEmail ? <EmailPrompt className="mb-6" /> : null}
         {resultBanner ? <LastWeekCard last={lastWeek} className="mb-6" /> : null}
         {!featured && isDone ? (
           <div className="mb-6">

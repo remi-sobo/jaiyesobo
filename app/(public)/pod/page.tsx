@@ -10,6 +10,7 @@ import { GhostButton, PlayButton } from "@/components/site/buttons";
 import { VaultSection } from "@/components/site/vault";
 import Reveal from "@/components/site/reveal";
 import { InstagramLine } from "@/components/site/instagram";
+import NewsletterBox from "@/components/site/newsletter-box";
 
 export const metadata: Metadata = {
   title: "On The Court · Jaiye Sobo",
@@ -170,6 +171,12 @@ export default function PodPage() {
               </li>
             ))}
           </ul>
+        </div>
+      </section>
+
+      <section className="border-t border-[var(--color-line)] px-5 py-[clamp(40px,6vw,80px)] min-[760px]:px-10">
+        <div className="mx-auto max-w-[1200px]">
+          <NewsletterBox className="max-w-[640px]" />
         </div>
       </section>
 
