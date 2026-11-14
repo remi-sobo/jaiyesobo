@@ -2,6 +2,9 @@ import type { LastWeekRow } from "@/components/sportsbook/public/last-week";
 import { CONTACT_EMAIL } from "@/lib/sportsbook/contact";
 import { SITE_URL, firstSentences, ordinal } from "./rules";
 
+/** Footer postal address on every email: the work address, never a home address. */
+export const MAILING_ADDRESS = "380 Portage Ave, Palo Alto, CA 94306";
+
 /**
  * Every email the site sends. Pure functions: data in, `{ subject, html, text,
  * headers }` out. Light background and simple tables with inline styles so they
@@ -50,7 +53,8 @@ const h1 = (s: string) => `<h1 style="margin:0 0 16px;font-family:${SERIF};font-
 type Shell = { preheader: string; html: string; text: string; manageToken: string; why: string };
 
 function shell({ preheader, html, text, manageToken, why }: Shell): { html: string; text: string } {
-  const address = process.env.EMAIL_MAILING_ADDRESS?.trim();
+  // Postal address required in the footer of every email. EMAIL_MAILING_ADDRESS overrides it.
+  const address = process.env.EMAIL_MAILING_ADDRESS?.trim() || MAILING_ADDRESS;
   const manage = manageUrl(manageToken);
   const unsub = unsubscribeUrl(manageToken);
   const footerLine = `Run It Back Picks · jaiyesobo.com`;
