@@ -220,7 +220,7 @@ Email is opt in, free to send within Resend's free tier, and inert until `RESEND
 - **Newsletter.** Admin, Run It Back Picks page, "Newsletter" section: pick an episode or column,
   preview, "Send test to me" (to the contact address), "Send to N subscribers".
 - **Env.** `RESEND_API_KEY`, `EMAIL_FROM` (default "Jaiye at Run It Back <picks@jaiyesobo.com>"),
-  `EMAIL_REPLY_TO` (default the contact address), `EMAIL_MAILING_ADDRESS` (printed in the footer).
+  `EMAIL_REPLY_TO` (default the contact address), `EMAIL_MAILING_ADDRESS` (overrides the footer address; the default is the work address in `lib/email/templates.ts`).
   `jaiyesobo.com` must be verified in Resend (SPF and DKIM) before sending.
 - **Later.** `phone` and `want_sms` on `sb_subscribers` are reserved for text messages (Twilio).
   Nothing reads them yet.
