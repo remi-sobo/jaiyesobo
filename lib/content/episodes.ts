@@ -4,6 +4,30 @@ import type { Episode } from "./types";
 /** On The Court. Newest first. */
 export const episodes: Episode[] = [
   {
+    number: 6,
+    slug: "runitback-week-5",
+    title: "My Week 5 Run It Back Picks",
+    titleAccent: "Week 5",
+    standfirst:
+      "All 12 of my Week 5 picks, and my dad's. Big men week, the Upset Special, the new Blowout of the Week, Dame's threes (we both locked it), and the closest guess. Think you can beat us?",
+    date: "2026-11-15",
+    runtime: "6:28",
+    guests: "Jaiye",
+    youtubeId: "tUT6JP4ay1Q",
+    sportsbookWeek: 5,
+    myTake: "My dad chose Orlando over Philly, which I was dumbfounded by.",
+    chapters: [
+      { time: "00:00", text: "Welcome to Week 5 of Run It Back Picks." },
+      { time: "00:21", text: "Big men week. I'm taking Sabonis, he's averaging like 14 rebounds." },
+      { time: "01:53", text: "The Upset Special. I took Indiana. My dad took Orlando.", segment: "Upset Special" },
+      { time: "02:27", text: "Blowout of the Week. I wanted the Blazers, but I couldn't do it." },
+      { time: "03:20", text: "Dame's threes. Over, easy. We both locked it." },
+      { time: "04:01", text: "Rockets or Nuggets, the Spurs, and Thunder at Heat." },
+      { time: "05:34", text: "Closest guess: 242. My dad said 228." },
+      { time: "06:14", text: "Your turn. Make your Week 5 picks." },
+    ],
+  },
+  {
     number: 5,
     slug: "blazers-thunder-recap",
     title: "Dame hit a logo three: Blazers vs Thunder",
