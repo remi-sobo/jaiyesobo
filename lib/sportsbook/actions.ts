@@ -238,6 +238,9 @@ export async function makeRecap(n: number): Promise<string> {
   const week = await getWeek(n);
   if (!week) throw new ActionError("No such week.");
   const items = await getItems(week.id);
+  // A recap written before every pick has a result gets the scores wrong (Week 4's did).
+  const left = items.filter((i) => i.status === "open").length;
+  if (left) throw new ActionError(`${left} ${left === 1 ? "pick still needs" : "picks still need"} a result before the recap.`);
   const picks = await getPicks(items.map((i) => i.id));
   const players = await getPlayers();
   const board = weekBoard(items, picks, players);
@@ -271,7 +274,8 @@ export async function makeRecap(n: number): Promise<string> {
 
 export async function saveRecap(n: number, text: string): Promise<void> {
   const week = await getWeek(n);
-  if (!week || week.status === "final") throw new ActionError("Can't edit that recap.");
+  // A final week's recap stays editable (migration 029): it is usually written right after the week closes.
+  if (!week || week.status === "draft") throw new ActionError("Can't edit that recap.");
   const recap = text.trim().slice(0, 2000);
   const { error } = await db().from("sb_weeks").update({ recap: recap || null }).eq("id", week.id);
   if (error) throw error;
@@ -410,18 +414,8 @@ export async function weeklyJob(now = new Date()) {
   const n = currentWeekNumber(now);
   const out: Record<string, unknown> = { sync, week: n };
   const last = n > 1 ? await getWeek(n - 1) : null;
-  if (last && (last.status === "open" || last.status === "graded")) {
-    await gradeWeek(last, now);
-    const fresh = await getWeek(n - 1);
-    if (fresh && !fresh.recap) {
-      try {
-        await makeRecap(n - 1);
-        out.recap = true;
-      } catch (e) {
-        out.recapError = String(e);
-      }
-    }
-  }
+  // The recap is written by closeOutWeeks below, once every pick has a result.
+  if (last && (last.status === "open" || last.status === "graded")) await gradeWeek(last, now);
   out.closed = await closeOutWeeks(now, { recap: true, emailDeadline });
   // Backstop for the pushes: no-ops if nightlySync and saveRecap already sent them.
   out.push = {
