@@ -304,7 +304,7 @@ export function resultsEmail(i: ResultsInput): Rendered {
     label("Top five") +
     `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 20px;">${topHtml}</table>` +
     (recap ? quote("Jaiye's recap", recap) : "") +
-    (next ? button(PLAY_URL, `Play Week ${next}`) : "") +
+    (next ? button(PLAY_URL, `Play Week ${next}`) : p(`Week ${row.week + 1} picks open Monday. <a href="${esc(PLAY_URL)}" style="color:${RED};">Get ready</a>.`)) +
     p(`<a href="${esc(url)}" style="color:${RED};">See the full Week ${row.week} results</a>`, "margin-bottom:0;");
 
   const text = `${row.me ? `You finished ${ordinal(row.me.rank)}.` : row.winnerName ? `${row.winnerName} won Week ${row.week}.` : `Week ${row.week} was a tie.`}
@@ -314,7 +314,7 @@ ${h2h}
 
 Top five:
 ${row.top.map((t, idx) => `${idx + 1}. ${t.name} ${t.points}`).join("\n")}
-${recap ? `\nJaiye's recap: ${recap}\n` : ""}${next ? `\nPlay Week ${next}: ${PLAY_URL}\n` : ""}
+${recap ? `\nJaiye's recap: ${recap}\n` : ""}${next ? `\nPlay Week ${next}: ${PLAY_URL}\n` : `\nWeek ${row.week + 1} picks open Monday: ${PLAY_URL}\n`}
 Full results: ${url}`;
 
   const s = shell({

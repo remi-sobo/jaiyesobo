@@ -1,17 +1,21 @@
 import { NextResponse } from "next/server";
 import { nightlySync } from "@/lib/sportsbook/data";
-import { weeklyJob } from "@/lib/sportsbook/actions";
+import { closeoutJob, weeklyJob } from "@/lib/sportsbook/actions";
 import { privacyCleanup } from "@/lib/privacy/cleanup";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 /**
- * GET /api/cron/sportsbook?job=nightly|weekly
+ * GET /api/cron/sportsbook?job=nightly|weekly|closeout
  *
  * Called by Vercel Cron (see vercel.json). With CRON_SECRET set, Vercel sends
  * it as a bearer token and nothing else gets in. Without it, only Vercel's
  * cron user agent is accepted. Both jobs are safe to run twice.
+ *
+ * closeout runs every 15 minutes from Monday 02:00 to 11:45 UTC (Sunday about
+ * 6pm to Monday 3am Pacific): it closes a week right after Sunday's last game
+ * and sends the recap and results email then (see closeoutJob).
  *
  * Schedules (vercel.json, UTC): nightly at 10:00; weekly Monday at 11:00
  * (3am Pacific Monday). The weekly job must run after the Pacific week has
@@ -39,7 +43,7 @@ export async function GET(req: Request) {
   if (!allowed) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const job = new URL(req.url).searchParams.get("job");
-  if (job !== "weekly") {
+  if (job !== "weekly" && job !== "closeout") {
     // Its own try, so a cleanup failure never stops grading, and the other way round.
     try {
       console.log(JSON.stringify({ scope: "privacy.cleanup", result: await privacyCleanup() }));
@@ -48,7 +52,7 @@ export async function GET(req: Request) {
     }
   }
   try {
-    const result = job === "weekly" ? await weeklyJob() : await nightlySync();
+    const result = job === "weekly" ? await weeklyJob() : job === "closeout" ? await closeoutJob() : await nightlySync();
     console.log(JSON.stringify({ scope: "sportsbook.cron", job, result }));
     return NextResponse.json({ ok: true, job, result });
   } catch (e) {

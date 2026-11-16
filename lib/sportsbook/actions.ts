@@ -1,10 +1,10 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { buildContext, draftOne, draftSlate, half, writeRecap, type DraftItem } from "./draft";
-import { getItems, getPicks, getPlayers, getSubmissions, getWeek, gradeWeek, listWeeks, nightlySync, pushGraded, pushOpen, weekBoard } from "./data";
+import { getItems, getPicks, getPlayers, getSubmissions, getWeek, gradeWeek, listWeeks, nightlySync, pushGraded, pushOpen, syncBoxes, syncGames, weekBoard } from "./data";
 import { pickPoints } from "./grade";
 import { recapPreview, sendPush, type PushResult } from "./push";
 import type { ItemOption, SbItem, SbPick, SbWeek } from "./types";
-import { SB_SEASON, currentWeekNumber, resultsWeekToSend, weekWindow } from "./weeks";
+import { SB_SEASON, currentWeekNumber, pacificDate, resultsWeekToSend, weekWindow } from "./weeks";
 import { EMAIL_RUN_BUDGET_MS } from "@/lib/email/rules";
 
 const db = () => createServiceClient();
@@ -377,6 +377,32 @@ async function emailResults(now: Date, deadline: number) {
 }
 
 /** Monday morning: grade last week, write its recap, draft this week. */
+/**
+ * Sunday night close-out (vercel.json runs it every 15 minutes, Sunday about
+ * 6pm to Monday 3am Pacific). Pulls the latest scores and box scores, grades,
+ * opens next week if it's due, and closes any week whose last game is final:
+ * recap, then the results email with the invite to next week. Every step is
+ * safe to rerun, so most runs do nothing.
+ */
+export async function closeoutJob(now = new Date()) {
+  const emailDeadline = Date.now() + EMAIL_RUN_BUDGET_MS;
+  const live = (await listWeeks()).filter((w) => w.status === "open" || w.status === "graded");
+  if (live.length === 0) return { skipped: "no live week" };
+  await syncGames(pacificDate(new Date(now.getTime() - 86_400_000)), pacificDate(now));
+  const boxes = await syncBoxes(30);
+  let graded = 0;
+  for (const w of live) graded += await gradeWeek(w, now);
+  // Open next week first, so the results email can carry "Play Week N".
+  let opened: number[] = [];
+  try {
+    opened = await (await import("./autopilot")).maybeOpenWeeks(now);
+  } catch (err) {
+    console.error(JSON.stringify({ scope: "sportsbook.autopilot", err: String(err) }));
+  }
+  const closed = await closeOutWeeks(now, { recap: true, emailDeadline });
+  return { boxes, graded, opened, closed };
+}
+
 export async function weeklyJob(now = new Date()) {
   // One email budget for the whole invocation: nightlySync's results pass and the one below share it.
   const emailDeadline = Date.now() + EMAIL_RUN_BUDGET_MS;
