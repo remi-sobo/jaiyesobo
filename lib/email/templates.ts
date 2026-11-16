@@ -537,3 +537,74 @@ Remi & Jaiye`;
   });
   return { subject: name ? `${name} is all set on Run It Back` : "You're all set on Run It Back", ...s, headers: listHeaders(i.manageToken) };
 }
+
+/* Player alerts, to Remi and Jaiye */
+
+export type PlayerAlertInput = {
+  /** "new": first time. "back": signed back in on a new device. */
+  kind: "new" | "back";
+  nickname: string;
+  /** "Jordan Lee", 13+ only, when they gave one. */
+  realName: string | null;
+  ageBand: "13_plus" | "under_13" | null;
+  via: "website" | "app";
+  /** For "back": how they got in. */
+  how?: "player code" | "email code" | "email link";
+  /** For "new": an earlier player this one looks like (same email or same real name). */
+  lookslike?: string | null;
+  league?: string | null;
+  hasEmail: boolean;
+  /** Live challengers, this one included. */
+  total: number;
+};
+
+const ADMIN_URL = `${SITE_URL}/admin/sportsbook`;
+
+/** "New player: Big Ticket (Jordan Lee)". Internal: no unsubscribe, never a player's email address. */
+export function playerAlertEmail(i: PlayerAlertInput): Rendered {
+  const who = i.realName ? `${i.nickname} (${i.realName})` : i.nickname;
+  const returner = i.kind === "back" || !!i.lookslike;
+  const age = i.ageBand === "13_plus" ? "13 or older" : i.ageBand === "under_13" ? "Under 13" : "Not asked";
+  const status =
+    i.kind === "back"
+      ? `Returner: signed back in with ${i.how ?? "their code"}`
+      : i.lookslike
+        ? `Looks like a returner: was "${i.lookslike}"`
+        : "First timer";
+  const rows: Array<[string, string]> = [
+    ["Nickname", i.nickname],
+    ["Real name", i.realName ?? (i.ageBand === "under_13" ? "Not asked (under 13)" : "Not given")],
+    ["Status", status],
+    ["Age", age],
+    [i.kind === "back" ? "Signed in on" : "Joined on", i.via === "app" ? "The app" : "The website"],
+    ...(i.league ? ([["League invite", i.league]] as Array<[string, string]>) : []),
+    ["Email", i.hasEmail ? "Added" : "None yet"],
+    ["Players now", String(i.total)],
+  ];
+  const table = `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 22px;">${rows
+    .map(
+      ([k, v]) =>
+        `<tr><td style="padding:10px 0;border-top:1px solid ${LINE};font-family:${MONO};font-size:12px;letter-spacing:2px;text-transform:uppercase;color:${MUTE};width:40%;">${esc(k)}</td><td align="right" style="padding:10px 0;border-top:1px solid ${LINE};font-family:${SANS};font-size:15px;font-weight:600;color:${k === "Status" && returner ? RED : INK};">${esc(v)}</td></tr>`,
+    )
+    .join("")}</table>`;
+  const head = i.kind === "back" ? `${i.nickname} is back` : i.lookslike ? `${i.nickname} joined` : `New player: ${i.nickname}`;
+  const body =
+    eyebrow(i.kind === "back" ? "Returner" : returner ? "New sign-up, looks familiar" : "New player") +
+    h1(head) +
+    (i.realName ? p(esc(i.realName), `color:${MUTE};font-size:17px;margin-top:-8px;`) : "") +
+    table +
+    button(ADMIN_URL, "Open the admin board");
+  const text = `${head}
+
+${rows.map(([k, v]) => `${k}: ${v}`).join("\n")}
+
+Admin: ${ADMIN_URL}`;
+  const s = shell({
+    preheader: `${status}. ${age}. ${i.via === "app" ? "On the app" : "On the website"}.`,
+    html: body,
+    text,
+    why: "This is a Run It Back alert for Remi and Jaiye. Players never see it.",
+  });
+  const subject = i.kind === "back" ? `Back again: ${who}` : i.lookslike ? `New sign-up (looks like ${i.lookslike}): ${who}` : `New player: ${who}`;
+  return { subject, ...s, headers: {} };
+}

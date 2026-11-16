@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
+import { alertPlayer } from "@/lib/sportsbook/alerts";
 import { createServiceClient } from "@/lib/supabase/server";
 import { ActionError, savePick, submitPicks } from "@/lib/sportsbook/actions";
 import { toggleReaction, isReactionKey } from "@/lib/sportsbook/fans";
@@ -169,6 +170,7 @@ async function handle(method: string, path: string[], req: Request): Promise<Res
       if (await overLimit(req, "join")) throw new HttpError(429, "Too many new players from here. Try later.");
       const { id } = await createChallenger(check.name, bd.age_band, real.names);
       const token = await createSession(id);
+      after(() => alertPlayer("new", id, { via: "app" }));
       const p = (await loadPlayer(id))!;
       return json({ token, player: apiPlayer(p) } satisfies SessionResponse, 201);
     }
@@ -178,6 +180,7 @@ async function handle(method: string, path: string[], req: Request): Promise<Res
       const id = await challengerByCode(str(bd.code));
       if (!id) throw new HttpError(404, "No player with that code.");
       const token = await createSession(id);
+      after(() => alertPlayer("back", id, { via: "app", how: "player code" }));
       const p = (await loadPlayer(id))!;
       return json({ token, player: apiPlayer(p) } satisfies SessionResponse);
     }
@@ -194,6 +197,8 @@ async function handle(method: string, path: string[], req: Request): Promise<Res
       const res = await verifyLoginCode(bd.email, bd.code);
       if (!res.ok) throw new HttpError(400, res.error);
       const token = await createSession(res.playerId);
+      const back = res.playerId;
+      after(() => alertPlayer("back", back, { via: "app", how: "email code" }));
       const p = (await loadPlayer(res.playerId))!;
       return json({ token, player: apiPlayer(p) } satisfies SessionResponse);
     }

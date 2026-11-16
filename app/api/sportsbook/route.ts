@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
+import { alertPlayer, priorPlayerForEmail } from "@/lib/sportsbook/alerts";
 import { createServiceClient } from "@/lib/supabase/server";
 import { ActionError, savePick, submitPicks } from "@/lib/sportsbook/actions";
 import { castVote, getVisitor, isReactionKey, toggleReaction } from "@/lib/sportsbook/fans";
@@ -62,8 +63,12 @@ export async function POST(req: Request) {
         // The email is optional. A bad one is refused before the player is made, so they can fix it and retry.
         const email = typeof body.email === "string" ? body.email.trim() : "";
         if (email && !isValidEmail(email)) return NextResponse.json({ error: "That email doesn't look right." }, { status: 400 });
+        // Checked before subscribe() moves the address to the new player, so the alert can say "looks like a returner".
+        const priorPlayerId = email ? await priorPlayerForEmail(email).catch(() => null) : null;
         const { id, code } = await createChallenger(check.name, body.age_band, real.names);
         await setChallengerCookie(id);
+        const joinedLeague = typeof body.league === "string" && body.league ? body.league : null;
+        after(() => alertPlayer("new", id, { via: "website", priorPlayerId, league: joinedLeague }));
         let emailStatus: string | null = null;
         if (email) {
           const sub = await subscribe({
@@ -88,6 +93,7 @@ export async function POST(req: Request) {
         const id = await challengerByCode(typeof body.code === "string" ? body.code : "");
         if (!id) return NextResponse.json({ error: "No player with that code." }, { status: 404 });
         await setChallengerCookie(id);
+        after(() => alertPlayer("back", id, { via: "website", how: "player code" }));
         return NextResponse.json({ ok: true });
       }
       case "login_email": {
@@ -102,6 +108,8 @@ export async function POST(req: Request) {
         const res = body.action === "login_code" ? await verifyLoginCode(body.email, body.code) : await verifyLoginLink(body.token);
         if (!res.ok) return NextResponse.json({ error: res.error }, { status: 400 });
         await setChallengerCookie(res.playerId);
+        const back = res.playerId;
+        after(() => alertPlayer("back", back, { via: "website", how: body.action === "login_code" ? "email code" : "email link" }));
         if (typeof body.league === "string" && body.league) await joinLeague(res.playerId, body.league, null).catch(() => null);
         return NextResponse.json({ ok: true });
       }
