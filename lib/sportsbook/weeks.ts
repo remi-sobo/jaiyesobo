@@ -101,3 +101,25 @@ export function parseWeekSlug(s: string): number | null {
   const m = /^week-(\d{1,2})$/.exec(s);
   return m ? Number(m[1]) : null;
 }
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Which week's results email may go out now: only the week that just ended
+ * (the current week minus one), and only once it is final. Its recap is waited
+ * on for up to 36 hours after it went final, then it goes without. Older weeks
+ * that were finalized late are never emailed: people only want last week's
+ * results and this week's picks.
+ */
+export function resultsWeekToSend(
+  weeks: Array<{ week_number: number; status: string; finalized_at: string | null; recap: string | null }>,
+  now: Date = new Date(),
+): number | null {
+  const last = currentWeekNumber(now) - 1;
+  const w = weeks.find((x) => x.week_number === last);
+  if (!w || w.status !== "final" || !w.finalized_at) return null;
+  const age = now.getTime() - Date.parse(w.finalized_at);
+  if (age < 0 || age >= 7 * DAY_MS) return null;
+  if (!w.recap && age <= 1.5 * DAY_MS) return null;
+  return w.week_number;
+}
