@@ -4,7 +4,7 @@ import { getItems, getPicks, getPlayers, getSubmissions, getWeek, gradeWeek, lis
 import { pickPoints } from "./grade";
 import { recapPreview, sendPush, type PushResult } from "./push";
 import type { ItemOption, SbItem, SbPick, SbWeek } from "./types";
-import { SB_SEASON, currentWeekNumber, weekWindow } from "./weeks";
+import { SB_SEASON, currentWeekNumber, resultsWeekToSend, weekWindow } from "./weeks";
 import { EMAIL_RUN_BUDGET_MS } from "@/lib/email/rules";
 
 const db = () => createServiceClient();
@@ -353,28 +353,24 @@ export async function closeOutWeeks(now = new Date(), opts: { recap?: boolean; e
 }
 
 /**
- * The Monday results emails, for final weeks published in the last 7 days. The
- * email carries the recap, so a week still waiting on its recap is held for up
- * to 36 hours and then sent without it. Every send is deduped per subscriber,
- * so reruns (the nightly job runs this too) only finish what is left. All the
- * sends in one cron invocation share `deadline` (epoch ms). Does
- * nothing until RESEND_API_KEY is set. Never throws into the job.
+ * The Monday results email: only for the week that just ended, once it is
+ * final (see `resultsWeekToSend`). Older weeks that were finalized late are
+ * never sent. The email carries the recap, so a week still waiting on its
+ * recap is held for up to 36 hours and then sent without it. Every send is
+ * deduped per subscriber, so reruns (the nightly job runs this too) only
+ * finish what is left. All the sends in one cron invocation share `deadline`
+ * (epoch ms). Does nothing until RESEND_API_KEY is set. Never throws into the
+ * job.
  */
 async function emailResults(now: Date, deadline: number) {
   try {
-    const DAY = 24 * 60 * 60 * 1000;
-    const weeks = (await listWeeks())
-      .filter((w) => w.status === "final" && w.finalized_at && now.getTime() - Date.parse(w.finalized_at) < 7 * DAY)
-      .filter((w) => w.recap || now.getTime() - Date.parse(w.finalized_at!) > 1.5 * DAY)
-      .sort((a, b) => a.week_number - b.week_number);
-    if (weeks.length === 0) return;
+    const n = resultsWeekToSend(await listWeeks(), now);
+    if (n === null) return;
+    // One shared deadline for the whole cron invocation (nightlySync and weeklyJob both come through here).
+    const left = deadline - Date.now();
+    if (left <= 0) return;
     const { sendResultsEmails } = await import("@/lib/email/campaigns");
-    for (const w of weeks) {
-      // One shared deadline for the whole cron invocation (nightlySync and weeklyJob both come through here).
-      const left = deadline - Date.now();
-      if (left <= 0) break;
-      await sendResultsEmails(w.week_number, { budgetMs: left });
-    }
+    await sendResultsEmails(n, { budgetMs: left });
   } catch (e) {
     console.error(JSON.stringify({ scope: "sportsbook.closeout", resultsEmailError: String(e) }));
   }
