@@ -105,8 +105,9 @@ export function parseWeekSlug(s: string): number | null {
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
- * Which week's results email may go out now: only the week that just ended
- * (the current week minus one), and only once it is final. Its recap is waited
+ * Which week's results email may go out now: only the week that just ended,
+ * once it is final. That's this week on Sunday night (it closes right after
+ * the last game) or last week from Monday on. Its recap is waited
  * on for up to 36 hours after it went final, then it goes without. Older weeks
  * that were finalized late are never emailed: people only want last week's
  * results and this week's picks.
@@ -115,11 +116,30 @@ export function resultsWeekToSend(
   weeks: Array<{ week_number: number; status: string; finalized_at: string | null; recap: string | null }>,
   now: Date = new Date(),
 ): number | null {
-  const last = currentWeekNumber(now) - 1;
-  const w = weeks.find((x) => x.week_number === last);
-  if (!w || w.status !== "final" || !w.finalized_at) return null;
-  const age = now.getTime() - Date.parse(w.finalized_at);
-  if (age < 0 || age >= 7 * DAY_MS) return null;
-  if (!w.recap && age <= 1.5 * DAY_MS) return null;
-  return w.week_number;
+  const current = currentWeekNumber(now);
+  // This week, when it closed Sunday night right after its last game; otherwise last week.
+  for (const n of [current, current - 1]) {
+    const w = weeks.find((x) => x.week_number === n);
+    if (!w || w.status !== "final" || !w.finalized_at) continue;
+    const age = now.getTime() - Date.parse(w.finalized_at);
+    if (age < 0 || age >= 7 * DAY_MS) continue;
+    if (!w.recap && age <= 1.5 * DAY_MS) return null;
+    return w.week_number;
+  }
+  return null;
+}
+
+/**
+ * A week is over at midnight Pacific after its Sunday, or sooner: once every
+ * game on its schedule (postponed ones aside) is final. That lets the week
+ * close, recap and email right after Sunday's last game.
+ */
+export function weekIsOver(bounds: { start: Date; end: Date }, games: Array<{ tip_at: string; status: number; postponed: boolean }>, now = new Date()): boolean {
+  if (now >= bounds.end) return true;
+  const played = games.filter((g) => !g.postponed);
+  if (played.length === 0) return false;
+  // The last game has to be on the last day: a schedule we only half know never closes a week early.
+  const lastTip = Math.max(...played.map((g) => Date.parse(g.tip_at)));
+  if (bounds.end.getTime() - lastTip > 24 * 3_600_000) return false;
+  return played.every((g) => g.status === 3);
 }

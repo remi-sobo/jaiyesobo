@@ -4,7 +4,7 @@ import { fetchBox, fetchGames } from "./espn";
 import { gradeItem, scoreWeek, weekWinner, type GameBox, type PlayerWeekScore } from "./grade";
 import { openPushMessage, sendPush, type PushResult } from "./push";
 import type { ItemSpec, SbItem, SbPick, SbPlayer, SbWeek } from "./types";
-import { SB_SEASON, pacificDate, weekBounds } from "./weeks";
+import { SB_SEASON, pacificDate, weekBounds, weekIsOver } from "./weeks";
 import { EMAIL_RUN_BUDGET_MS } from "@/lib/email/rules";
 
 const supa = () => createServiceClient();
@@ -79,12 +79,22 @@ export async function loadBoxes(gameIds: string[]): Promise<Map<string, GameBox>
     .in("game_id", gameIds);
   if (error) throw error;
   for (const g of games ?? []) out.set(g.game_id, { ...(g as Omit<GameBox, "players">), players: [] });
-  const { data: lines, error: lErr } = await db
-    .from("nba_player_games")
-    .select("game_id, person_id, name, team, played, pts, reb, ast, fg3m, stl, blk")
-    .in("game_id", gameIds);
-  if (lErr) throw lErr;
-  for (const l of lines ?? []) out.get(l.game_id)?.players.push({ ...l, person_id: Number(l.person_id) } as GameBox["players"][number]);
+  // Paged: a full week is 40+ games and 1,000+ player lines, past the API's
+  // 1,000 row cap. Unpaged, late games looked like they had no box score, so
+  // the weekly leader pick waited out its 36 hour grace (Weeks 2 to 4, 2026).
+  const PAGE = 1000;
+  for (let from = 0; ; from += PAGE) {
+    const { data: lines, error: lErr } = await db
+      .from("nba_player_games")
+      .select("game_id, person_id, name, team, played, pts, reb, ast, fg3m, stl, blk")
+      .in("game_id", gameIds)
+      .order("game_id")
+      .order("person_id")
+      .range(from, from + PAGE - 1);
+    if (lErr) throw lErr;
+    for (const l of lines ?? []) out.get(l.game_id)?.players.push({ ...l, person_id: Number(l.person_id) } as GameBox["players"][number]);
+    if (!lines || lines.length < PAGE) break;
+  }
   return out;
 }
 
@@ -181,10 +191,9 @@ export async function gradeWeek(week: SbWeek, now = new Date()): Promise<number>
   const items = await getItems(week.id);
   const open = items.filter((i) => i.status === "open" && i.type !== "custom");
   const bounds = weekBounds(week); // the row's own dates, not recomputed from the season start
-  const weekOver = now >= bounds.end;
-
-  const needsWeek = open.some((i) => i.type === "weekly_leader");
-  const weekGameRows = needsWeek ? await getGamesBetween(bounds.start, bounds.end) : [];
+  // Every game of the week, so the week can count as over the moment Sunday's last game is final.
+  const weekGameRows = await getGamesBetween(bounds.start, bounds.end);
+  const weekOver = weekIsOver(bounds, weekGameRows, now);
   const ids = new Set<string>([...open.flatMap((i) => specGameIds(i.spec)), ...weekGameRows.map((g) => g.game_id)]);
   const boxes = await loadBoxes([...ids]);
   const ctx = {
