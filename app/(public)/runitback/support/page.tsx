@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Help · Run It Back Picks" };
 
 export default function SupportPage() {
   return (
-    <PolicyPage title="Help" updated="October 25, 2026" draft={false}>
+    <PolicyPage title="Help" updated="October 25, 2026">
       <h2>How it works</h2>
       <p>Every Monday a new slate of 10 to 12 NBA picks drops. Make your picks before each game tips off. Right picks earn their points, wrong ones lose them. Star one pick as your Lock of the Week: right doubles it, wrong costs double.</p>
       <h2>Playing on a new phone</h2>
