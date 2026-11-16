@@ -17,6 +17,7 @@ export const MAILING_ADDRESS = "380 Portage Ave, Palo Alto, CA 94306";
 export type Rendered = { subject: string; html: string; text: string; headers: Record<string, string> };
 
 export const PLAY_URL = `${SITE_URL}/runitback/play`;
+const PRIVACY_URL = `${SITE_URL}/runitback/privacy`;
 
 /* Run It Back Picks tokens (public/runitback-brand/brand_tokens.json). */
 const RED = "#E11D2E";
@@ -138,7 +139,7 @@ ${html}
 </td></tr>
 <tr><td style="padding:14px 6px 0;font-family:${SANS};font-size:12px;line-height:1.7;color:${MUTE};">
 ${esc(why)}<br>
-${links}${esc(footerLine)}${address ? `<br>${esc(address)}` : ""}
+${links}${esc(footerLine)} &nbsp;·&nbsp; <a href="${PRIVACY_URL}" style="color:${MUTE};text-decoration:underline;">Privacy</a>${address ? `<br>${esc(address)}` : ""}
 </td></tr>
 </table></td></tr></table></body></html>`;
   const plain = `${text.trim()}
@@ -147,7 +148,8 @@ ${links}${esc(footerLine)}${address ? `<br>${esc(address)}` : ""}
 ${why}
 YouTube: ${youtube.url}
 Instagram: ${instagram.url}
-${manage && unsub ? `Manage what I get: ${manage}\nUnsubscribe: ${unsub}\n` : ""}${footerLine}${address ? `\n${address}` : ""}
+${manage && unsub ? `Manage what I get: ${manage}\nUnsubscribe: ${unsub}\n` : ""}Privacy: ${PRIVACY_URL}
+${footerLine}${address ? `\n${address}` : ""}
 `;
   return { html: page, text: plain };
 }

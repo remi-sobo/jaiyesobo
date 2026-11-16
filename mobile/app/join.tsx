@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Lockup } from "@/components/Lockup";
 import { ApiError } from "@/lib/api";
@@ -152,6 +152,22 @@ export default function Join() {
         {join.isPending ? <ActivityIndicator color={colors.ink} /> : <Text style={styles.primaryText}>I&apos;m in</Text>}
       </Pressable>
 
+      <Text style={styles.legal}>
+        By joining you agree to the{" "}
+        <Text accessibilityRole="link" style={styles.legalLink} onPress={() => openPolicy("terms")}>
+          Terms
+        </Text>
+        . See{" "}
+        <Text accessibilityRole="link" style={styles.legalLink} onPress={() => openPolicy("privacy")}>
+          Privacy
+        </Text>{" "}
+        and{" "}
+        <Text accessibilityRole="link" style={styles.legalLink} onPress={() => openPolicy("parents")}>
+          For parents
+        </Text>
+        .
+      </Text>
+
       {/* Keep the invite code when switching screens, so signing in still lands back on it. */}
       <Link replace href={typeof invite === "string" && invite.length > 0 ? { pathname: "/restore", params: { invite } } : "/restore"} style={styles.restoreLink}>
         <Text style={styles.restoreLinkText}>Already playing? Sign back in</Text>
@@ -159,6 +175,11 @@ export default function Join() {
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+/** The policy pages live on the website, same as the links in Settings. */
+function openPolicy(page: "terms" | "privacy" | "parents") {
+  Linking.openURL(`https://jaiyesobo.com/runitback/${page}`).catch(() => {});
 }
 
 function AgeButton({ selected, label, onPress }: { selected: boolean; label: string; onPress: () => void }) {
@@ -201,6 +222,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.button,
   },
   help: { color: colors.steel, fontSize: 13, marginTop: 6 },
+  legal: { color: colors.steel, fontSize: 13, lineHeight: 19, marginTop: 14, textAlign: "center" },
+  legalLink: { color: colors.paper, textDecorationLine: "underline" },
   nameRow: { flexDirection: "row", gap: 8 },
   // flexBasis and minWidth 0: on web a text box has a built-in width that would push "Last" off a phone screen.
   nameInput: { flex: 1, flexBasis: 0, minWidth: 0 },

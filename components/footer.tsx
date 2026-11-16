@@ -11,6 +11,12 @@ const links = [
   { href: "/feed.xml", label: "Feed" },
 ];
 
+const legal = [
+  { href: "/privacy", label: "Privacy" },
+  { href: "/terms", label: "Terms" },
+  { href: "/runitback/parents", label: "For parents" },
+];
+
 export default function Footer() {
   return (
     <footer className="border-t border-[var(--color-line)] px-5 py-[clamp(52px,7vw,104px)] min-[760px]:px-10">
@@ -52,6 +58,13 @@ export default function Footer() {
 
         <div className="mt-10 flex flex-col gap-2 border-t border-[var(--color-line)] pt-7 font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)] sm:flex-row sm:justify-between">
           <div>Vol. 02 · 2026 · East Palo Alto</div>
+          <nav aria-label="Legal" className="flex flex-wrap gap-x-5 gap-y-1">
+            {legal.map((l) => (
+              <Link key={l.href} href={l.href} className="inline-flex min-h-6 items-center transition-colors duration-300 hover:text-[var(--color-red)]">
+                {l.label}
+              </Link>
+            ))}
+          </nav>
           <div>Built with Dad</div>
         </div>
       </div>
