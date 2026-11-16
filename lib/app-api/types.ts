@@ -86,6 +86,9 @@ export type MePatch = {
   /** Expo push token, like ExponentPushToken[xxxx]. null turns push off for this account. */
   push_token?: string | null;
   push_enabled?: Partial<PushSettings>;
+  /** Optional real names, 13+ only. Private: only Jaiye and Remi see them. Empty string or null clears one. */
+  first_name?: string | null;
+  last_name?: string | null;
 };
 
 /* Weeks and picks */
