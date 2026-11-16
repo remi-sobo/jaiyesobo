@@ -9,10 +9,13 @@ export type Short = {
   seconds: number;
   /** The episode it was cut from, so the clip can link to the full thing. Leave out for a clip shot on its own. */
   episodeSlug?: string;
+  /** Where the clip sends people when it isn't about an episode. Wins over episodeSlug. */
+  link?: { href: string; label: string };
 };
 
 /** Newest first. Built by the on-the-court-edit skill (build_shorts.py). */
 export const shorts: Short[] = [
+  { id: "runitback-promo", title: "I'm 9. I made an NBA picks game. I think I can beat you.", seconds: 31, link: { href: "/runitback", label: "Play Run It Back Picks free" } },
   { id: "cade-made-history", title: "Cade did something nobody has ever done", seconds: 31 },
   { id: "bold-prediction-wizards", title: "Bold prediction alert: the Wizards make the playoffs", seconds: 26 },
   { id: "cade-all-nba", title: "Is Cade All-NBA this year?", seconds: 21 },
@@ -47,8 +50,8 @@ export function shortsWithEpisodes() {
       video: shortVideo(s),
       poster: shortPoster(s),
       // A clip with no episode still gets a way into the podcast.
-      href: ep ? `/pod/${ep.slug}` : "/pod#episodes",
-      linkLabel: ep ? `Watch all of EP.${String(ep.number).padStart(2, "0")}` : "Watch the podcast",
+      href: s.link?.href ?? (ep ? `/pod/${ep.slug}` : "/pod#episodes"),
+      linkLabel: s.link?.label ?? (ep ? `Watch all of EP.${String(ep.number).padStart(2, "0")}` : "Watch the podcast"),
     };
   });
 }
