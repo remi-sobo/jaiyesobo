@@ -47,7 +47,7 @@ export type SubscribeResult =
 
 /** Logs one send. The dedupe key is only kept on a real send, so a failure can be retried. */
 export async function logEmail(row: {
-  kind: "confirm" | "consent" | "results" | "newsletter";
+  kind: "confirm" | "consent" | "results" | "newsletter" | "login";
   subscriberId: string | null;
   dedupeKey?: string | null;
   subject: string;

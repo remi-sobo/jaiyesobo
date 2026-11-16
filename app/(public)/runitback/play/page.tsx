@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { getChallenger } from "@/lib/sportsbook/players";
+import { getChallenger, ownRealNames } from "@/lib/sportsbook/players";
+import { createServiceClient } from "@/lib/supabase/server";
+import { RealNamesBox } from "@/components/sportsbook/public/real-names-box";
 import { featuredWeekNumber, loadWeekView } from "@/lib/sportsbook/view";
 import { BrandLockup } from "@/components/sportsbook/public/brand-lockup";
 import { JoinForm, PlayBoard } from "@/components/sportsbook/public/challenger-play";
@@ -21,6 +23,16 @@ export default async function PlayPage() {
   const n = await featuredWeekNumber().catch(() => null);
   const view = n ? await loadWeekView(n, { viewerId: me?.id ?? null }) : null;
   const open = view?.week.status === "open";
+  // Real names are for 13+ only, so the box shows only for them.
+  const isTeen = me
+    ? await createServiceClient()
+        .from("sb_players")
+        .select("age_band")
+        .eq("id", me.id)
+        .maybeSingle()
+        .then(({ data }) => data?.age_band === "13_plus")
+    : false;
+  const names = me && isTeen ? await ownRealNames(me.id) : null;
 
   return (
     <main className="px-4 py-[clamp(40px,6vw,80px)] min-[760px]:px-10">
@@ -59,6 +71,11 @@ export default async function PlayPage() {
         ) : (
           <PlayBoard me={me} items={view.items} picks={view.picks} now={view.now} week={view.week.week_number} submitted={view.submitted.includes(me.id)} />
         )}
+        {names ? (
+          <div className="mt-8 flex justify-center">
+            <RealNamesBox first={names.first_name} last={names.last_name} />
+          </div>
+        ) : null}
         <div className="mt-10 flex flex-wrap items-center justify-center gap-x-2 font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">
           <span>Prefer the app?</span>
           {/* A plain anchor, not next/link: the app is a separate single-page build, and typed routes don't know it. */}

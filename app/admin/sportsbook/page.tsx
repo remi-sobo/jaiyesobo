@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/session";
 import { getSettings } from "@/lib/sportsbook/draft";
-import { getHousePlayers } from "@/lib/sportsbook/players";
+import { getHousePlayers, whoIsWho } from "@/lib/sportsbook/players";
 import { autopilotStatus, type AutopilotStatus } from "@/lib/sportsbook/autopilot";
 import { loadWeekView } from "@/lib/sportsbook/view";
 import { currentWeekNumber, pacificWeekday, requestNow, tipLabel, weekRangeLabel, weekWindow } from "@/lib/sportsbook/weeks";
 import SharedPicks from "@/components/sportsbook/admin/shared-picks";
 import SlateEditor, { AddPropInline } from "@/components/sportsbook/admin/slate-editor-entry";
-import ResultsPanel, { BoardTable, ChallengersPanel, SettingsPanel } from "@/components/sportsbook/admin/results-panel";
+import ResultsPanel, { BoardTable, ChallengersPanel, SettingsPanel, type WhoMap } from "@/components/sportsbook/admin/results-panel";
 import RefreshButton from "@/components/sportsbook/admin/refresh-button";
 import { LeaguesPanel, ReportsPanel } from "@/components/sportsbook/admin/growth-panel";
 import { allLeagues } from "@/lib/sportsbook/leagues";
@@ -49,6 +49,10 @@ export default async function AdminSportsbookPage(props: { searchParams: Promise
   let view: Awaited<ReturnType<typeof loadWeekView>> = null;
   let house: Awaited<ReturnType<typeof getHousePlayers>> | null = null;
   let settings: Awaited<ReturnType<typeof getSettings>> = { fav_teams: [], fav_players: [] };
+  // Real names and emails, admin only. Before migration 031 the name columns don't exist: fall back to nicknames.
+  const who: WhoMap = Object.fromEntries(
+    (await whoIsWho({ withEmail: true }).catch(() => [])).map((w) => [w.id, { real_name: w.real_name, email: w.email }]),
+  );
   try {
     [view, house, settings] = await Promise.all([loadWeekView(n, { admin: true }), getHousePlayers(), getSettings()]);
   } catch (e) {
@@ -182,7 +186,7 @@ export default async function AdminSportsbookPage(props: { searchParams: Promise
             <LeaguesPanel leagues={leagues} />
           </Section>
           <Section title="Challengers">
-            <ChallengersPanel players={view?.players ?? []} />
+            <ChallengersPanel players={view?.players ?? []} who={who} />
           </Section>
           <Section title="Subscribers">
             <SubscribersPanel stats={stats} enabled={emailEnabled()} />
