@@ -44,7 +44,7 @@ export default async function PlayPage() {
         ) : null}
         <header className="mb-10 text-center">
           <div className="relative mx-auto mb-5 h-28 w-28 overflow-hidden rounded-full border-2 border-[var(--color-red)] shadow-[0_0_40px_rgba(230,57,70,0.35)]">
-            <Image src="/jaiye-hero.jpg" alt="Jaiye in his number 23 jersey" fill sizes="112px" className="object-cover object-[center_18%]" />
+            <Image src="/jaiye-hero.jpg" alt="Jaiye in a Jordan jersey on the beach" fill sizes="112px" className="object-cover object-[center_18%]" />
           </div>
           <BrandLockup variant="wordmark" h={56} className="mx-auto" priority />
           <h1 className="mt-6 font-[family-name:var(--font-fraunces)] text-[clamp(2.4rem,7vw,4.6rem)] font-black leading-[0.9] tracking-[-0.04em]">

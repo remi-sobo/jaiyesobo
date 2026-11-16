@@ -81,7 +81,7 @@ export function SportsbookHero({
         <div className="relative order-1 min-h-[300px] md:order-2 md:min-h-[520px]">
           <Image
             src="/jaiye-hero.jpg"
-            alt="Jaiye in a number 23 jersey, throwing up a peace sign on the beach"
+            alt="Jaiye in a Jordan jersey, throwing up a peace sign on the beach"
             fill
             sizes="(max-width: 768px) 100vw, 45vw"
             priority
@@ -91,7 +91,7 @@ export function SportsbookHero({
           <div className="absolute inset-0 bg-[linear-gradient(0deg,var(--color-off-black)_0%,transparent_45%)] md:bg-[linear-gradient(90deg,var(--color-off-black)_0%,transparent_35%)]" />
           <div className="absolute inset-0 bg-[var(--color-red)] opacity-[0.12] mix-blend-multiply" />
           <div className="absolute right-3 top-3 border border-[rgba(245,241,234,0.35)] bg-[rgba(10,10,10,0.6)] px-2.5 py-1 font-[family-name:var(--font-jetbrains)] text-[0.6rem] uppercase tracking-[0.25em] text-[var(--color-bone)] backdrop-blur-sm">
-            #23 · Jaiye
+            #0 · Jaiye
           </div>
         </div>
       </div>

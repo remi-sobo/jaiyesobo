@@ -76,3 +76,11 @@ describe("welcome email", () => {
     }
   });
 });
+
+describe("Jaiye's number", () => {
+  it("is #0, never #23", () => {
+    expect(player.html).toContain("#0</span>");
+    expect(player.text).toContain("Jaiye #0");
+    expect(all(player)).not.toContain("#23");
+  });
+});
