@@ -202,7 +202,8 @@ const styles = StyleSheet.create({
   },
   help: { color: colors.steel, fontSize: 13, marginTop: 6 },
   nameRow: { flexDirection: "row", gap: 8 },
-  nameInput: { flex: 1 },
+  // flexBasis and minWidth 0: on web a text box has a built-in width that would push "Last" off a phone screen.
+  nameInput: { flex: 1, flexBasis: 0, minWidth: 0 },
   ageRow: { flexDirection: "row", gap: 8 },
   ageBtn: {
     flex: 1,

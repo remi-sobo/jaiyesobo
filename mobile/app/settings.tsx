@@ -597,7 +597,7 @@ const styles = StyleSheet.create({
   nameText: { flexShrink: 1, color: colors.paper, fontSize: 20 },
   nameEmpty: { color: colors.steel, fontSize: 16 },
   realNameRow: { flexDirection: "row", gap: 8 },
-  realNameInput: { flex: 1 },
+  realNameInput: { flex: 1, flexBasis: 0, minWidth: 0 },
   linkBtn: { minHeight: 44, justifyContent: "center" },
   linkText: { color: colors.steel, fontSize: 14, textDecorationLine: "underline" },
   input: {
