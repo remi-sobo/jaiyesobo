@@ -133,6 +133,7 @@ function SettingsBody({ player, email }: { player: ApiPlayer; email: ApiEmail | 
   return (
     <View>
       <NameSection name={player.display_name} />
+      {player.age_band === "13_plus" ? <RealNameSection first={player.first_name ?? null} last={player.last_name ?? null} /> : null}
       {player.code ? <CodeSection code={player.code} /> : null}
       <AlertsSection player={player} />
       <EmailSection player={player} email={email} />
@@ -246,6 +247,86 @@ function NameSection({ name }: { name: string }) {
         </View>
       )}
       {save.error ? <Text style={styles.error}>{actionError(save.error, "Couldn't change your name. Try again.")}</Text> : null}
+    </View>
+  );
+}
+
+/** Optional, private real names for 13+ players. Only Jaiye and Remi see them, next to the nickname. */
+function RealNameSection({ first, last }: { first: string | null; last: string | null }) {
+  const qc = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const [f, setF] = useState("");
+  const [l, setL] = useState("");
+  const saved = [first, last].filter(Boolean).join(" ");
+
+  const save = useMutation({
+    mutationFn: () => patchMe({ first_name: f.trim() || null, last_name: l.trim() || null }),
+    onSuccess: (data) => {
+      qc.setQueryData(["me"], data);
+      setEditing(false);
+    },
+  });
+
+  return (
+    <View>
+      <Text style={styles.label}>Your real name</Text>
+      {editing ? (
+        <View>
+          <View style={styles.realNameRow}>
+            <TextInput
+              value={f}
+              onChangeText={setF}
+              placeholder="First"
+              placeholderTextColor={colors.steel}
+              maxLength={30}
+              autoCapitalize="words"
+              autoCorrect={false}
+              textContentType="givenName"
+              accessibilityLabel="First name"
+              autoFocus
+              style={[styles.input, styles.realNameInput]}
+            />
+            <TextInput
+              value={l}
+              onChangeText={setL}
+              placeholder="Last"
+              placeholderTextColor={colors.steel}
+              maxLength={30}
+              autoCapitalize="words"
+              autoCorrect={false}
+              textContentType="familyName"
+              accessibilityLabel="Last name"
+              style={[styles.input, styles.realNameInput]}
+            />
+          </View>
+          <Text style={styles.hint}>Leave both empty to remove it.</Text>
+          <View style={styles.editActions}>
+            <Pressable
+              disabled={save.isPending}
+              onPress={() => save.mutate()}
+              style={({ pressed }) => [styles.primary, save.isPending && styles.primaryDisabled, pressed && styles.primaryPressed]}
+            >
+              {save.isPending ? <ActivityIndicator color={colors.ink} /> : <Text style={styles.primaryText}>Save</Text>}
+            </Pressable>
+            <Pressable onPress={() => { setEditing(false); save.reset(); }} style={styles.linkBtn}>
+              <Text style={styles.linkText}>Cancel</Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : (
+        <View style={styles.nameRow}>
+          <Text style={[styles.nameText, !saved && styles.nameEmpty]} numberOfLines={1}>{saved || "Not added"}</Text>
+          <Pressable
+            onPress={() => { setF(first ?? ""); setL(last ?? ""); save.reset(); setEditing(true); }}
+            hitSlop={{ left: 8, right: 8 }}
+            style={styles.linkBtn}
+          >
+            <Text style={styles.linkText}>{saved ? "Change" : "Add"}</Text>
+          </Pressable>
+        </View>
+      )}
+      <Text style={styles.hint}>Private. Only Jaiye and his dad see it, so they know who&apos;s who.</Text>
+      {save.error ? <Text style={styles.error}>{actionError(save.error, "Couldn't save your name. Try again.")}</Text> : null}
     </View>
   );
 }
@@ -514,6 +595,9 @@ const styles = StyleSheet.create({
   },
   nameRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
   nameText: { flexShrink: 1, color: colors.paper, fontSize: 20 },
+  nameEmpty: { color: colors.steel, fontSize: 16 },
+  realNameRow: { flexDirection: "row", gap: 8 },
+  realNameInput: { flex: 1 },
   linkBtn: { minHeight: 44, justifyContent: "center" },
   linkText: { color: colors.steel, fontSize: 14, textDecorationLine: "underline" },
   input: {

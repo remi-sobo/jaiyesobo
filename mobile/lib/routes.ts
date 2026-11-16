@@ -3,6 +3,8 @@
 // response shape only needs to be written once.
 import type {
   ApiBoard,
+  EmailCodeRequest,
+  EmailLoginRequest,
   EmailPatchRequest,
   EmailPatchResponse,
   EmailPutRequest,
@@ -46,6 +48,18 @@ export async function joinSession(req: JoinRequest): Promise<SessionResponse> {
 /** POST /session/restore — bring an existing account onto this phone with its code. */
 export async function restoreSession(req: RestoreRequest): Promise<SessionResponse> {
   const res = await appApi<SessionResponse>("/session/restore", { method: "POST", body: req, anonymous: true });
+  await setToken(res.token);
+  return res;
+}
+
+/** POST /session/email-code — email a login code. Same answer whether or not the address is on a player. */
+export function requestEmailCode(req: EmailCodeRequest): Promise<ApiOk> {
+  return appApi<ApiOk>("/session/email-code", { method: "POST", body: req, anonymous: true });
+}
+
+/** POST /session/email-login — sign in with the emailed code. Stores the token. */
+export async function emailLogin(req: EmailLoginRequest): Promise<SessionResponse> {
+  const res = await appApi<SessionResponse>("/session/email-login", { method: "POST", body: req, anonymous: true });
   await setToken(res.token);
   return res;
 }
