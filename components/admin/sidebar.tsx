@@ -97,6 +97,10 @@ export default function Sidebar({
         <NavItem href="/admin/predictions" active={is("/admin/predictions")} label="NBA Predictions" />
       </NavGroup>
 
+      <NavGroup label="Site">
+        <NavItem href="/admin/analytics" active={is("/admin/analytics")} label="Analytics" />
+      </NavGroup>
+
       <NavGroup label="System">
         <NavItem href="/admin/setup" active={is("/admin/setup")} label="Setup" />
       </NavGroup>
@@ -124,6 +128,7 @@ const MOBILE_LINKS = [
   { href: "/admin/feedback", label: "Feedback" },
   { href: "/admin/sportsbook", label: "Run It Back" },
   { href: "/admin/predictions", label: "Predictions" },
+  { href: "/admin/analytics", label: "Analytics" },
   { href: "/admin/setup", label: "Setup" },
 ];
 

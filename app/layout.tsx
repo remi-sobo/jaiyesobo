@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import Tracker from "@/components/analytics/tracker";
 
 // Fonts are self-hosted from app/fonts so the build never calls Google Fonts.
 // next/font/google sometimes failed the Turbopack build on Vercel while mapping
@@ -87,6 +88,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <style>{`[data-reveal]{opacity:1!important;transform:none!important}`}</style>
         </noscript>
         {children}
+        <Tracker />
       </body>
     </html>
   );

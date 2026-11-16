@@ -66,7 +66,7 @@ export default async function PostPage(props: PageProps<"/column/[slug]">) {
   return (
     <main className="px-5 py-[clamp(44px,6vw,88px)] min-[760px]:px-10">
       <ReadingProgress targetId="column-article" />
-      <article id="column-article" className="mx-auto flex max-w-[660px] flex-col">
+      <article id="column-article" data-read={`column:${post.slug}`} data-read-label={post.title} className="mx-auto flex max-w-[660px] flex-col">
         <Link
           href="/column"
           className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)] transition-colors duration-300 hover:text-[var(--color-bone)]"

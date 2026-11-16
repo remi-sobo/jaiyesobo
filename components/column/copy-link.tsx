@@ -20,6 +20,7 @@ export default function CopyLink() {
     <button
       type="button"
       onClick={copy}
+      data-track="copy-link"
       className="border border-[var(--color-line-strong)] px-4 py-3 font-[family-name:var(--font-jetbrains)] text-[0.62rem] uppercase tracking-[0.2em] text-[var(--color-bone)] transition-colors hover:border-[var(--color-red)] hover:text-[var(--color-red)]"
     >
       {copied ? "Link copied" : "Copy link"}

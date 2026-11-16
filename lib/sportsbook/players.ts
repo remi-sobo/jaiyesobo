@@ -38,6 +38,17 @@ export async function clearChallengerCookie() {
   c.delete(COOKIE);
 }
 
+/** The player id in this browser's cookie, if the signature checks out. No database call: for analytics, where the name is looked up later. */
+export async function challengerIdFromCookie(): Promise<string | null> {
+  const c = await cookies();
+  const raw = c.get(COOKIE)?.value;
+  if (!raw) return null;
+  const [id, sig] = raw.split(".");
+  if (!id || !sig || sig.length !== 32) return null;
+  if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(sign(id)))) return null;
+  return id;
+}
+
 /** The challenger this browser belongs to, if any. Includes their own code: it's theirs to see, and never anyone else's. */
 export async function getChallenger(): Promise<SbPlayerWithCode | null> {
   const c = await cookies();

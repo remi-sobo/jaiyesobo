@@ -25,7 +25,7 @@ export default function PrivacyBody() {
 
       <h2>The short version</h2>
       <ul>
-        <li>Reading columns and watching episodes: we don&apos;t collect anything about you.</li>
+        <li>Reading and watching: we count which pages get visited, read, watched and clicked, tied to a random id in your browser, not to your name.</li>
         <li>Playing: we keep a nickname, your picks or scores, and a random id in a cookie so the site remembers you.</li>
         <li>Email is always optional. We email only addresses that were confirmed from a link we sent.</li>
         <li>Players under 13 use a nickname only. Their email can only be a parent&apos;s, and the parent says yes first.</li>
@@ -34,7 +34,7 @@ export default function PrivacyBody() {
 
       <h2>What we collect, and why</h2>
       <p>
-        <strong>Reading and watching.</strong> Columns and the home page collect nothing about you. Episodes play from YouTube in its privacy enhanced mode (youtube-nocookie.com). Once you press play, YouTube&apos;s own privacy policy applies to that video. Our short clips are files we host ourselves.
+        <strong>Reading and watching.</strong> We count what people do on the site so Jaiye can see what they like: which pages get opened and for how long, which links and buttons get clicked, how far down a column or episode article people read, and which videos get played and finished. This is tied to a random id your browser keeps, plus the website you came from and whether you&apos;re on a phone, tablet or computer. We don&apos;t keep your IP address, location or browser details with it, and it stays in our own database. Episodes play from YouTube in its privacy enhanced mode (youtube-nocookie.com). Once you press play, YouTube&apos;s own privacy policy applies to that video. Our short clips are files we host ourselves.
       </p>
       <p>
         <strong>The newsletter.</strong> Your email address, and whether you said you&apos;re 13 or older or a parent signing up a kid. We use it to send a note when Jaiye has a new episode or column.
@@ -50,6 +50,7 @@ export default function PrivacyBody() {
         <li>Whether you&apos;re 13 or older (yes or no). We don&apos;t ask your birthday.</li>
         <li>If you&apos;re 13 or older and choose to add it: your first and last name. Only Jaiye and Remi see it, so they know who&apos;s who. It&apos;s never shown to other players or on the site, in the app or on the podcast.</li>
         <li>Your player code, your picks, your leagues, your reactions, the preset trash talk lines you post, anyone you mute or report, and when you last played.</li>
+        <li>If you&apos;re 13 or older and signed in on the website: the site visit counts described above are linked to your nickname. Only Remi and Jaiye see it.</li>
         <li>In the app (iPhone or web): a sign in token kept on your device, and, for players 13 and up who turn alerts on, a push token so we can send them.</li>
         <li>Fans who aren&apos;t playing can react to picks and vote on who wins the week. We keep the reaction or vote and a random id in a cookie, nothing else.</li>
       </ul>
@@ -70,6 +71,7 @@ export default function PrivacyBody() {
         <li><strong>sb_visitor</strong>: a random id so your reactions and votes count once. One year.</li>
         <li><strong>jaiye_games_session</strong>: a random id so the games remember your scores and streaks. One year.</li>
         <li>Family sign in cookies, used only by Jaiye&apos;s family to get into their own pages.</li>
+        <li><strong>js_vid</strong> and <strong>js_sid</strong>: random ids kept in your browser&apos;s storage (not cookies) so we can count visits. js_vid stays until you clear your browser&apos;s site data. js_sid is forgotten when you close the tab.</li>
         <li>The Run It Back Picks web app keeps your sign in token in your browser&apos;s storage. The iPhone app keeps it in the phone&apos;s keychain.</li>
       </ul>
 
@@ -96,7 +98,7 @@ export default function PrivacyBody() {
 
       <h2>Kids under 13</h2>
       <p>
-        We built this with kids in mind. Jaiye is 9. Players under 13 can play Run It Back Picks with a nickname. We never ask them for a real name. They can&apos;t post trash talk or start leagues, they can&apos;t buy the Season Pass, and the app sends them no push alerts. From a player under 13 we keep only their nickname, their picks, reactions and leagues, their player code, the cookie or sign in token that keeps them signed in, and their IP address to stop spam, as described above. We use it only to run the game.
+        We built this with kids in mind. Jaiye is 9. Players under 13 can play Run It Back Picks with a nickname. We never ask them for a real name. They can&apos;t post trash talk or start leagues, they can&apos;t buy the Season Pass, and the app sends them no push alerts. From a player under 13 we keep only their nickname, their picks, reactions and leagues, their player code, the cookie or sign in token that keeps them signed in, and their IP address to stop spam, as described above. Their visits to the site are counted like everyone&apos;s, under a random browser id that is never linked to their nickname. We use it only to run the game and see what people like.
       </p>
       <p>
         A player under 13 can only get email at a parent&apos;s address. When an address is entered for a player under 13, we send the parent one email first that explains the game and asks if it&apos;s OK. Nothing else is sent until the parent taps the button. If the parent doesn&apos;t say yes within {UNCONFIRMED_EMAIL_DAYS} days, we delete their address. We never email the child.
@@ -111,7 +113,7 @@ export default function PrivacyBody() {
       <h2>Keeping and deleting</h2>
       <ul>
         <li>We keep your information while you play. Delete your Run It Back account any time: in the app, Settings, then Delete account. On the website, email us. Your nickname, real name, player code, leagues, trash talk, push token, sign ins and every email address tied to the account (a parent&apos;s included) are removed. Old picks stay without a name so other players&apos; points don&apos;t change.</li>
-        <li>Spam-log IP addresses are deleted after {IP_LOG_DAYS} days. Email addresses nobody confirms are deleted after {UNCONFIRMED_EMAIL_DAYS} days.</li>
+        <li>Site visit counts are deleted after 13 months. Spam-log IP addresses are deleted after {IP_LOG_DAYS} days. Email addresses nobody confirms are deleted after {UNCONFIRMED_EMAIL_DAYS} days.</li>
         <li>When you unsubscribe, we keep the address marked as unsubscribed so we don&apos;t email it again. Email us if you want it gone completely.</li>
         <li>Stripe keeps payment records as the law requires.</li>
         <li>To remove a games score or name, email us.</li>
@@ -124,7 +126,7 @@ export default function PrivacyBody() {
 
       <h2>Do Not Track</h2>
       <p>
-        We don&apos;t track you across other websites, and we don&apos;t let anyone else track you on ours. So we treat everyone the same, whether or not your browser sends a Do Not Track or Global Privacy Control signal.
+        We don&apos;t track you across other websites, and we don&apos;t let anyone else track you on ours. If your browser sends a Do Not Track or Global Privacy Control signal, we still count the visit, but the random id is forgotten when you close the tab and is never linked to your nickname.
       </p>
 
       <h2>Changes to this page</h2>

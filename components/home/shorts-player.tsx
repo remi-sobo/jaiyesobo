@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import type { ShortWithEpisode } from "@/lib/content/shorts";
+import { track } from "@/lib/analytics/client";
 import { instagram } from "@/lib/content/social";
 
 const clock = (s: number) => {
@@ -24,6 +25,26 @@ export default function ShortsPlayer({ shorts }: { shorts: ShortWithEpisode[] })
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
   const [progress, setProgress] = useState(0);
+
+  // Analytics: one "start" per clip per visit, watch time banked on every pause.
+  const startedClips = useRef(new Set<string>());
+  // Position in the clip (seconds) where the current stretch of playing began.
+  const playedFrom = useRef<(number | null)[]>([]);
+  function watchStart(i: number, at: number) {
+    const s = shorts[i];
+    playedFrom.current[i] = at;
+    if (startedClips.current.has(s.id)) return;
+    startedClips.current.add(s.id);
+    track({ t: "watch", k: `short:${s.id}`, l: s.title, d: "start" });
+  }
+  function watchStop(i: number, at: number, finished = false) {
+    const s = shorts[i];
+    const from = playedFrom.current[i];
+    playedFrom.current[i] = null;
+    const secs = from == null ? 0 : Math.round(at - from);
+    if (secs >= 1) track({ t: "watch", k: `short:${s.id}`, l: s.title, d: "time", n: secs });
+    if (finished) track({ t: "watch", k: `short:${s.id}`, l: s.title, d: "complete" });
+  }
 
   function center(i: number) {
     const box = rail.current;
@@ -106,10 +127,20 @@ export default function ShortsPlayer({ shorts }: { shorts: ShortWithEpisode[] })
                   preload="none"
                   muted={muted}
                   className="absolute inset-0 h-full w-full object-cover"
-                  onPlay={() => on && setPlaying(true)}
-                  onPause={() => on && setPlaying(false)}
+                  onPlay={(e) => {
+                    watchStart(i, e.currentTarget.currentTime);
+                    if (on) setPlaying(true);
+                  }}
+                  onPause={(e) => {
+                    watchStop(i, e.currentTarget.currentTime);
+                    if (on) setPlaying(false);
+                  }}
                   onTimeUpdate={(e) => on && setProgress(e.currentTarget.currentTime / (e.currentTarget.duration || s.seconds))}
-                  onEnded={() => (i + 1 < shorts.length ? play(i + 1) : setPlaying(false))}
+                  onEnded={(e) => {
+                    watchStop(i, e.currentTarget.currentTime, true);
+                    if (i + 1 < shorts.length) play(i + 1);
+                    else setPlaying(false);
+                  }}
                 >
                   Your browser does not support video.
                 </video>
