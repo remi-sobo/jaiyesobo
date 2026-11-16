@@ -10,6 +10,7 @@ import { FanVote } from "./fan-bits";
 import { LastWeekCard } from "./last-week";
 import { PublicCard } from "./public-week";
 import PlayerBoard from "./player-board";
+import PromoVideo from "./promo-video";
 import VideoPopout from "@/components/site/video-popout";
 import { sportsbookEpisode } from "@/lib/content/episodes";
 import { pad } from "@/lib/content/format";
@@ -147,6 +148,7 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
           }
         />
         <Ticker items={view.items} />
+        {featured && !me ? <PromoVideo cta={isOpen} className="mt-6" /> : null}
         {me ? (
           <nav aria-label="Your leagues" className="mt-6 flex flex-wrap items-center gap-2">
             <span className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">Your leagues</span>

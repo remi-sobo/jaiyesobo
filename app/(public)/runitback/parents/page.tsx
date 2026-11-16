@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import PolicyPage from "@/components/sportsbook/public/policy-page";
+import PromoVideo from "@/components/sportsbook/public/promo-video";
 import { CONTACT_EMAIL } from "@/lib/sportsbook/contact";
 
 export const metadata: Metadata = { title: "For parents · Run It Back Picks" };
@@ -11,6 +12,7 @@ export default function ParentsPage() {
   return (
     <PolicyPage title="For parents" updated="November 15, 2026">
       <p>Run It Back Picks was built by a 9 year old and his dad. We made it something we&apos;d hand our own kids.</p>
+      <PromoVideo cta={false} />
       <ul>
         <li>No money, no prizes, no betting words. Points and bragging rights only.</li>
         <li>No open chat. Players can only post from a short list of preset lines, and anyone can report or mute.</li>
