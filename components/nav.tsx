@@ -2,16 +2,17 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+// Two things live here: what Jaiye says (On The Court) and what he made (Play).
+// History and Now are still pages, they just aren't in the menu.
 const links = [
-  { href: "/column", label: "Column" },
-  { href: "/pod", label: "Pod" },
-  { href: "/games", label: "Games" },
-  { href: "/runitback", label: "Run It Back" },
+  { href: "/on-the-court", label: "On The Court" },
+  { href: "/games", label: "Play" },
   { href: "/predictions", label: "Predictions" },
-  { href: "/history", label: "History" },
-  { href: "/now", label: "Now" },
   { href: "/about", label: "About" },
 ];
+
+/** The main game gets the one button in the bar. */
+const mainGame = { href: "/runitback", label: "Play Run It Back" };
 
 export default function Nav() {
   const [open, setOpen] = useState(false);
@@ -45,7 +46,7 @@ export default function Nav() {
         </Link>
 
         {/* Desktop: one line, never two. */}
-        <ul className="hidden list-none gap-7 min-[760px]:flex lg:gap-9">
+        <ul className="hidden list-none items-center gap-7 min-[760px]:flex lg:gap-9">
           {links.map((l) => (
             <li key={l.href}>
               <Link
@@ -57,6 +58,14 @@ export default function Nav() {
               </Link>
             </li>
           ))}
+          <li>
+            <Link
+              href={mainGame.href}
+              className="inline-flex min-h-9 items-center bg-[var(--color-red)] px-4 font-[family-name:var(--font-jetbrains)] text-[0.7rem] font-bold uppercase tracking-[0.15em] whitespace-nowrap text-[var(--color-black)] transition-colors duration-300 hover:bg-[var(--color-red-bright)]"
+            >
+              {mainGame.label}
+            </Link>
+          </li>
         </ul>
 
         <button
@@ -97,6 +106,15 @@ export default function Nav() {
               </li>
             ))}
           </ul>
+          <div className="px-5 pt-5">
+            <Link
+              href={mainGame.href}
+              onClick={() => setOpen(false)}
+              className="flex min-h-14 items-center justify-center bg-[var(--color-red)] px-5 font-[family-name:var(--font-jetbrains)] text-[0.8rem] font-bold uppercase tracking-[0.15em] text-[var(--color-black)]"
+            >
+              {mainGame.label}
+            </Link>
+          </div>
           <div className="px-5 py-5 font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.25em] text-[var(--color-mute)]">
             Vol. 02 · 2026
           </div>

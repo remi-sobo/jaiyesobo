@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { featuredGame } from "@/lib/content/games";
 import { Accent, SectionLabel } from "@/components/site/type";
-import { PlayButton } from "@/components/site/buttons";
+import { GhostButton, PlayButton } from "@/components/site/buttons";
 
 export default function PlaySomething() {
   const game = featuredGame();
@@ -9,7 +9,7 @@ export default function PlaySomething() {
   return (
     <section className="border-t border-[var(--color-line)] bg-[var(--color-off-black)] px-5 py-[clamp(52px,7vw,104px)] min-[760px]:px-10">
       <div className="mx-auto max-w-[1200px]">
-        <SectionLabel tone="yellow">Play something I made</SectionLabel>
+        <SectionLabel tone="yellow">More games I made</SectionLabel>
 
         <div className="mt-8 grid gap-[clamp(24px,4vw,64px)] lg:grid-cols-2 lg:items-center">
           <div>
@@ -24,10 +24,11 @@ export default function PlaySomething() {
               can&apos;t move him after that. You don&apos;t know who&apos;s coming next.
             </p>
             {game.href && (
-              <div className="mt-8">
+              <div className="mt-8 flex flex-wrap gap-3">
                 <PlayButton href={game.href} tone="yellow">
                   Play
                 </PlayButton>
+                <GhostButton href="/games">All my games</GhostButton>
               </div>
             )}
             {game.credit && (

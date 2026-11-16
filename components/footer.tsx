@@ -2,10 +2,10 @@ import Link from "next/link";
 import { instagram } from "@/lib/content/social";
 
 const links = [
-  { href: "/column", label: "Column" },
-  { href: "/pod", label: "Pod" },
-  { href: "/games", label: "Games" },
-  { href: "/history", label: "History" },
+  { href: "/on-the-court", label: "On The Court" },
+  { href: "/games", label: "Play" },
+  { href: "/runitback", label: "Run It Back Picks" },
+  { href: "/predictions", label: "Predictions" },
   { href: "/now", label: "Now" },
   { href: "/about", label: "About" },
   { href: "/feed.xml", label: "Feed" },
