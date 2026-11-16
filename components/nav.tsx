@@ -61,7 +61,7 @@ export default function Nav() {
           <li>
             <Link
               href={mainGame.href}
-              className="inline-flex min-h-9 items-center bg-[var(--color-red)] px-4 font-[family-name:var(--font-jetbrains)] text-[0.7rem] font-bold uppercase tracking-[0.15em] whitespace-nowrap text-[var(--color-black)] transition-colors duration-300 hover:bg-[var(--color-red-bright)]"
+              className="inline-flex min-h-11 items-center bg-[var(--color-red)] px-4 font-[family-name:var(--font-jetbrains)] text-[0.7rem] font-bold uppercase tracking-[0.15em] whitespace-nowrap text-[var(--color-black)] transition-colors duration-300 hover:bg-[var(--color-red-bright)]"
             >
               {mainGame.label}
             </Link>
