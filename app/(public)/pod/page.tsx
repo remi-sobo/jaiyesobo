@@ -13,7 +13,7 @@ import { InstagramLine } from "@/components/site/instagram";
 import NewsletterBox from "@/components/site/newsletter-box";
 
 export const metadata: Metadata = {
-  title: "On The Court · Jaiye Sobo",
+  title: "On The Court: The Show · Jaiye Sobo",
   description:
     "Me and my dad talking basketball for about twenty minutes. New episodes throughout the season.",
 };
@@ -26,7 +26,7 @@ export default function PodPage() {
     <main>
       <section className="px-5 py-[clamp(44px,6vw,88px)] min-[760px]:px-10">
         <div className="mx-auto max-w-[1200px]">
-          <SectionLabel>The Podcast</SectionLabel>
+          <SectionLabel>On The Court · The Show</SectionLabel>
           <h1 className="mt-6 font-[family-name:var(--font-fraunces)] text-[clamp(3rem,8vw,6rem)] font-black leading-[0.85] tracking-[-0.045em]">
             On The <em className="font-normal italic text-[var(--color-red)]">Court.</em>
           </h1>

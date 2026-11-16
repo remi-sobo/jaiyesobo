@@ -15,17 +15,19 @@ export default function Home() {
   return (
     <main>
       <Hero />
+      {/* On The Court first: the show, the column, the clips. */}
       <Reveal>
-        <Shorts />
-      </Reveal>
-      <Reveal>
-        <ThisSeason />
+        <OnTheCourt />
       </Reveal>
       <Reveal>
         <LatestDrop />
       </Reveal>
       <Reveal>
-        <OnTheCourt />
+        <Shorts />
+      </Reveal>
+      {/* Then Play: Run It Back Picks leads, the other games follow. */}
+      <Reveal>
+        <ThisSeason />
       </Reveal>
       <Reveal>
         <PlaySomething />

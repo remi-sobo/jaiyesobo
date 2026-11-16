@@ -7,7 +7,7 @@ import { Accent, SectionLabel } from "@/components/site/type";
 import ColumnList, { type ColumnRow } from "@/components/column/column-list";
 
 export const metadata: Metadata = {
-  title: "The Column · Jaiye Sobo",
+  title: "On The Court: The Column · Jaiye Sobo",
   description:
     "I pick one thing that happened in basketball and I say what I think about it. New writing throughout the season.",
 };
@@ -32,7 +32,7 @@ export default function ColumnPage() {
     <main>
       <section className="px-5 pt-[clamp(44px,6vw,88px)] min-[760px]:px-10">
         <div className="mx-auto max-w-[1200px]">
-          <SectionLabel>On The Court</SectionLabel>
+          <SectionLabel>On The Court · The Column</SectionLabel>
           <h1 className="mt-6 font-[family-name:var(--font-fraunces)] text-[clamp(3rem,8vw,6rem)] font-black leading-[0.85] tracking-[-0.045em]">
             The <em className="font-normal italic text-[var(--color-red)]">Column.</em>
           </h1>
@@ -46,6 +46,9 @@ export default function ColumnPage() {
             <a href="#all" className="hover:text-[var(--color-bone)]">
               Jump to all of them ↓
             </a>
+            <Link href="/pod" className="hover:text-[var(--color-bone)]">
+              Watch the show →
+            </Link>
           </div>
         </div>
       </section>
