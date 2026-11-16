@@ -72,7 +72,7 @@ describe("login email", () => {
   it("uses the Run It Back look", () => {
     expect(m.html).toContain("#0B0B0C");
     expect(m.html).toContain("#E11D2E");
-    expect(m.html).toContain("symbol_reversed_transparent.png");
+    expect(m.html).toContain("wordmark_horizontal_dark_email.png");
   });
 });
 

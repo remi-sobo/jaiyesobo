@@ -2,7 +2,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import type { ApiEmail } from "@/lib/app-api/types";
 import { sendEmail, type SendResult } from "./send";
 import { canRepend, canSendConfirm, isValidEmail, maskEmail, normalizeEmail, relationFor, type Relation } from "./rules";
-import { confirmEmail, parentConsentEmail, type Rendered } from "./templates";
+import { confirmEmail, parentConsentEmail, welcomeEmail, type Rendered } from "./templates";
 import { sign, verifyForDb, versionMatches } from "./tokens";
 
 /**
@@ -47,7 +47,7 @@ export type SubscribeResult =
 
 /** Logs one send. The dedupe key is only kept on a real send, so a failure can be retried. */
 export async function logEmail(row: {
-  kind: "confirm" | "consent" | "results" | "newsletter" | "login";
+  kind: "confirm" | "consent" | "results" | "newsletter" | "login" | "welcome";
   subscriberId: string | null;
   dedupeKey?: string | null;
   subject: string;
@@ -104,6 +104,42 @@ async function sendConfirmation(sub: Subscriber): Promise<SendResult> {
   const result = await sendEmail({ to: sub.email, ...mail });
   await logEmail({ kind: sub.relation === "parent" ? "consent" : "confirm", subscriberId: sub.id, subject: mail.subject, result });
   return result;
+}
+
+/**
+ * The welcome email, right after an address is confirmed. At most one ever
+ * per subscriber row: the 'welcome' dedupe key in sb_email_log stops a second
+ * one if they unsubscribe and confirm again. Never throws.
+ */
+async function sendWelcome(sub: Subscriber): Promise<void> {
+  try {
+    const { data: already } = await db()
+      .from("sb_email_log")
+      .select("id")
+      .eq("subscriber_id", sub.id)
+      .eq("dedupe_key", "welcome")
+      .limit(1);
+    if (already?.length) return;
+    let nickname: string | null = null;
+    let code: string | null = null;
+    if (sub.player_id) {
+      const { data: p } = await db().from("sb_players").select("display_name, code").eq("id", sub.player_id).is("deleted_at", null).maybeSingle();
+      nickname = (p?.display_name as string | undefined) ?? null;
+      code = (p?.code as string | undefined) ?? null;
+    }
+    const mail = welcomeEmail({
+      manageToken: sign({ sid: sub.id, purpose: "manage" }),
+      relation: sub.relation,
+      results: sub.want_results,
+      newsletter: sub.want_newsletter,
+      nickname,
+      code,
+    });
+    const result = await sendEmail({ to: sub.email, ...mail });
+    await logEmail({ kind: "welcome", subscriberId: sub.id, dedupeKey: "welcome", subject: mail.subject, result });
+  } catch (e) {
+    console.error(JSON.stringify({ scope: "email.welcome", err: String(e) }));
+  }
 }
 
 /**
@@ -278,6 +314,8 @@ export async function confirm(token: unknown): Promise<ConfirmResult> {
         const { error: delErr } = await db().from("sb_subscribers").delete().eq("player_id", sub.player_id).neq("id", sub.id);
         if (delErr) console.error(JSON.stringify({ scope: "email.confirm", cleanup: sub.player_id, err: String(delErr.message ?? delErr) }));
       }
+      // Only the request that flipped pending to confirmed gets here, so this runs once per confirm.
+      await sendWelcome(sub);
     }
     return {
       ok: true,
