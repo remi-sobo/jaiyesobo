@@ -463,7 +463,7 @@ function playerWelcome(i: WelcomeInput): Rendered {
     more +
     resultsLine +
     p("See you on the board,", "margin:22px 0 2px;") +
-    `<div style="font-family:${DISPLAY};font-size:30px;line-height:1;font-weight:900;font-style:italic;text-transform:uppercase;color:${INK};">Jaiye <span style="color:${RED};">#23</span></div>`;
+    `<div style="font-family:${DISPLAY};font-size:30px;line-height:1;font-weight:900;font-style:italic;text-transform:uppercase;color:${INK};">Jaiye <span style="color:${RED};">#0</span></div>`;
   const text = `${name ? `You're in, ${name}.` : "You're in."}
 
 Hey, it's Jaiye. Thanks for signing up. Every week my dad and I pick NBA games, and now you're picking against us.
@@ -480,7 +480,7 @@ More from me:
 ${i.newsletter ? "I'll also send you new takes, episodes and columns as they come, on top of your Run It Back picks." : `Want my takes, episodes and columns too? Turn them on: ${manageUrl(i.manageToken)}`}
 ${i.results ? "\nEvery Monday you'll get your results: where you finished, and whether you beat me and my dad.\n" : ""}
 See you on the board,
-Jaiye #23`;
+Jaiye #0`;
   const s = shell({
     preheader: "Here's how it works, where to watch, and what's coming next.",
     html: body,
