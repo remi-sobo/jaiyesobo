@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { subscribeEmail, subscribedMessage } from "./email-api";
 
@@ -76,6 +77,12 @@ export default function NewsletterBox({ className = "" }: { className?: string }
           >
             {busy ? "One sec…" : "Sign me up"}
           </button>
+          <p className="text-[0.8rem] text-[var(--color-mute)]">
+            We only use your email for this.{" "}
+            <Link href="/privacy" className="underline underline-offset-4 hover:text-[var(--color-bone)]">
+              Privacy
+            </Link>
+          </p>
         </form>
       )}
     </section>

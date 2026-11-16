@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
 import { subscribeEmail, subscribedMessage } from "@/components/site/email-api";
 
@@ -77,6 +78,9 @@ export function EmailPrompt({ className = "" }: { className?: string }) {
           <button type="button" onClick={dismiss} className="min-h-10 px-2 text-[0.85rem] text-[var(--color-mute)] underline-offset-4 hover:underline">
             Not now
           </button>
+          <Link href="/runitback/privacy" className="inline-flex min-h-10 items-center px-2 text-[0.85rem] text-[var(--color-mute)] underline underline-offset-4 hover:text-[var(--color-bone)]">
+            Privacy
+          </Link>
           {error ? <p className="w-full text-[0.85rem] text-[var(--color-red-soft)]">{error}</p> : null}
         </form>
       )}

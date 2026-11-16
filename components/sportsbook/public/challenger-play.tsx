@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { SbItem, SbPick, SbPlayerWithCode } from "@/lib/sportsbook/types";
 import { CardHead, CardPrompt, ResultLine, TeamDot, isLocked, isWinningOption } from "../card-parts";
@@ -187,9 +188,26 @@ export function JoinForm({ league, from, onJoined }: { league?: string; from?: s
         {submitLabel}
       </button>
       {mode === "join" ? (
-        <button type="button" onClick={() => go("email")} className={linkButton}>
-          Already playing? Sign back in
-        </button>
+        <>
+          <p className="text-center text-[0.8rem] text-[var(--color-mute)]">
+            By joining you agree to the{" "}
+            <Link href="/runitback/terms" className="underline underline-offset-4 hover:text-[var(--color-bone)]">
+              Terms
+            </Link>
+            . See{" "}
+            <Link href="/runitback/privacy" className="underline underline-offset-4 hover:text-[var(--color-bone)]">
+              Privacy
+            </Link>{" "}
+            and{" "}
+            <Link href="/runitback/parents" className="underline underline-offset-4 hover:text-[var(--color-bone)]">
+              For parents
+            </Link>
+            .
+          </p>
+          <button type="button" onClick={() => go("email")} className={linkButton}>
+            Already playing? Sign back in
+          </button>
+        </>
       ) : (
         <div className="flex flex-col items-center gap-1">
           {mode === "code" ? (
