@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { nightlySync } from "@/lib/sportsbook/data";
 import { weeklyJob } from "@/lib/sportsbook/actions";
+import { privacyCleanup } from "@/lib/privacy/cleanup";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -25,6 +26,9 @@ export const maxDuration = 300;
  * does. Not approved, it opens when the week starts, Monday 12:00am Pacific. The
  * weekly job drafts a missing current week first, then opens whatever is ready.
  *
+ * The nightly job also runs the privacy cleanup (lib/privacy/cleanup.ts): old
+ * spam-log IPs and never-confirmed email addresses are deleted.
+ *
  * Both also send the "graded" push (and weekly the "recap" one) through
  * lib/sportsbook/push.ts. Those are keyed by week, so a rerun sends nothing new.
  */
@@ -35,6 +39,14 @@ export async function GET(req: Request) {
   if (!allowed) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const job = new URL(req.url).searchParams.get("job");
+  if (job !== "weekly") {
+    // Its own try, so a cleanup failure never stops grading, and the other way round.
+    try {
+      console.log(JSON.stringify({ scope: "privacy.cleanup", result: await privacyCleanup() }));
+    } catch (e) {
+      console.error(JSON.stringify({ scope: "privacy.cleanup", err: String(e) }));
+    }
+  }
   try {
     const result = job === "weekly" ? await weeklyJob() : await nightlySync();
     console.log(JSON.stringify({ scope: "sportsbook.cron", job, result }));
