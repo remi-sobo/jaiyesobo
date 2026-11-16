@@ -99,7 +99,7 @@ export default async function EpisodePage(props: PageProps<"/pod/[slug]">) {
         </div>
 
         {ep.article ? (
-          <section id="article" className="mt-16 scroll-mt-24">
+          <section id="article" data-read={`pod:${ep.slug}`} data-read-label={ep.title} className="mt-16 scroll-mt-24">
             <SectionLabel tone="red">The article</SectionLabel>
             {ep.myTake ? (
               <div className="mt-8 border-l-2 border-[var(--color-red)] pl-6">

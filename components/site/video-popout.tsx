@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ytEmbedUrl } from "./episode-player";
+import { useYouTubeWatch } from "@/components/analytics/use-youtube-watch";
 
 /**
  * A branded thumbnail (a real frame from the video) that opens the episode
@@ -71,6 +72,8 @@ export default function VideoPopout({
 
 function VideoModal({ youtubeId, title, href, onClose }: { youtubeId: string; title: string; href: string; onClose: () => void }) {
   const closeRef = useRef<HTMLButtonElement>(null);
+  const frame = useRef<HTMLIFrameElement>(null);
+  useYouTubeWatch(frame, youtubeId, title);
   useEffect(() => {
     closeRef.current?.focus();
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -105,6 +108,7 @@ function VideoModal({ youtubeId, title, href, onClose }: { youtubeId: string; ti
         </div>
         <div className="relative aspect-video w-full border border-[var(--color-line-strong)] bg-black">
           <iframe
+            ref={frame}
             className="absolute inset-0 h-full w-full border-0"
             src={ytEmbedUrl(youtubeId, { autoplay: true })}
             title={title}
