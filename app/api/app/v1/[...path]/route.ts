@@ -17,7 +17,8 @@ import {
   renameLeague,
 } from "@/lib/sportsbook/leagues";
 import { overLimit } from "@/lib/sportsbook/limits";
-import { challengerByCode, checkDisplayName, createChallenger, isAgeBand } from "@/lib/sportsbook/players";
+import { challengerByCode, checkDisplayName, checkRealNames, createChallenger, isAgeBand } from "@/lib/sportsbook/players";
+import { requestLoginCode, verifyLoginCode } from "@/lib/email/login";
 import { rivalRecord, topRivals } from "@/lib/sportsbook/rivals";
 import { deleteAccount, deleteTalk, fileReport, isReportContext, mutedBy, playerFlags, postTalk, setMute } from "@/lib/sportsbook/safety";
 import { scheduleLiveSync } from "@/lib/sportsbook/live";
@@ -163,8 +164,10 @@ async function handle(method: string, path: string[], req: Request): Promise<Res
       const check = checkDisplayName(bd.name);
       if (!check.ok) throw new HttpError(400, check.error);
       if (!isAgeBand(bd.age_band)) throw new HttpError(400, "Tell us if you're 13 or older.");
+      const real = checkRealNames(bd.first_name, bd.last_name, bd.age_band);
+      if (!real.ok) throw new HttpError(400, real.error);
       if (await overLimit(req, "join")) throw new HttpError(429, "Too many new players from here. Try later.");
-      const { id } = await createChallenger(check.name, bd.age_band);
+      const { id } = await createChallenger(check.name, bd.age_band, real.names);
       const token = await createSession(id);
       const p = (await loadPlayer(id))!;
       return json({ token, player: apiPlayer(p) } satisfies SessionResponse, 201);
@@ -176,6 +179,22 @@ async function handle(method: string, path: string[], req: Request): Promise<Res
       if (!id) throw new HttpError(404, "No player with that code.");
       const token = await createSession(id);
       const p = (await loadPlayer(id))!;
+      return json({ token, player: apiPlayer(p) } satisfies SessionResponse);
+    }
+    case route === "POST /session/email-code": {
+      const bd = await body(req);
+      if (await overLimit(req, "login")) throw new HttpError(429, "Too many tries. Wait a bit.");
+      const res = await requestLoginCode(bd.email);
+      if (!res.ok) throw new HttpError(400, res.error);
+      return ok();
+    }
+    case route === "POST /session/email-login": {
+      const bd = await body(req);
+      if (await overLimit(req, "restore")) throw new HttpError(429, "Too many tries. Wait a bit.");
+      const res = await verifyLoginCode(bd.email, bd.code);
+      if (!res.ok) throw new HttpError(400, res.error);
+      const token = await createSession(res.playerId);
+      const p = (await loadPlayer(res.playerId))!;
       return json({ token, player: apiPlayer(p) } satisfies SessionResponse);
     }
     case route === "DELETE /session": {
@@ -242,6 +261,17 @@ async function handle(method: string, path: string[], req: Request): Promise<Res
         const check = checkDisplayName(bd.display_name);
         if (!check.ok) throw new HttpError(400, check.error);
         patch.display_name = check.name;
+      }
+      if (bd.first_name !== undefined || bd.last_name !== undefined) {
+        if (await overLimit(req, "name")) throw new HttpError(429, "Slow down a little.");
+        const real = checkRealNames(
+          bd.first_name !== undefined ? bd.first_name : me.first_name,
+          bd.last_name !== undefined ? bd.last_name : me.last_name,
+          me.age_band,
+        );
+        if (!real.ok) throw new HttpError(400, real.error);
+        patch.first_name = real.names.first_name;
+        patch.last_name = real.names.last_name;
       }
       // Accounts made before the age question can answer it once. Anyone who already has an answer keeps it.
       let ageBand = me.age_band;

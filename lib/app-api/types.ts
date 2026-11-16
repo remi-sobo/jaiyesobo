@@ -31,12 +31,19 @@ export type ApiPlayer = {
   push_enabled: PushSettings;
   /** Players who haven't confirmed they're 13 or older can't post trash talk or create leagues, and get no push alerts. */
   can_talk: boolean;
+  /** Optional real names, 13+ only. Only ever sent to the player themself; nobody else's ApiPlayer carries them. */
+  first_name: string | null;
+  last_name: string | null;
 };
 
 /* Sessions */
 
-export type JoinRequest = { name: string; age_band: AgeBand };
+export type JoinRequest = { name: string; age_band: AgeBand; first_name?: string | null; last_name?: string | null };
 export type RestoreRequest = { code: string };
+/** POST /session/email-code. Always 200 for a valid address, matched or not. */
+export type EmailCodeRequest = { email: string };
+/** POST /session/email-login. Answers with a SessionResponse. */
+export type EmailLoginRequest = { email: string; code: string };
 export type SessionResponse = { token: string; player: ApiPlayer };
 
 /* Me */

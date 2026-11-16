@@ -39,9 +39,11 @@ export type PlayerRow = SbPlayerWithCode & {
   pass_season: string | null;
   push_enabled: PushSettings | null;
   deleted_at: string | null;
+  first_name: string | null;
+  last_name: string | null;
 };
 
-const PLAYER_COLS = "id, kind, display_name, code, hidden, age_band, has_pass, pass_season, push_enabled, deleted_at";
+const PLAYER_COLS = "id, kind, display_name, code, hidden, age_band, has_pass, pass_season, push_enabled, deleted_at, first_name, last_name";
 
 export async function loadPlayer(id: string): Promise<PlayerRow | null> {
   const { data } = await createServiceClient().from("sb_players").select(PLAYER_COLS).eq("id", id).maybeSingle();
@@ -61,6 +63,8 @@ export function apiPlayer(p: PlayerRow): ApiPlayer {
     pass_season: p.pass_season,
     push_enabled: { ...DEFAULT_PUSH, ...(p.push_enabled ?? {}) },
     can_talk: canPostTalk({ id: p.id, kind: p.kind, age_band: p.age_band, deleted_at: p.deleted_at, hidden: p.hidden }),
+    first_name: p.first_name ?? null,
+    last_name: p.last_name ?? null,
   };
 }
 

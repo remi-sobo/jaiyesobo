@@ -1,15 +1,19 @@
 import { NextResponse } from "next/server";
+import { createServiceClient } from "@/lib/supabase/server";
 import { ActionError, savePick, submitPicks } from "@/lib/sportsbook/actions";
 import { castVote, getVisitor, isReactionKey, toggleReaction } from "@/lib/sportsbook/fans";
 import {
   challengerByCode,
   checkDisplayName,
+  checkRealNames,
   clearChallengerCookie,
   createChallenger,
   getChallenger,
   isAgeBand,
   setChallengerCookie,
+  setRealNames,
 } from "@/lib/sportsbook/players";
+import { requestLoginCode, verifyLoginCode, verifyLoginLink } from "@/lib/email/login";
 import { joinLeague, leaveLeague } from "@/lib/sportsbook/leagues";
 import { isValidEmail } from "@/lib/email/rules";
 import { subscribe } from "@/lib/email/subscribers";
@@ -22,8 +26,12 @@ type Body = Record<string, unknown>;
 
 /**
  * POST /api/sportsbook { action }
- *   join { name, age_band, league?, email?, email_results?, email_newsletter? }   new challenger, sets the cookie, returns their code
+ *   join { name, age_band, first_name?, last_name?, league?, email?, email_results?, email_newsletter? }   new challenger, sets the cookie, returns their code
  *   restore { code }     same challenger on another device
+ *   login_email { email }               email a login code (13+, confirmed email). Same answer for any valid address
+ *   login_code { email, code }          sign in with the emailed code
+ *   login_link { token }                sign in with the emailed link (a POST, so mail scanners can't use it up)
+ *   names { first_name, last_name }     set or clear your real names (13+ only, private)
  *   pick { item_id, choice?, guess?, is_lock? }
  *   submit { week }      lock this challenger's picks for the week
  *   leave                forget this device
@@ -48,11 +56,13 @@ export async function POST(req: Request) {
         const check = checkDisplayName(body.name);
         if (!check.ok) return NextResponse.json({ error: check.error }, { status: 400 });
         if (!isAgeBand(body.age_band)) return NextResponse.json({ error: "Tell us if you're 13 or older." }, { status: 400 });
+        const real = checkRealNames(body.first_name, body.last_name, body.age_band);
+        if (!real.ok) return NextResponse.json({ error: real.error }, { status: 400 });
         if (await overLimit(req, "join")) return NextResponse.json({ error: "Too many new players from here. Try later." }, { status: 429 });
         // The email is optional. A bad one is refused before the player is made, so they can fix it and retry.
         const email = typeof body.email === "string" ? body.email.trim() : "";
         if (email && !isValidEmail(email)) return NextResponse.json({ error: "That email doesn't look right." }, { status: 400 });
-        const { id, code } = await createChallenger(check.name, body.age_band);
+        const { id, code } = await createChallenger(check.name, body.age_band, real.names);
         await setChallengerCookie(id);
         let emailStatus: string | null = null;
         if (email) {
@@ -78,6 +88,31 @@ export async function POST(req: Request) {
         const id = await challengerByCode(typeof body.code === "string" ? body.code : "");
         if (!id) return NextResponse.json({ error: "No player with that code." }, { status: 404 });
         await setChallengerCookie(id);
+        return NextResponse.json({ ok: true });
+      }
+      case "login_email": {
+        if (await overLimit(req, "login")) return NextResponse.json({ error: "Too many tries. Wait a bit." }, { status: 429 });
+        const res = await requestLoginCode(body.email);
+        if (!res.ok) return NextResponse.json({ error: res.error }, { status: 400 });
+        return NextResponse.json({ ok: true });
+      }
+      case "login_code":
+      case "login_link": {
+        if (await overLimit(req, "restore")) return NextResponse.json({ error: "Too many tries. Wait a bit." }, { status: 429 });
+        const res = body.action === "login_code" ? await verifyLoginCode(body.email, body.code) : await verifyLoginLink(body.token);
+        if (!res.ok) return NextResponse.json({ error: res.error }, { status: 400 });
+        await setChallengerCookie(res.playerId);
+        if (typeof body.league === "string" && body.league) await joinLeague(res.playerId, body.league, null).catch(() => null);
+        return NextResponse.json({ ok: true });
+      }
+      case "names": {
+        const me = await getChallenger();
+        if (!me) return NextResponse.json({ error: "Join first." }, { status: 401 });
+        if (await overLimit(req, "name")) return NextResponse.json({ error: "Slow down a little." }, { status: 429 });
+        const { data: row } = await createServiceClient().from("sb_players").select("age_band").eq("id", me.id).maybeSingle();
+        const real = checkRealNames(body.first_name, body.last_name, isAgeBand(row?.age_band) ? row.age_band : null);
+        if (!real.ok) return NextResponse.json({ error: real.error }, { status: 400 });
+        await setRealNames(me.id, real.names);
         return NextResponse.json({ ok: true });
       }
       case "pick": {

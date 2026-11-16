@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAdminSession, getKidSession } from "@/lib/session";
-import { getHousePlayers } from "@/lib/sportsbook/players";
+import { getHousePlayers, whoIsWho } from "@/lib/sportsbook/players";
+import { WhoIsWho } from "@/components/sportsbook/who-is-who";
 import { buildPodPrep } from "@/lib/sportsbook/pod";
 import { getPodNotes } from "@/lib/sportsbook/pod-notes";
 import { loadWeekView } from "@/lib/sportsbook/view";
@@ -25,11 +26,13 @@ export default async function PodPage({ searchParams }: Props) {
   const session = (await getKidSession()) ?? (await getAdminSession());
   if (!session) redirect(`/me/lock?next=${encodeURIComponent(week ? `/me/pod?week=${n}` : "/me/pod")}`);
 
-  const [thisWeek, lastWeek, house, notes] = await Promise.all([
+  const [thisWeek, lastWeek, house, notes, people] = await Promise.all([
     loadWeekView(n, { admin: true }).catch(() => null),
     n > 1 ? loadWeekView(n - 1, { admin: true }).catch(() => null) : Promise.resolve(null),
     getHousePlayers(),
     getPodNotes(SB_SEASON, n).catch(() => ({}) as Record<string, string>),
+    // Real names only, never emails: Jaiye's login doesn't get those.
+    whoIsWho({ withEmail: false }).catch(() => []),
   ]);
   const sections = buildPodPrep({ week: n, thisWeek, lastWeek, house });
 
@@ -69,6 +72,7 @@ export default async function PodPage({ searchParams }: Props) {
         </div>
       </header>
       <PodPrep week={n} sections={sections} notes={notes} />
+      <WhoIsWho people={people} />
       <BottomNav />
     </main>
   );
