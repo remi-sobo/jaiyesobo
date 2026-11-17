@@ -13,7 +13,7 @@ export const episodes: Episode[] = [
     date: "2026-11-15",
     runtime: "6:28",
     guests: "Jaiye",
-    youtubeId: "IlG9QmppeKE",
+    youtubeId: "Ff4FfmzOUVI",
     sportsbookWeek: 5,
     myTake: "My dad chose Orlando over Philly, which I was dumbfounded by.",
     chapters: [
@@ -25,6 +25,27 @@ export const episodes: Episode[] = [
       { time: "04:00", text: "Rockets or Nuggets, the Spurs, and Thunder at Heat." },
       { time: "05:35", text: "Closest guess: 242. My dad said 228." },
       { time: "06:14", text: "Your turn. Make your Week 5 picks." },
+    ],
+  },
+  {
+    number: 7,
+    slug: "pistons-wizards-2ot",
+    title: "Cade did something nobody has ever done: Pistons vs Wizards",
+    titleAccent: "nobody has ever done",
+    standfirst:
+      "The Pistons beat the Wizards 144 to 140 in double overtime, and Cade had 50 points, 10 assists and zero turnovers. Then two bold predictions, Run It Back Picks, and the Blazers.",
+    date: "2026-11-13",
+    runtime: "6:26",
+    guests: "Jaiye",
+    youtubeId: "Yogn5KB1s-o",
+    myTake: "I feel like the Wizards are going to make it into the playoffs.",
+    chapters: [
+      { time: "00:00", text: "Bold prediction alert. That crazy Pistons Wizards game last night." },
+      { time: "00:19", text: "Cade made history. 50 points, 10 plus assists and zero turnovers." },
+      { time: "03:02", text: "Where they stand. Both teams are looking nice right now." },
+      { time: "03:40", text: "Bold predictions. The Wizards make the playoffs, and Cade makes All-NBA." },
+      { time: "05:04", text: "Things are going good in Run It Back, and good for the Blazers." },
+      { time: "06:01", text: "After the show: me vs. the mic." },
     ],
   },
   {
@@ -58,7 +79,7 @@ export const episodes: Episode[] = [
     date: "2026-10-25",
     runtime: "12:46",
     guests: "Jaiye",
-    youtubeId: "hBtpyWI6twU",
+    youtubeId: "SSfxPemZMpI",
     sportsbookWeek: 2,
     myTake: "He ain't cooking me this week. This is my week.",
     chapters: [
@@ -93,7 +114,7 @@ export const episodes: Episode[] = [
     date: "2026-10-20",
     runtime: "11:01",
     guests: "Jaiye",
-    youtubeId: "UyJfkfRXky0",
+    youtubeId: "eRUKPkqMiY8",
     sportsbookWeek: 1,
     myTake: "The Mavs aren't winning that game. San Antonio wins the whole thing this year.",
     chapters: [
@@ -182,7 +203,7 @@ export const episodes: Episode[] = [
     date: "2026-10-06",
     runtime: "17:41",
     guests: "Jaiye",
-    youtubeId: "ieOaiqyBni0",
+    youtubeId: "QWjT5otbMJ8",
     myTake: "I know ball. I got a million ball knowledge.",
     chapters: [
       { time: "00:00", text: "Four tiers, bottom to top." },
