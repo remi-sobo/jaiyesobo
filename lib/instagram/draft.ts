@@ -52,6 +52,7 @@ async function examples(): Promise<string> {
     .from("ig_comments")
     .select("text, posted_text, custom_text")
     .eq("status", "posted")
+    .not("reply_id", "is", null) // replies made in the Instagram app have no text to learn from
     .order("decided_at", { ascending: false })
     .limit(20);
   if (!data?.length) return "";

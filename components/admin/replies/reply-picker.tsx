@@ -6,6 +6,9 @@ import { decideAction } from "@/app/admin/replies/actions";
 
 const mono = "font-[family-name:var(--font-jetbrains)]";
 
+/** One-tap emoji replies. Kid friendly, basketball heavy. */
+const QUICK_EMOJI = ["🔥", "😂", "🏀", "💯", "👀", "🙌🏾"];
+
 export default function ReplyPicker({ token, pending, done }: { token: string | null; pending: CommentRow[]; done: CommentRow[] }) {
   return (
     <div className="flex flex-col gap-4">
@@ -86,6 +89,38 @@ function Card({ token, initial }: { token: string | null; initial: CommentRow })
                 {o}
               </button>
             ))}
+
+          {c.status === "open" && (
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              {QUICK_EMOJI.map((e) => (
+                <button
+                  key={e}
+                  disabled={busy}
+                  onClick={() => send({ action: "custom", text: e })}
+                  aria-label={`Reply with ${e}`}
+                  className="h-11 w-11 rounded-md border border-[var(--color-line)] bg-[var(--color-warm-bg)] text-xl active:bg-[var(--color-warm-surface-2)] disabled:opacity-50"
+                >
+                  {e}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {c.status === "open" && c.media_permalink && (
+            <div className="rounded-md border border-dashed border-[var(--color-line)] px-3 py-2 text-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <a href={c.media_permalink} target="_blank" rel="noreferrer" className="font-semibold underline">
+                  Reply with a GIF
+                </a>
+                <button disabled={busy} onClick={() => send({ action: "in_app" })} className={`${mono} text-[0.65rem] uppercase tracking-[0.12em] text-[var(--color-warm-mute)] disabled:opacity-50`}>
+                  Done in Instagram
+                </button>
+              </div>
+              <p className="mt-1 text-[var(--color-warm-mute)]">
+                Opens the post in Instagram. Tap Reply under @{c.username}&apos;s comment, then the GIF button. Come back and tap Done.
+              </p>
+            </div>
+          )}
 
           {writing ? (
             <div className="flex flex-col gap-2">

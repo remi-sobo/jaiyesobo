@@ -23,7 +23,9 @@ No system. Remi signs in to Instagram in Chrome, Claude reads comments and draft
 1. Every morning at 7:00am Pacific, the site checks @onthecourt_pod for comments it hasn't seen.
 2. For each one, Claude writes 3 reply options in Jaiye's voice (see Voice below).
 3. If there's at least one comment, Kendra gets an email at kendrasobo@gmail.com: "4 new comments for Jaiye." One button opens the picker.
-4. The picker is a phone-friendly page. For each comment it shows the reel thumbnail, the comment, and 3 option buttons. Below them are "Write my own" and "Skip."
+4. The picker is a phone-friendly page. Each comment also has a row of one-tap emoji replies and a "Reply with a GIF" link that opens the post in Instagram (the API only posts text), with "Done in Instagram" to mark it answered.
+
+   Before that: the picker is a phone-friendly page. For each comment it shows the reel thumbnail, the comment, and 3 option buttons. Below them are "Write my own" and "Skip."
 5. Tapping an option or sending her own reply posts it to Instagram right away. The card turns into "Posted" with a link to the comment.
 6. Comments that need a parent get no options. Instead the card says why it was flagged and offers "Hide on Instagram" or "Leave it."
 7. Kendra's picks and the replies she writes herself are saved. Each morning's drafts use her most recent ones as examples, so the options start to sound like her.

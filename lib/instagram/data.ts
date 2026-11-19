@@ -246,6 +246,7 @@ export const DecisionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("leave") }),
   z.object({ action: z.literal("posted") }), // "unknown" turned out to be on Instagram
   z.object({ action: z.literal("retry") }), // "unknown" turned out not to be on Instagram
+  z.object({ action: z.literal("in_app") }), // answered in the Instagram app (a GIF reply)
 ]);
 export type Decision = z.infer<typeof DecisionSchema>;
 
@@ -286,6 +287,15 @@ export async function decide(v: Viewer, commentId: string, input: unknown): Prom
     }
     case "posted": {
       const r = await move(commentId, ["unknown"], { status: "posted", error: null, ...decided });
+      return r ? { ok: true, row: r } : { ok: false, error: "Already handled." };
+    }
+    case "in_app": {
+      const r = await move(commentId, ["open", "flagged"], {
+        status: "posted",
+        posted_text: "(replied in the Instagram app, likely a GIF)",
+        claimed_at: null,
+        ...decided,
+      });
       return r ? { ok: true, row: r } : { ok: false, error: "Already handled." };
     }
     case "retry": {
