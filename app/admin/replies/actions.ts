@@ -1,8 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/session";
-import { decide, revokeAllLinks, type DecideResult, type Viewer } from "@/lib/instagram/data";
+import { decide, morningRun, revokeAllLinks, type DecideResult, type Viewer } from "@/lib/instagram/data";
 import { verifyPickerToken } from "@/lib/instagram/tokens";
 
 async function viewer(token: string | null): Promise<Viewer | null> {
@@ -24,4 +25,17 @@ export async function revokeLinksAction(): Promise<void> {
   if (!(await getAdminSession())) return;
   await revokeAllLinks();
   revalidatePath("/admin/setup");
+}
+
+/** Setup's "Run now": the 6am job at any hour, sending even if this morning's email went out. */
+export async function runNowAction(): Promise<void> {
+  if (!(await getAdminSession())) return;
+  const r = await morningRun({ force: true });
+  const msg =
+    r.status === "done"
+      ? `${r.newComments} new, ${r.inBatch} waiting, ${r.emailed ? "email sent" : "no email"}`
+      : r.status === "skipped"
+        ? r.reason
+        : `Failed: ${r.error}`;
+  redirect(`/admin/setup?ig_run=${encodeURIComponent(msg)}`);
 }

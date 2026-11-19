@@ -12,10 +12,10 @@ export const dynamic = "force-dynamic";
 export default async function AdminSetupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ig_connected?: string; ig_error?: string }>;
+  searchParams: Promise<{ ig_connected?: string; ig_error?: string; ig_run?: string }>;
 }) {
   await requireAdmin();
-  const { ig_connected, ig_error } = await searchParams;
+  const { ig_connected, ig_error, ig_run } = await searchParams;
   const [kids, games, audience] = await Promise.all([
     getAllKids(),
     getAllGames(),
@@ -38,7 +38,7 @@ export default async function AdminSetupPage({
         </p>
       </div>
 
-      <InstagramSetupPanel connected={ig_connected} error={ig_error} />
+      <InstagramSetupPanel connected={ig_connected} error={ig_error} run={ig_run} />
 
       <SeedKemiPanel />
 

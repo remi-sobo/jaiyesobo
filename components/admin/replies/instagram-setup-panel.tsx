@@ -1,8 +1,8 @@
 import { getConnection, instagramConfigured } from "@/lib/instagram/api";
-import { revokeLinksAction } from "@/app/admin/replies/actions";
+import { revokeLinksAction, runNowAction } from "@/app/admin/replies/actions";
 
 /** Setup card: connect @onthecourt_pod, see when the token expires, kill picker links. */
-export default async function InstagramSetupPanel({ connected, error }: { connected?: string; error?: string }) {
+export default async function InstagramSetupPanel({ connected, error, run }: { connected?: string; error?: string; run?: string }) {
   const configured = instagramConfigured();
   const conn = configured ? await getConnection().catch(() => null) : null;
   const mono = "font-[family-name:var(--font-jetbrains)]";
@@ -22,6 +22,7 @@ export default async function InstagramSetupPanel({ connected, error }: { connec
       )}
       {connected && <p className="mt-2 text-sm text-[var(--color-green)]">Connected @{connected}.</p>}
       {error && <p className="mt-2 text-sm text-[var(--color-red)]">Instagram connect failed: {error}</p>}
+      {run && <p className="mt-2 text-sm">Run now: {run}</p>}
       <div className="mt-4 flex flex-wrap gap-3">
         {configured && (
           <a href="/api/auth/instagram/start" className="rounded-md bg-[var(--color-red)] px-4 py-2 text-sm font-semibold text-white">
@@ -31,6 +32,11 @@ export default async function InstagramSetupPanel({ connected, error }: { connec
         <a href="/admin/replies" className="rounded-md border border-[var(--color-line)] px-4 py-2 text-sm">
           Open the picker
         </a>
+        {conn && (
+          <form action={runNowAction}>
+            <button className="rounded-md border border-[var(--color-line)] px-4 py-2 text-sm">Run now</button>
+          </form>
+        )}
         <form action={revokeLinksAction}>
           <button className="rounded-md border border-[var(--color-line)] px-4 py-2 text-sm text-[var(--color-warm-mute)]">
             Kill all email links
