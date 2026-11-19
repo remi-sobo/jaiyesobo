@@ -38,12 +38,16 @@ export function buildInstagramAuthUrl(redirectUri: string, state: string): strin
   return u.toString();
 }
 
+/** An error Instagram answered with (4xx), so we know the call did not take effect. */
+export class IgRejected extends Error {}
+
 async function igFetch<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, { ...init, signal: AbortSignal.timeout(15_000), cache: "no-store" });
   const j = (await res.json().catch(() => ({}))) as T & { error?: { message?: string; code?: number } | string; error_message?: string };
   if (!res.ok || (j as { error?: unknown }).error) {
     const e = (j as { error?: { message?: string } | string; error_message?: string });
     const msg = typeof e.error === "string" ? e.error_message ?? e.error : e.error?.message ?? `${res.status}`;
+    if (res.status >= 400 && res.status < 500) throw new IgRejected(`Instagram API: ${msg}`);
     throw new Error(`Instagram API: ${msg}`);
   }
   return j;
@@ -58,10 +62,14 @@ export async function connectWithCode(code: string, redirectUri: string): Promis
     redirect_uri: redirectUri,
     code,
   });
-  const short = await igFetch<{ access_token: string; user_id: number | string }>("https://api.instagram.com/oauth/access_token", {
+  // The docs show both a flat object and { data: [ ... ] }; accept either.
+  type Short = { access_token: string; user_id: number | string };
+  const raw = await igFetch<Short & { data?: Short[] }>("https://api.instagram.com/oauth/access_token", {
     method: "POST",
     body: form,
   });
+  const short = raw.data?.[0] ?? raw;
+  if (!short.access_token) throw new Error("Instagram API: no access token in the code exchange");
   const longUrl = new URL(`${GRAPH}/access_token`);
   longUrl.searchParams.set("grant_type", "ig_exchange_token");
   longUrl.searchParams.set("client_secret", appSecret());
@@ -95,6 +103,12 @@ async function saveToken(token: string, expiresIn: number, igUserId: string, use
 
 export type IgConnection = { username: string; igUserId: string; expiresAt: string };
 
+/** Days until the token expires, for the cron's early warning. */
+export async function tokenDaysLeft(): Promise<number | null> {
+  const c = await getConnection();
+  return c ? (new Date(c.expiresAt).getTime() - Date.now()) / 864e5 : null;
+}
+
 export async function getConnection(): Promise<IgConnection | null> {
   const supa = createServiceClient();
   const { data } = await supa.from("ig_token").select("username, ig_user_id, expires_at").eq("id", 1).maybeSingle();
@@ -110,12 +124,17 @@ export async function getToken(): Promise<{ token: string; igUserId: string; use
   const expires = new Date(data.expires_at).getTime();
   if (expires < Date.now()) throw new Error("Instagram token expired");
   if (expires - Date.now() <= TEN_DAYS_MS) {
-    const u = new URL(`${GRAPH}/refresh_access_token`);
-    u.searchParams.set("grant_type", "ig_refresh_token");
-    u.searchParams.set("access_token", data.access_token);
-    const j = await igFetch<{ access_token: string; expires_in: number }>(u.toString());
-    await saveToken(j.access_token, j.expires_in, data.ig_user_id, data.username);
-    return { token: j.access_token, igUserId: data.ig_user_id, username: data.username };
+    try {
+      const u = new URL(`${GRAPH}/refresh_access_token`);
+      u.searchParams.set("grant_type", "ig_refresh_token");
+      u.searchParams.set("access_token", data.access_token);
+      const j = await igFetch<{ access_token: string; expires_in: number }>(u.toString());
+      await saveToken(j.access_token, j.expires_in, data.ig_user_id, data.username);
+      return { token: j.access_token, igUserId: data.ig_user_id, username: data.username };
+    } catch (e) {
+      // The current token still works; keep using it and let the cron warn.
+      console.error(JSON.stringify({ scope: "instagram", step: "refresh", error: String(e) }));
+    }
   }
   return { token: data.access_token, igUserId: data.ig_user_id, username: data.username };
 }

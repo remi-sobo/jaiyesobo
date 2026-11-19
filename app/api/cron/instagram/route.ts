@@ -12,8 +12,8 @@ export const maxDuration = 300;
  * works when it's 6am in Los Angeles: 14:00 UTC in winter, 13:00 in summer.
  * One batch per Pacific date, so a rerun sends no second email.
  *
- * Same auth as the sportsbook cron. `?force=1` (with the secret) runs it at
- * any hour, for a first test.
+ * Same auth as the sportsbook cron. `?force=1` runs it at any hour and sends
+ * again, for a first test; it only works with CRON_SECRET set and sent.
  */
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
@@ -21,7 +21,7 @@ export async function GET(req: Request) {
   const allowed = secret ? auth === `Bearer ${secret}` : (req.headers.get("user-agent") ?? "").startsWith("vercel-cron/");
   if (!allowed) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const force = new URL(req.url).searchParams.get("force") === "1";
+  const force = !!secret && new URL(req.url).searchParams.get("force") === "1";
   const result = await morningRun({ force });
   return NextResponse.json(result, { status: result.status === "error" ? 500 : 200 });
 }

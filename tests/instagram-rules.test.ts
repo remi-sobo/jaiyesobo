@@ -40,9 +40,14 @@ describe("cleaning model options", () => {
   it("drops options that are too long", () => {
     expect(cleanOption("a".repeat(221))).toBeNull();
   });
-  it("keeps a parent's own words, trimmed", () => {
-    expect(cleanCustom("  @x good point 😂😂  ")).toBe("good point 😂😂");
+  it("keeps a parent's own words exactly, only trimmed", () => {
+    expect(cleanCustom("  @sam lol nope 😂😂  ")).toBe("@sam lol nope 😂😂");
     expect(cleanCustom("   ")).toBeNull();
+    expect(cleanCustom(undefined)).toBeNull();
+  });
+  it("doesn't flag real names that contain crude words", () => {
+    expect(preFlag("dickerson_hoops", "Essex grape document").flagged).toBe(false);
+    expect(preFlag("a", "that was a dick move").flagged).toBe(true);
   });
 });
 

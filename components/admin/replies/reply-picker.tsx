@@ -31,6 +31,7 @@ function Card({ token, initial }: { token: string | null; initial: CommentRow })
   const [error, setError] = useState<string | null>(null);
   const [busy, start] = useTransition();
   const open = c.status === "open" || c.status === "flagged";
+  const waiting = open || c.status === "posting" || c.status === "unknown";
 
   function send(d: Decision) {
     setError(null);
@@ -42,7 +43,7 @@ function Card({ token, initial }: { token: string | null; initial: CommentRow })
   }
 
   return (
-    <section className={`rounded-md border border-[var(--color-line)] bg-[var(--color-warm-surface)] p-4 ${open ? "" : "opacity-70"}`}>
+    <section className={`rounded-md border border-[var(--color-line)] bg-[var(--color-warm-surface)] p-4 ${waiting ? "" : "opacity-70"}`}>
       <div className="flex gap-3">
         {c.media_thumb ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -132,7 +133,34 @@ function Card({ token, initial }: { token: string | null; initial: CommentRow })
 
       {c.status === "posting" && <p className={`${mono} mt-3 text-[0.7rem] uppercase text-[var(--color-warm-mute)]`}>Posting...</p>}
 
-      {!open && c.status !== "posting" && (
+      {c.status === "unknown" && (
+        <div className="mt-3 rounded-sm bg-[var(--color-warm-surface-2)] px-3 py-3 text-sm">
+          <p>
+            Instagram didn&apos;t answer, so this may have posted:{" "}
+            {c.posted_text ? <span>&ldquo;{c.posted_text}&rdquo;</span> : null}
+          </p>
+          <p className="mt-1 text-[var(--color-warm-mute)]">
+            {c.media_permalink ? (
+              <a href={c.media_permalink} target="_blank" rel="noreferrer" className="underline">
+                Check the post
+              </a>
+            ) : (
+              "Check the post"
+            )}
+            , then tell us which:
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button disabled={busy} onClick={() => send({ action: "posted" })} className="rounded-md bg-[var(--color-red)] px-3 py-2 font-semibold text-white disabled:opacity-50">
+              It posted
+            </button>
+            <button disabled={busy} onClick={() => send({ action: "retry" })} className="rounded-md border border-[var(--color-line)] px-3 py-2 disabled:opacity-50">
+              It&apos;s not there, pick again
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!waiting && (
         <p className="mt-3 text-sm">
           <span className={`${mono} text-[0.65rem] uppercase tracking-[0.15em] text-[var(--color-green)]`}>{DONE_LABEL[c.status] ?? c.status}</span>
           {c.posted_text ? <span className="ml-2">&ldquo;{c.posted_text}&rdquo;</span> : null}
