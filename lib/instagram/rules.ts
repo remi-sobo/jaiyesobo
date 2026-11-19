@@ -91,3 +91,15 @@ export function pacificNow(d = new Date()): { date: string; hour: number } {
 }
 
 export const SEND_HOUR_PACIFIC = 6;
+
+/** True when one of these replies is ours, matched by username or by account id. */
+export function answeredByUs(
+  replies: { id?: string; username?: string; from?: { id?: string; username?: string } }[],
+  ourUsername: string,
+  ourId: string,
+): boolean {
+  const me = ourUsername.toLowerCase();
+  return replies.some(
+    (r) => r.username?.toLowerCase() === me || r.from?.username?.toLowerCase() === me || (!!ourId && r.from?.id === ourId),
+  );
+}

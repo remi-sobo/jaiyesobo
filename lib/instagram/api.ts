@@ -145,8 +145,11 @@ export type IgComment = {
   text: string;
   username: string;
   timestamp: string;
-  replies: { id: string; username: string }[];
+  replies: IgReply[];
 };
+
+/** A reply under a comment. Meta fills username or from (or both) depending on the token, so we ask for both. */
+export type IgReply = { id: string; username?: string; from?: { id?: string; username?: string } };
 
 export async function listRecentMedia(token: string, igUserId: string, limit = 12): Promise<IgMedia[]> {
   const u = new URL(`${GRAPH}/${igUserId}/media`);
@@ -159,10 +162,10 @@ export async function listRecentMedia(token: string, igUserId: string, limit = 1
 
 export async function listComments(token: string, mediaId: string): Promise<IgComment[]> {
   const u = new URL(`${GRAPH}/${mediaId}/comments`);
-  u.searchParams.set("fields", "id,text,username,timestamp,replies{id,username}");
+  u.searchParams.set("fields", "id,text,username,timestamp,replies{id,username,from}");
   u.searchParams.set("limit", "50");
   u.searchParams.set("access_token", token);
-  const j = await igFetch<{ data: Array<Omit<IgComment, "replies"> & { replies?: { data: { id: string; username: string }[] } }> }>(u.toString());
+  const j = await igFetch<{ data: Array<Omit<IgComment, "replies"> & { replies?: { data: IgReply[] } }> }>(u.toString());
   return (j.data ?? []).map((c) => ({
     id: c.id,
     text: c.text ?? "",
@@ -170,6 +173,16 @@ export async function listComments(token: string, mediaId: string): Promise<IgCo
     timestamp: c.timestamp,
     replies: c.replies?.data ?? [],
   }));
+}
+
+/** All replies under one comment, straight from its replies edge (the nested field can come back short). */
+export async function listReplies(token: string, commentId: string): Promise<IgReply[]> {
+  const u = new URL(`${GRAPH}/${commentId}/replies`);
+  u.searchParams.set("fields", "id,username,from");
+  u.searchParams.set("limit", "50");
+  u.searchParams.set("access_token", token);
+  const j = await igFetch<{ data?: IgReply[] }>(u.toString());
+  return j.data ?? [];
 }
 
 export async function replyToComment(token: string, commentId: string, message: string): Promise<string> {

@@ -2,10 +2,10 @@ import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/send";
 import { CONTACT_EMAIL } from "@/lib/sportsbook/contact";
-import { IgRejected, getToken, hideComment, listComments, listRecentMedia, replyToComment, tokenDaysLeft } from "./api";
+import { IgRejected, getToken, hideComment, listComments, listRecentMedia, listReplies, replyToComment, tokenDaysLeft } from "./api";
 import { draftReplies } from "./draft";
 import { morningEmail, reconnectEmail } from "./email";
-import { CARRY_OVER_DAYS, MAX_DRAFTS_PER_RUN, SEND_HOUR_PACIFIC, STALE_CLAIM_MS, cleanCustom, pacificNow } from "./rules";
+import { CARRY_OVER_DAYS, MAX_DRAFTS_PER_RUN, SEND_HOUR_PACIFIC, STALE_CLAIM_MS, answeredByUs, cleanCustom, pacificNow } from "./rules";
 import { createPickerToken } from "./tokens";
 
 export type CommentStatus = "open" | "flagged" | "posting" | "unknown" | "posted" | "skipped" | "hidden" | "left";
@@ -106,16 +106,26 @@ async function run(date: string, force: boolean): Promise<MorningResult> {
   if (media.length && failures === media.length) throw new Error("Couldn't read comments on any post (permissions?)");
 
   const me = ourUsername.toLowerCase();
-  const fresh = found.filter(
-    ({ c }) => c.username.toLowerCase() !== me && !c.replies.some((r) => r.username.toLowerCase() === me),
-  );
+  const fresh = found.filter(({ c }) => c.username.toLowerCase() !== me && !answeredByUs(c.replies, ourUsername, igUserId));
   const ids = fresh.map(({ c }) => c.id);
   const { data: seen } = ids.length ? await supa.from("ig_comments").select("id").in("id", ids) : { data: [] };
   const seenIds = new Set((seen ?? []).map((r) => r.id));
-  const todo = fresh
+  const candidates = fresh
     .filter(({ c }) => !seenIds.has(c.id))
-    .sort((a, b) => b.c.timestamp.localeCompare(a.c.timestamp))
-    .slice(0, MAX_DRAFTS_PER_RUN);
+    .sort((a, b) => b.c.timestamp.localeCompare(a.c.timestamp));
+
+  // The nested replies field can come back short, so check each new comment's replies directly
+  // before drafting. This catches replies made by hand in the Instagram app.
+  const todo: typeof candidates = [];
+  for (const item of candidates) {
+    if (todo.length >= MAX_DRAFTS_PER_RUN) break;
+    try {
+      if (answeredByUs(await listReplies(token, item.c.id), ourUsername, igUserId)) continue;
+    } catch (e) {
+      log({ step: "replies", comment: item.c.id, error: String(e) });
+    }
+    todo.push(item);
+  }
 
   if (todo.length) {
     const drafts = await draftReplies(
@@ -307,7 +317,18 @@ export async function decide(v: Viewer, commentId: string, input: unknown): Prom
 
       let replyId: string;
       try {
-        const { token } = await getToken();
+        const { token, username, igUserId } = await getToken();
+        // Someone may have answered in the Instagram app since 6am. Don't reply twice.
+        const already = await listReplies(token, commentId).catch(() => null);
+        if (already && answeredByUs(already, username, igUserId)) {
+          const r = await move(commentId, ["posting"], {
+            status: "skipped",
+            error: "Already answered on Instagram",
+            claimed_at: null,
+            ...decided,
+          });
+          return r ? { ok: true, row: r } : { ok: false, error: "Already answered on Instagram." };
+        }
         replyId = await replyToComment(token, commentId, text);
       } catch (e) {
         const error = e instanceof Error ? e.message : String(e);

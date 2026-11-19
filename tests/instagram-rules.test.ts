@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { cleanCustom, cleanOption, emojiCount, pacificNow, preFlag } from "@/lib/instagram/rules";
+import { answeredByUs, cleanCustom, cleanOption, emojiCount, pacificNow, preFlag } from "@/lib/instagram/rules";
 import { createPickerToken, verifyPickerToken, PICKER_TTL_MS } from "@/lib/instagram/tokens";
 
 beforeAll(() => {
@@ -75,5 +75,17 @@ describe("picker links", () => {
     expect(verifyPickerToken(`${other}.${sig}`)).toBeNull();
     expect(verifyPickerToken(`${body}.x${sig}`)).toBeNull();
     expect(verifyPickerToken(null)).toBeNull();
+  });
+});
+
+describe("already answered", () => {
+  it("matches our reply by username, by from.username, or by account id", () => {
+    expect(answeredByUs([{ id: "1", username: "OnTheCourt_Pod" }], "onthecourt_pod", "9")).toBe(true);
+    expect(answeredByUs([{ id: "1", from: { username: "onthecourt_pod" } }], "onthecourt_pod", "9")).toBe(true);
+    expect(answeredByUs([{ id: "1", from: { id: "9" } }], "onthecourt_pod", "9")).toBe(true);
+  });
+  it("ignores other people's replies and bare ids", () => {
+    expect(answeredByUs([{ id: "1", username: "sxiangl" }, { id: "2" }], "onthecourt_pod", "9")).toBe(false);
+    expect(answeredByUs([{ id: "1", from: {} }], "onthecourt_pod", "")).toBe(false);
   });
 });

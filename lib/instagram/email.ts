@@ -23,7 +23,7 @@ export function morningEmail(token: string, comments: PreviewComment[]) {
     .map(
       (c) =>
         `<p style="margin:0 0 10px;font-size:15px;line-height:1.45;color:#F7F7F8"><span style="color:#9CA3AF">@${esc(c.username)}</span> ${
-          c.flagged ? `<span style="color:#E11D2E">(flagged)</span>` : esc(c.text.length > 120 ? `${c.text.slice(0, 117)}...` : c.text)
+          c.flagged ? `<span style="color:#E11D2E">(flagged)</span>` : !c.text.trim() ? `<span style="color:#9CA3AF">(GIF)</span>` : esc(c.text.length > 120 ? `${c.text.slice(0, 117)}...` : c.text)
         }</p>`,
     )
     .join("");
