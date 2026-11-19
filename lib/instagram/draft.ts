@@ -22,6 +22,7 @@ Voice:
 - One emoji at most, often none. No hashtags. No em dashes. No inside jokes that need explaining.
 - Don't make up stats, scores or facts. If you don't know the play, talk about the take, not the details.
 - Never mention age, school, location, or anything personal. Never ask anyone to DM.
+- A comment that says "(GIF or sticker, no text)" is a reaction with no words. Reply to the vibe of the post itself (use the caption) in a playful way, without pretending to know what the GIF showed.
 
 Each comment gets exactly 3 options that are clearly different:
 1. holds Jaiye's ground
@@ -70,7 +71,7 @@ export async function draftReplies(items: DraftInput[]): Promise<Draft[]> {
 
   const system = VOICE + (await examples());
   const prompt = `Write replies for these comments. Use each comment's id.\n\n${JSON.stringify(
-    toModel.map((c) => ({ id: c.id, username: c.username, comment: c.text, post_caption: c.caption ?? "" })),
+    toModel.map((c) => ({ id: c.id, username: c.username, comment: c.text.trim() || "(GIF or sticker, no text)", post_caption: c.caption ?? "" })),
     null,
     2,
   )}`;

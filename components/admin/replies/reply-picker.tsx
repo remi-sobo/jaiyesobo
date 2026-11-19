@@ -61,7 +61,9 @@ function Card({ token, initial }: { token: string | null; initial: CommentRow })
               </>
             ) : null}
           </div>
-          <p className="mt-1 break-words text-[1rem] leading-snug">{c.text}</p>
+          <p className="mt-1 break-words text-[1rem] leading-snug">
+            {c.text.trim() ? c.text : <span className="italic text-[var(--color-warm-mute)]">GIF or sticker (open the post to see it)</span>}
+          </p>
         </div>
       </div>
 
