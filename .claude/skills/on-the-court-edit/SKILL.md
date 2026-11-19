@@ -13,6 +13,7 @@ On The Court is Jaiye's podcast on jaiyesobo.com. Jaiye is 9 and he is the host.
 - Stage 4, on-screen graphics: BUILT for episode 03 on 2026-11-10, waiting on notes from Remi and Jaiye (see "On-screen graphics")
 - Stage 5, vertical clips for YouTube Shorts: BUILT for episode 03 on 2026-11-10, waiting on notes (see "Shorts")
 - Publishing: episode 03 went up by hand on 2026-11-10. Remi drags the file into YouTube Studio (the Chrome extension cannot upload files over 10 MB), then the title, description, and settings can be filled in through Chrome. The site entry is in `lib/content/episodes.ts`.
+- Player pop-ups (an NBA player's cutout appears when Jaiye says the name): BUILT on 2026-11-19, tested on episode 03's transcript and a test render, not yet rendered into an episode or seen by Jaiye (see "Player pop-ups")
 - Branded open and close cards for the full episode: NOT WRITTEN YET.
 
 Start an episode from one sentence, for example: "New On The Court episode, ~/Downloads/ep4.mp4, Jaiye solo."
@@ -165,6 +166,20 @@ Rules:
 - Never show a result before he says it. Never show a result he did not know when he recorded, even if the data has it now. In episode 03 that meant no result on picks 2, 5, and 10.
 - Standings and week totals at recording time are not in the data. Use what he says and mark the card "as recorded" or "so far".
 - He calls Remi "my dad", so cards say "Dad". The matchup card says "Remi" because that is the game's name for it.
+
+## Player pop-ups
+
+Remi asked on 2026-11-19, after seeing Gil's Arena do it: when Jaiye names an NBA player, that player's cutout pops up on screen. Head and shoulders shots are fine.
+
+- Pictures: `python3 .claude/skills/on-the-court-edit/scripts/fetch_players.py` downloads every active player plus the legends in `player-aliases.json` into `podcast/players/img/` (about 550 pictures, 100 MB, 15 seconds) and writes the index `podcast/players/players.json`. Run it on any new machine, at the start of a season, and after big trades. It needs the internet and reads public pages only.
+- The pictures are the NBA's media day headshots. They are gitignored on purpose: this repo is public and the pictures are not ours to republish. Only the index of names and ids is committed.
+- Find the names: `python3 .claude/skills/on-the-court-edit/scripts/find_players.py podcast/episodes/<slug>` reads `words.json` and writes `transcript/player-cues.json`, then prints a cue sheet. It runs after the transcript is built, so name spellings are already fixed.
+- What it matches: full names, nicknames in `player-aliases.json` (Dame, Ant, KD, Wemby), and a last name only one player has. It will not guess a last name several players share, or one that is an everyday word (Green, Brown, Mitchell). Those go in `not_sure` or are left alone. When Jaiye uses a new nickname, add it to `player-aliases.json` and run it again.
+- Always read the cue sheet against the transcript before a render. A wrong face is worse than no face. Set `"off": true` on a cue to drop it, or change its `player_id`. Both survive a rebuild.
+- Draw and render: `build_cards.py` draws the cutouts along with the other cards, and `build_cut.py --gfx` places them. Nothing else to run.
+- Look: bottom left, under the side card and away from his face, standing on a black name plate with the red bar. It slides up from under the frame, stays about 3 seconds, and the same player does not pop again for 30 seconds. All of that is in `style.json` under `players`.
+- A cutout never shows over a full screen card, and two never show at once. Names said back to back take turns.
+- Not built yet: pop-ups in Shorts. The Shorts layout has no free corner, so that needs its own design.
 
 ## Shorts
 

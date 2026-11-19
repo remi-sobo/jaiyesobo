@@ -6,6 +6,7 @@ Usage (from the repo root):
 
 --sfx adds the sound effects in transcript/sfx-cues.json.
 --gfx adds the on-screen graphics in transcript/graphics-cues.json (draw them first with build_cards.py).
+      It also adds the player cutouts in transcript/player-cues.json when that file is there.
 
 Reads   <episode>/transcript/cut-list.json   (must have "status": "approved")
         <episode>/transcript/pauses.json, words.json
@@ -206,6 +207,29 @@ def main():
                 print(f"SKIPPED card {c['id']}: its moment was cut.")
         for x, y in zip(gfx, gfx[1:]):
             x["to"] = min(x["to"], y["from"])
+    # Player cutouts sit bottom left, so they can share the screen with a side card.
+    # They never show over a full screen card, and never two at once.
+    ppath = ep / "transcript" / "player-cues.json"
+    if "--gfx" in sys.argv and ppath.exists():
+        pst, pops = style["players"], []
+        fulls = [(x["from"], x["to"]) for x in gfx if x["layout"] == "full"]
+        for c in json.loads(ppath.read_text())["cues"]:
+            png = ep / "work" / "cards" / f"{c['id']}.png"
+            if c.get("off"):
+                continue
+            if not png.exists():
+                sys.exit(f"Player cutout {c['id']} is not drawn yet. Run build_cards.py first.")
+            a, b = round(to_edit(c["raw_from"]), 2), round(to_edit(c["raw_to"]), 2)
+            if b - a < 1.0:
+                print(f"SKIPPED player {c['id']}: its moment was cut.")
+            elif any(a < t and b > f for f, t in fulls):
+                print(f"SKIPPED player {c['id']}: a full screen card is up.")
+            else:
+                if pops and a < pops[-1]["to"]:
+                    pops[-1]["to"] = a
+                pops.append({"id": c["id"], "layout": "player", "from": a, "to": b, "png": png,
+                             "pop": pst["pop_seconds"]})
+        gfx += [x for x in pops if x["to"] - x["from"] >= 1.0]
     out = ep / "output"
     out.mkdir(exist_ok=True)
     stem = out / f"{slug}-{version}"
@@ -240,7 +264,9 @@ def main():
     g.append("[open][main][close]concat=n=3:v=1:a=0" + ("[v0]" if gfx else "[vout]"))
     for i, x in enumerate(gfx):
         last = "[vout]" if i == len(gfx) - 1 else f"[v{i + 1}]"
-        g.append(f"[v{i}][{first_card + i}:v]overlay=0:0:enable='between(t,{x['from']},{x['to'] - 0.001:.3f})'{last}")
+        # A player cutout slides up from under the frame and settles. Everything else just appears.
+        y = f"'if(lt(t,{x['from'] + x['pop']:.3f}),540*pow(1-(t-{x['from']})/{x['pop']},2),0)'" if x.get("pop") else "0"
+        g.append(f"[v{i}][{first_card + i}:v]overlay=0:{y}:enable='between(t,{x['from']},{x['to'] - 0.001:.3f})'{last}")
 
     n = len(keep)
     g.append(f"[0:a]asplit={n}" + "".join(f"[s{i}]" for i in range(n)))
