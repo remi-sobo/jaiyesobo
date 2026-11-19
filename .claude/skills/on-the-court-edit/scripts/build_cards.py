@@ -5,18 +5,26 @@ Usage (from the repo root):
   python3 .claude/skills/on-the-court-edit/scripts/build_cards.py podcast/episodes/episode-03
 
 Reads   <episode>/transcript/graphics-cues.json
-Writes  <episode>/work/cards/<id>.png   one 1920x1080 picture per cue. Side cards have a clear background.
+        <episode>/transcript/player-cues.json   (optional, from find_players.py) and podcast/players/
+Writes  <episode>/work/cards/<id>.png   one 1920x1080 picture per cue. Side cards and player cutouts
+                                        have a clear background.
 
 Uses Google Chrome (headless) to draw, and loads the show fonts (Fraunces, Inter, JetBrains Mono)
 from Google Fonts, so it needs the internet. No episode content leaves the Mac.
 """
 import html
 import json
+import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 
-CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+MAC_CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+CHROME = os.environ.get("CHROME") or (MAC_CHROME if Path(MAC_CHROME).exists() else
+                                      shutil.which("google-chrome") or shutil.which("chromium") or MAC_CHROME)
+SKILL = Path(__file__).resolve().parent.parent
+REPO = SKILL.parent.parent.parent
 BONE, RED, MUTE, BLACK = "#F5F1EA", "#E63946", "#8a8a8a", "#0a0a0a"
 
 HEAD = f"""<!doctype html><html><head><meta charset="utf-8">
@@ -97,16 +105,38 @@ def full(c):
             f'<div style="margin-top:40px">' + kicker(c["footer"], 24) + "</div></div>")
 
 
+def player(c, st):
+    """A player cutout, bottom left, standing on a name plate. Everything else stays clear."""
+    img = REPO / "podcast" / "players" / "img" / f"{c['player_id']}.png"
+    if not img.exists():
+        sys.exit(f"No picture for {c['name']}. Run fetch_players.py, or turn the cue {c['id']} off.")
+    w = st["width"]
+    first, _, last = c["name"].partition(" ")
+    size = 58 if len(last or first) <= 11 else 46
+    return (f'<div style="position:absolute;left:{st["left"]}px;bottom:{st["bottom"]}px;width:{w}px">'
+            f'<img src="{img.as_uri()}" style="display:block;width:{w}px;margin-bottom:-4px;'
+            f'filter:drop-shadow(0 18px 30px rgba(0,0,0,.6))">'
+            f'<div style="position:relative;background:rgba(10,10,10,.94);border-left:10px solid {RED};padding:18px 26px 20px;'
+            f'box-shadow:0 30px 80px rgba(0,0,0,.55)">'
+            + kicker(f'{first} / {c["team"]}' if c.get("team") and last else (c.get("team") or first), 19) +
+            f'<div class="disp" style="font-size:{size}px;margin-top:6px;white-space:nowrap">{e(last or first)}</div>'
+            f'</div></div>')
+
+
 def main():
     ep = Path(sys.argv[1]).resolve()
     cues = json.loads((ep / "transcript" / "graphics-cues.json").read_text())["cues"]
+    ppath = ep / "transcript" / "player-cues.json"
+    pstyle = json.loads((SKILL / "style.json").read_text())["players"]
+    if ppath.exists():
+        cues = cues + json.loads(ppath.read_text())["cues"]
     out = ep / "work" / "cards"
     out.mkdir(parents=True, exist_ok=True)
     for c in cues:
         if c.get("off"):
             continue
         page = out / f"{c['id']}.html"
-        page.write_text(HEAD + (full(c) if c["layout"] == "full" else side(c)) + "</body></html>")
+        page.write_text(HEAD + (full(c) if c["layout"] == "full" else player(c, pstyle) if c["layout"] == "player" else side(c)) + "</body></html>")
         png = out / f"{c['id']}.png"
         subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--window-size=1920,1080",
                         "--default-background-color=00000000", "--virtual-time-budget=8000",

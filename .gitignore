@@ -56,3 +56,6 @@ next-env.d.ts
 /podcast/sfx/*.wav
 /podcast/sfx/*.mp3
 /podcast/sfx/memes/
+
+# NBA player cutouts for the podcast pop-ups. They belong to the NBA and this repo is public. Rebuild with fetch_players.py.
+/podcast/players/img/
