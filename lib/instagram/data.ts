@@ -80,9 +80,9 @@ async function run(date: string, force: boolean): Promise<MorningResult> {
   const batch = await liveBatch(date);
   if (batch.emailed_at && !force) return { status: "skipped", reason: "Already sent this morning" };
 
-  let token: string, ourUsername: string;
+  let token: string, ourUsername: string, igUserId: string;
   try {
-    ({ token, username: ourUsername } = await getToken());
+    ({ token, username: ourUsername, igUserId } = await getToken());
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e);
     await alert(error);
@@ -92,7 +92,7 @@ async function run(date: string, force: boolean): Promise<MorningResult> {
   if (days !== null && days < 5) await alert(`The Instagram token runs out in ${Math.max(0, Math.floor(days))} days and didn't renew.`);
 
   // Everything new on the last 12 posts that we haven't seen or answered.
-  const media = await listRecentMedia(token, 12);
+  const media = await listRecentMedia(token, igUserId, 12);
   const found: { media: (typeof media)[number]; c: Awaited<ReturnType<typeof listComments>>[number] }[] = [];
   let failures = 0;
   for (const m of media) {

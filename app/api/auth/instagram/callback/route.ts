@@ -15,7 +15,6 @@ export async function GET(req: Request) {
     return NextResponse.redirect(new URL("/admin/setup?ig_error=invalid_state", req.url));
   }
 
-  // Instagram appends "#_" to the code on some redirects.
   const clean = code.replace(/#_$/, "");
   try {
     const { username } = await connectWithCode(clean, `${url.origin}/api/auth/instagram/callback`);

@@ -15,7 +15,9 @@ export default async function InstagramSetupPanel({ connected, error }: { connec
       </h2>
       {conn && (
         <p className="mt-1 text-sm text-[var(--color-warm-mute)]">
-          Token good until {new Date(conn.expiresAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}. The 6am job renews it.
+          {conn.never
+            ? "The connection doesn't expire. Reconnect only if Instagram access is removed."
+            : `Token good until ${new Date(conn.expiresAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}. You'll get an email 5 days before.`}
         </p>
       )}
       {connected && <p className="mt-2 text-sm text-[var(--color-green)]">Connected @{connected}.</p>}

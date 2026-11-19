@@ -1,6 +1,8 @@
 # Instagram reply picker spec
 
-Status: draft, waiting on Remi's approval. No code written.
+Status: approved and built on branch `site/instagram-replies`. Send time is 6am Pacific; the email goes to Kendra only.
+
+Change from the draft: Meta no longer offers plain Instagram Login to new apps, so the connect step uses Unified Login (Facebook Login for Business with a login configuration, `graph.facebook.com`). Env vars are `META_APP_ID`, `META_APP_SECRET`, `META_LOGIN_CONFIG_ID` and `KENDRA_REPLY_EMAIL`. The token is a system user token set to never expire, so the 60-day refresh in failure mode 1 no longer applies; the alert email still fires if Instagram stops working.
 
 ## Problem statement
 
