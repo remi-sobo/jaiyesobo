@@ -36,7 +36,7 @@ const Result = z.object({
       id: z.string(),
       flagged: z.boolean(),
       reason: z.string().optional(),
-      options: z.array(z.string()).max(3),
+      options: z.array(z.string()),
     }),
   ),
 });
@@ -99,7 +99,7 @@ export async function draftReplies(items: DraftInput[]): Promise<Draft[]> {
       out.push({ id: it.id, flagged: true, reason: r.reason?.trim() || "Needs a parent", options: [] });
       continue;
     }
-    const options = r.options.map(cleanOption).filter((s): s is string => !!s);
+    const options = r.options.slice(0, 3).map(cleanOption).filter((s): s is string => !!s);
     out.push({ id: it.id, flagged: false, reason: null, options });
   }
   return out;
