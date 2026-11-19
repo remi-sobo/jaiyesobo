@@ -207,24 +207,26 @@ def main():
                 print(f"SKIPPED card {c['id']}: its moment was cut.")
         for x, y in zip(gfx, gfx[1:]):
             x["to"] = min(x["to"], y["from"])
-        # Player cutouts sit bottom left, so they can share the screen with a side card.
-        # They never show over a full screen card, and never two at once.
-        ppath, pst, pops = ep / "transcript" / "player-cues.json", style["players"], []
+    # Player cutouts sit bottom left, so they can share the screen with a side card.
+    # They never show over a full screen card, and never two at once.
+    ppath = ep / "transcript" / "player-cues.json"
+    if "--gfx" in sys.argv and ppath.exists():
+        pst, pops = style["players"], []
         fulls = [(x["from"], x["to"]) for x in gfx if x["layout"] == "full"]
-        for c in (json.loads(ppath.read_text())["cues"] if ppath.exists() else []):
+        for c in json.loads(ppath.read_text())["cues"]:
             png = ep / "work" / "cards" / f"{c['id']}.png"
             if c.get("off"):
                 continue
             if not png.exists():
                 sys.exit(f"Player cutout {c['id']} is not drawn yet. Run build_cards.py first.")
             a, b = round(to_edit(c["raw_from"]), 2), round(to_edit(c["raw_to"]), 2)
-            if pops and a < pops[-1]["to"]:
-                pops[-1]["to"] = a
             if b - a < 1.0:
                 print(f"SKIPPED player {c['id']}: its moment was cut.")
             elif any(a < t and b > f for f, t in fulls):
                 print(f"SKIPPED player {c['id']}: a full screen card is up.")
             else:
+                if pops and a < pops[-1]["to"]:
+                    pops[-1]["to"] = a
                 pops.append({"id": c["id"], "layout": "player", "from": a, "to": b, "png": png,
                              "pop": pst["pop_seconds"]})
         gfx += [x for x in pops if x["to"] - x["from"] >= 1.0]

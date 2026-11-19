@@ -112,7 +112,8 @@ def player(c, st):
         sys.exit(f"No picture for {c['name']}. Run fetch_players.py, or turn the cue {c['id']} off.")
     w = st["width"]
     first, _, last = c["name"].partition(" ")
-    size = 58 if len(last or first) <= 11 else 46
+    n = len(last or first)
+    size = 58 if n <= 11 else 46 if n <= 14 else int(46 * 14 / n)
     return (f'<div style="position:absolute;left:{st["left"]}px;bottom:{st["bottom"]}px;width:{w}px">'
             f'<img src="{img.as_uri()}" style="display:block;width:{w}px;margin-bottom:-4px;'
             f'filter:drop-shadow(0 18px 30px rgba(0,0,0,.6))">'

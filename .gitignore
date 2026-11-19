@@ -59,3 +59,5 @@ next-env.d.ts
 
 # NBA player cutouts for the podcast pop-ups. They belong to the NBA and this repo is public. Rebuild with fetch_players.py.
 /podcast/players/img/
+
+__pycache__/

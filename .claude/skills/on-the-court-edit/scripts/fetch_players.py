@@ -61,14 +61,14 @@ def nba_names():
 def espn_rosters():
     """name key -> team short name and ESPN picture, for everyone on a roster today."""
     teams = json.loads(get(ESPN_TEAMS))["sports"][0]["leagues"][0]["teams"]
-    found = {}
+    found, failed = {}, []
 
     def one(t):
         t = t["team"]
         try:
             return t, json.loads(get(ESPN_ROSTER.format(t["id"]))).get("athletes", [])
         except Exception as err:
-            print(f"  could not read the {t['displayName']} roster: {err}")
+            failed.append(f"{t['displayName']} ({err})")
             return t, []
 
     with ThreadPoolExecutor(8) as pool:
@@ -76,6 +76,9 @@ def espn_rosters():
             for a in athletes:
                 found[key(a["fullName"])] = {"team": t["abbreviation"], "team_name": t["displayName"],
                                              "espn_img": (a.get("headshot") or {}).get("href")}
+    if failed:
+        sys.exit("Stopped, nothing written. Could not read these rosters, so their players would lose "
+                 "their team: " + "; ".join(failed) + ". Try again in a minute.")
     return found
 
 
