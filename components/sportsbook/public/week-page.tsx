@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { getChallenger } from "@/lib/sportsbook/players";
+import { subscriberForPlayer } from "@/lib/email/subscribers";
+import { EmailPrompt } from "./email-prompt";
 import { getVisitor, loadReactions, loadVotes } from "@/lib/sportsbook/fans";
 import { listWeeks } from "@/lib/sportsbook/data";
 import { lastWeekRow, loadWeekView, weekResultRow } from "@/lib/sportsbook/view";
@@ -8,6 +10,7 @@ import { FanVote } from "./fan-bits";
 import { LastWeekCard } from "./last-week";
 import { PublicCard } from "./public-week";
 import PlayerBoard from "./player-board";
+import PromoVideo from "./promo-video";
 import VideoPopout from "@/components/site/video-popout";
 import { sportsbookEpisode } from "@/lib/content/episodes";
 import { pad } from "@/lib/content/format";
@@ -94,6 +97,8 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
     me ? playerFlags(me.id) : Promise.resolve(null),
     me ? myLeagues(me.id) : Promise.resolve([]),
   ]);
+  // A signed in player with no email on file gets a small nudge. If the email table isn't there yet, say nothing.
+  const needsEmail = me ? await subscriberForPlayer(me.id).then((s) => !s, () => false) : false;
   const nameOf = new Map(view.players.map((p) => [p.id, p.display_name]));
   const talkFor = (itemId: string) => {
     const lines = talkLines.filter((t) => t.item_id === itemId).map((t) => ({ player_id: t.player_id, name: nameOf.get(t.player_id) ?? "Player", text: t.text }));
@@ -111,10 +116,44 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
   const prevWeek = published.filter((w) => w.week_number < n).sort((a, b) => b.week_number - a.week_number)[0] ?? null;
   const nextWeekLink = published.filter((w) => w.week_number > n).sort((a, b) => a.week_number - b.week_number)[0] ?? null;
   const top5 = view.board.slice(0, 5);
+  // People come here to see where the week stands, so that leads the page once anybody has a point.
+  const rankOf = (points: number) => view.board.filter((x) => x.score.points > points).length + 1;
+  const myRow = me ? view.board.find((b) => b.player.id === me.id) : undefined;
+  const standingsFirst = featured && top5.length > 0 && view.board.some((b) => b.score.points !== 0);
 
   return (
     <main className="px-4 py-[clamp(40px,6vw,80px)] min-[760px]:px-10">
       <div className="mx-auto max-w-[1240px]">
+        {needsEmail ? <EmailPrompt className="mb-6" /> : null}
+        {standingsFirst ? (
+          <section aria-label={`Week ${n} standings`} className="mb-6 border border-[var(--color-line-strong)] bg-[var(--color-off-black)] p-4 sm:p-5">
+            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+              <Label>Week {n} standings · {isOpen ? "so far" : view.week.status === "final" ? "final" : "grading"}</Label>
+              <div className="flex flex-wrap gap-x-5 font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.2em]">
+                <a href="#board" className="inline-flex min-h-11 items-center text-[var(--color-bone)] underline-offset-4 hover:text-[var(--color-red)] hover:underline">Full board ↓</a>
+                <Link href="/runitback/standings" className="inline-flex min-h-11 items-center text-[var(--color-bone)] underline-offset-4 hover:text-[var(--color-red)] hover:underline">Season →</Link>
+              </div>
+            </div>
+            <ol aria-label={`Week ${n} top five`} className="mt-3 grid grid-cols-1 gap-px bg-[var(--color-line)] sm:grid-cols-5">
+              {top5.map((b) => {
+                const house = b.player.kind !== "challenger";
+                const mine = b.player.id === me?.id;
+                return (
+                  <li key={b.player.id} className={`flex min-h-11 items-center gap-3 bg-[var(--color-black)] px-3 py-2 sm:flex-col sm:items-start sm:gap-1 sm:py-3 ${mine ? "outline outline-1 -outline-offset-1 outline-[var(--color-red)]" : ""}`}>
+                    <span className="w-5 font-[family-name:var(--font-jetbrains)] text-[0.7rem] tabular-nums text-[var(--color-mute)] sm:w-auto">{rankOf(b.score.points)}</span>
+                    <span className={`min-w-0 flex-1 truncate text-[0.95rem] sm:w-full sm:flex-none ${house ? "font-semibold text-[var(--color-red)]" : "text-[var(--color-bone)]"}`}>{b.player.display_name}{mine ? " (you)" : ""}</span>
+                    <span className={`font-[family-name:var(--font-jetbrains)] text-[0.95rem] tabular-nums sm:text-[1.4rem] ${house ? "text-[var(--color-red)]" : "text-[var(--color-bone)]"}`}>{b.score.points}</span>
+                  </li>
+                );
+              })}
+            </ol>
+            {myRow && !top5.some((b) => b.player.id === me?.id) ? (
+              <p className="mt-3 text-[0.9rem] text-[var(--color-mute)]">
+                You&apos;re <span className="text-[var(--color-bone)]">#{rankOf(myRow.score.points)}</span> of {view.board.length} with <span className="text-[var(--color-bone)]">{myRow.score.points}</span> {myRow.score.points === 1 ? "point" : "points"}.
+              </p>
+            ) : null}
+          </section>
+        ) : null}
         {resultBanner ? <LastWeekCard last={lastWeek} className="mb-6" /> : null}
         {!featured && isDone ? (
           <div className="mb-6">
@@ -142,6 +181,7 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
           }
         />
         <Ticker items={view.items} />
+        {featured && !me ? <PromoVideo cta={isOpen} className="mt-6" /> : null}
         {me ? (
           <nav aria-label="Your leagues" className="mt-6 flex flex-wrap items-center gap-2">
             <span className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">Your leagues</span>
@@ -160,27 +200,6 @@ export default async function WeekPage({ n, featured }: { n: number; featured: b
         <div className="mt-[clamp(40px,6vw,72px)] grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
           <section>
             {featured && !resultBanner ? <LastWeekCard last={lastWeek} variant="line" className="mb-4" /> : null}
-            {featured && top5.length ? (
-              <div className="mb-8 lg:hidden">
-                <Label>Week {n} leaderboard</Label>
-                <ol aria-label={`Week ${n} top five`} className="mt-4 border border-[var(--color-line)]">
-                  {top5.map((b, i) => {
-                    const rank = view.board.filter((x) => x.score.points > b.score.points).length + 1;
-                    const house = b.player.kind !== "challenger";
-                    return (
-                      <li key={b.player.id} className={`flex min-h-11 items-center gap-3 px-3 ${i > 0 ? "border-t border-[var(--color-line)]" : ""} ${house ? "bg-[var(--color-black)]" : ""}`}>
-                        <span className="w-5 font-[family-name:var(--font-jetbrains)] text-[0.7rem] tabular-nums text-[var(--color-mute)]">{rank}</span>
-                        <span className={`min-w-0 flex-1 truncate text-[0.95rem] ${house ? "font-semibold text-[var(--color-red)]" : "text-[var(--color-bone)]"}`}>{b.player.display_name}</span>
-                        <span className={`font-[family-name:var(--font-jetbrains)] text-[0.9rem] tabular-nums ${house ? "text-[var(--color-red)]" : "text-[var(--color-bone)]"}`}>{b.score.points}</span>
-                      </li>
-                    );
-                  })}
-                </ol>
-                <a href="#board" className="mt-1 inline-flex min-h-11 items-center font-[family-name:var(--font-jetbrains)] text-[0.7rem] uppercase tracking-[0.2em] text-[var(--color-bone)] underline-offset-4 hover:text-[var(--color-red)] hover:underline">
-                  Full board ↓
-                </a>
-              </div>
-            ) : null}
             <Label>This week&apos;s picks</Label>
             <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
               {view.items.map((item) => (

@@ -8,12 +8,60 @@ import { useSbAction } from "./use-action";
 const btn =
   "min-h-10 border px-3 font-[family-name:var(--font-jetbrains)] text-[0.62rem] uppercase tracking-[0.15em] disabled:opacity-40";
 
-/** Monday: the AI draft, ready to swap, edit, add Jaiye's Prop, then open. */
-export default function SlateEditor({ week, items, status, now }: { week: number; items: SbItem[]; status: "none" | "draft"; now: number }) {
+/** What the autopilot bar shows for a draft week. `opensLabel` is the Pacific time it goes live, like "Sun 6:00pm". */
+export type AutopilotBar = { approved: boolean; opensLabel: string; past: boolean };
+
+/** The AI draft, ready to swap, edit, add Jaiye's Prop, approve (goes live Sunday 6pm) or open now. */
+export default function SlateEditor({
+  week,
+  items,
+  status,
+  now,
+  autopilot,
+}: {
+  week: number;
+  items: SbItem[];
+  status: "none" | "draft";
+  now: number;
+  autopilot?: AutopilotBar | null;
+}) {
   const { run, busy, error } = useSbAction();
 
   return (
     <div>
+      {autopilot && status === "draft" && items.length > 0 ? (
+        <div className="mb-6 flex flex-wrap items-center gap-3 border border-[var(--color-line-strong)] bg-[var(--color-warm-surface)]/50 p-4">
+          {autopilot.approved ? (
+            <>
+              <span className="text-[0.95rem]">
+                {autopilot.past ? "Approved. Opens on the next sync." : `Approved. Goes live ${autopilot.opensLabel}.`}
+              </span>
+              <button
+                type="button"
+                disabled={!!busy}
+                onClick={() => run("unapprove", { week })}
+                className="text-[0.8rem] text-[var(--color-warm-mute)] underline disabled:opacity-40"
+              >
+                Undo
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                disabled={!!busy}
+                onClick={() => run("approve", { week })}
+                className={`${btn} border-[var(--color-green)] bg-[var(--color-green)] text-[var(--color-black)]`}
+              >
+                {busy === "approve" ? "Approving…" : `Approve Week ${week}`}
+              </button>
+              <span className="text-[0.85rem] text-[var(--color-warm-mute)]">
+                Goes live Sunday at 6:00pm once approved. If nobody approves, it goes live Monday at 12:00am anyway.
+              </span>
+            </>
+          )}
+        </div>
+      ) : null}
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <button
           type="button"
@@ -30,7 +78,7 @@ export default function SlateEditor({ week, items, status, now }: { week: number
             onClick={() => run("open", { week })}
             className={`${btn} border-[var(--color-green)] text-[var(--color-green)]`}
           >
-            Open the week ({items.length} picks)
+            Open now
           </button>
         ) : null}
         <span className="text-[0.85rem] text-[var(--color-warm-mute)]">

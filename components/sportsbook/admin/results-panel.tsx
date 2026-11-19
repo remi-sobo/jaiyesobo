@@ -160,7 +160,10 @@ export default function ResultsPanel({
   );
 }
 
-export function ChallengersPanel({ players }: { players: SbPlayer[] }) {
+/** Real name and email per challenger id. Admin only: built on the server by whoIsWho({ withEmail: true }). */
+export type WhoMap = Record<string, { real_name: string | null; email: string | null }>;
+
+export function ChallengersPanel({ players, who = {} }: { players: SbPlayer[]; who?: WhoMap }) {
   const { run, busy, error } = useSbAction();
   const challengers = players.filter((p) => p.kind === "challenger");
   return (
@@ -172,7 +175,11 @@ export function ChallengersPanel({ players }: { players: SbPlayer[] }) {
         <ul className="flex flex-col">
           {challengers.map((p) => (
             <li key={p.id} className="flex flex-wrap items-center gap-3 border-t border-[var(--color-line)] py-2">
-              <span className={`flex-1 ${p.hidden ? "text-[var(--color-warm-dim)] line-through" : ""}`}>{p.display_name}</span>
+              <span className={`flex-1 ${p.hidden ? "text-[var(--color-warm-dim)] line-through" : ""}`}>
+                {p.display_name}
+                {who[p.id]?.real_name ? <span className="text-[var(--color-warm-mute)]"> · {who[p.id]!.real_name}</span> : null}
+                {who[p.id]?.email ? <span className="block font-[family-name:var(--font-jetbrains)] text-[0.7rem] text-[var(--color-warm-dim)]">{who[p.id]!.email}</span> : null}
+              </span>
               <button
                 type="button"
                 disabled={!!busy}

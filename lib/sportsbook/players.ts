@@ -38,6 +38,17 @@ export async function clearChallengerCookie() {
   c.delete(COOKIE);
 }
 
+/** The player id in this browser's cookie, if the signature checks out. No database call: for analytics, where the name is looked up later. */
+export async function challengerIdFromCookie(): Promise<string | null> {
+  const c = await cookies();
+  const raw = c.get(COOKIE)?.value;
+  if (!raw) return null;
+  const [id, sig] = raw.split(".");
+  if (!id || !sig || sig.length !== 32) return null;
+  if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(sign(id)))) return null;
+  return id;
+}
+
 /** The challenger this browser belongs to, if any. Includes their own code: it's theirs to see, and never anyone else's. */
 export async function getChallenger(): Promise<SbPlayerWithCode | null> {
   const c = await cookies();
@@ -207,13 +218,85 @@ export function isAgeBand(v: unknown): v is AgeBand {
   return v === "13_plus" || v === "under_13";
 }
 
-/** Makes a new challenger with a fresh player code. Retries if the code is taken. */
-export async function createChallenger(name: string, ageBand: AgeBand | null): Promise<{ id: string; code: string }> {
+/* Real names: optional, 13+ only, private. Only Remi (admin) and Jaiye (his own login) ever see them. */
+
+export type RealNames = { first_name: string | null; last_name: string | null };
+export type RealNameCheck = { ok: true; names: RealNames } | { ok: false; error: string };
+
+function oneRealName(raw: unknown, which: string): { ok: true; value: string | null } | { ok: false; error: string } {
+  if (raw === undefined || raw === null) return { ok: true, value: null };
+  if (typeof raw !== "string") return { ok: false, error: `Check your ${which}.` };
+  const v = raw.normalize("NFKC").replace(/\s+/g, " ").trim();
+  if (!v) return { ok: true, value: null };
+  if (v.length > 30) return { ok: false, error: `Keep your ${which} to 30 characters.` };
+  if (!/^[\p{L}\p{M} .'-]+$/u.test(v)) return { ok: false, error: `Your ${which} can only have letters, spaces, hyphens and apostrophes.` };
+  return { ok: true, value: v };
+}
+
+/**
+ * Checks optional first and last names. Under 13 (or an unanswered age) can't
+ * have them at all: a child's real name is personal information under COPPA.
+ */
+export function checkRealNames(first: unknown, last: unknown, ageBand: AgeBand | null): RealNameCheck {
+  const f = oneRealName(first, "first name");
+  if (!f.ok) return f;
+  const l = oneRealName(last, "last name");
+  if (!l.ok) return l;
+  if ((f.value || l.value) && ageBand !== "13_plus") return { ok: false, error: "Real names are only for players 13 and older." };
+  return { ok: true, names: { first_name: f.value, last_name: l.value } };
+}
+
+/** Saves a challenger's real names. The database also refuses names on anyone not 13+. */
+export async function setRealNames(playerId: string, names: RealNames): Promise<void> {
+  const { error } = await createServiceClient().from("sb_players").update(names).eq("id", playerId).eq("kind", "challenger");
+  if (error) throw error;
+}
+
+/** A challenger's own real names, for their own settings. */
+export async function ownRealNames(playerId: string): Promise<RealNames> {
+  const { data } = await createServiceClient().from("sb_players").select("first_name, last_name").eq("id", playerId).maybeSingle();
+  return { first_name: (data?.first_name as string | null) ?? null, last_name: (data?.last_name as string | null) ?? null };
+}
+
+/** "Jordan Lee", "Jordan", or null. */
+export function fullName(n: RealNames): string | null {
+  const s = [n.first_name, n.last_name].filter(Boolean).join(" ").trim();
+  return s || null;
+}
+
+export type WhoIs = { id: string; display_name: string; real_name: string | null; email: string | null };
+
+/**
+ * Who's who, for Remi's admin page and Jaiye's own login only. Never call this
+ * from a public page or the app API. Emails come back only when `withEmail`
+ * (admin); Jaiye's page never asks for them.
+ */
+export async function whoIsWho(opts: { withEmail: boolean }): Promise<WhoIs[]> {
   const supa = createServiceClient();
+  const { data } = await supa
+    .from("sb_players")
+    .select("id, display_name, first_name, last_name")
+    .eq("kind", "challenger")
+    .is("deleted_at", null)
+    .order("display_name");
+  const rows = (data ?? []) as Array<{ id: string; display_name: string; first_name: string | null; last_name: string | null }>;
+  const emails = new Map<string, string>();
+  if (opts.withEmail && rows.length) {
+    const { data: subs } = await supa.from("sb_subscribers").select("player_id, email, relation").in("player_id", rows.map((r) => r.id));
+    for (const s of subs ?? []) if (s.player_id) emails.set(s.player_id as string, `${s.email as string}${s.relation === "parent" ? " (parent)" : ""}`);
+  }
+  return rows.map((r) => ({ id: r.id, display_name: r.display_name, real_name: fullName(r), email: emails.get(r.id) ?? null }));
+}
+
+/** Makes a new challenger with a fresh player code. Retries if the code is taken. */
+export async function createChallenger(name: string, ageBand: AgeBand | null, names: RealNames = { first_name: null, last_name: null }): Promise<{ id: string; code: string }> {
+  const supa = createServiceClient();
+  // Only send name columns when there are names, so a sign-up without them never depends on migration 031.
+  const real = ageBand === "13_plus" && (names.first_name || names.last_name) ? names : {};
   for (let attempt = 0; attempt < 5; attempt++) {
     const { data, error } = await supa
       .from("sb_players")
-      .insert({ kind: "challenger", display_name: name, code: newPlayerCode(), age_band: ageBand })
+      .insert({ kind: "challenger", display_name: name, code: newPlayerCode(), age_band: ageBand, ...real })
       .select("id, code")
       .single();
     if (!error && data) return { id: data.id as string, code: data.code as string };

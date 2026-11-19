@@ -1,0 +1,324 @@
+{
+ "episode": "shorts-2026-11-10-blazers-game",
+ "status": "draft",
+ "note": "Phone videos from the Warriors vs Blazers game, backstage. Story edits: little talking, so the words on screen are written for the edit ('say') and each piece names its own 'source'. Who is in each clip came from Remi and from what Dad says out loud on the video, never from faces. Remi confirmed on 2026-11-10 that IMG_3413 and IMG_3416 are Damian Lillard and IMG_3420 is Steph Curry.",
+ "shorts": [
+  {
+   "id": "dame-time",
+   "fps": 30,
+   "layout": {
+    "video_top": 300,
+    "video_height": 1500,
+    "prescale": [
+     1080,
+     1920
+    ],
+    "crop": {
+     "width": 1080,
+     "height": 1500,
+     "x": 0,
+     "y": 120
+    },
+    "face": {
+     "x": 540,
+     "y": 600
+    },
+    "hold_zoom": 1.45,
+    "caption_bottom_margin": 90,
+    "voice_loudness_lufs": -17,
+    "end_card_seconds": 2.6
+   },
+   "music": {
+    "file": "raw/theme.mp3",
+    "gain": 0.16,
+    "start": 4
+   },
+   "kicker": "On The Court / Game Night",
+   "hook": [
+    "Dame",
+    "Time."
+   ],
+   "youtube_title": "He met his favorite player. Dame Time.",
+   "verdict": [
+    "Dame",
+    "Time."
+   ],
+   "verdict_label": "On The Court",
+   "punch": [
+    "dame",
+    "time",
+    "jordan",
+    "favorite",
+    "him",
+    "best",
+    "ever"
+   ],
+   "pieces": [
+    {
+     "photo": "raw/photos/12.jpg",
+     "seconds": 2.4,
+     "say": "HE HAS NO IDEA\nWHAT'S ABOUT TO HAPPEN"
+    },
+    {
+     "clip": [
+      0.5,
+      5.0
+     ],
+     "source": "raw/IMG_3413.mov",
+     "speed": 0.6,
+     "sfx": "heavenly",
+     "max": 7,
+     "say": [
+      "HIS FAVORITE PLAYER\nIS DOWN THIS HALL",
+      "HIS MICHAEL JORDAN"
+     ]
+    },
+    {
+     "clip": [
+      4.4,
+      9.2
+     ],
+     "source": "raw/IMG_3416.mov",
+     "say": "THAT'S HIM."
+    },
+    {
+     "clip": [
+      9.2,
+      11.6
+     ],
+     "source": "raw/IMG_3416.mov",
+     "say": "DAD: \"THAT'S AWESOME.\""
+    },
+    {
+     "clip": [
+      11.6,
+      15.0
+     ],
+     "source": "raw/IMG_3416.mov",
+     "say": "LOOK AT THIS FACE"
+    },
+    {
+     "hold": "yay",
+     "max": 2.2,
+     "at": 15.0,
+     "face": {
+      "x": 300,
+      "y": 650
+     },
+     "say": "BEST DAY EVER"
+    },
+    {
+     "clip": [
+      15.0,
+      16.2
+     ],
+     "source": "raw/IMG_3416.mov",
+     "say": "DAD: \"LET'S GO!\""
+    },
+    {
+     "end": ""
+    }
+   ]
+  },
+  {
+   "id": "old-folk-high-five",
+   "fps": 30,
+   "layout": {
+    "video_top": 300,
+    "video_height": 1500,
+    "prescale": [
+     1080,
+     1920
+    ],
+    "crop": {
+     "width": 1080,
+     "height": 1500,
+     "x": 0,
+     "y": 120
+    },
+    "face": {
+     "x": 540,
+     "y": 600
+    },
+    "hold_zoom": 1.45,
+    "caption_bottom_margin": 90,
+    "voice_loudness_lufs": -17,
+    "end_card_seconds": 2.6
+   },
+   "music": {
+    "file": "raw/theme.mp3",
+    "gain": 0.16,
+    "start": 4
+   },
+   "kicker": "On The Court / Game Night",
+   "hook": [
+    "He called Steph",
+    "old folk"
+   ],
+   "youtube_title": "He said Steph is old folk. Then this happened.",
+   "verdict": [
+    "Respect."
+   ],
+   "verdict_label": "The verdict",
+   "punch": [
+    "steph",
+    "old",
+    "folk",
+    "warriors",
+    "respect"
+   ],
+   "pieces": [
+    {
+     "photo": "raw/photos/9.jpg",
+     "seconds": 2.2,
+     "say": "HE WROTE THAT\nSTEPH IS \"OLD FOLK\""
+    },
+    {
+     "clip": [
+      8.6,
+      12.6
+     ],
+     "source": "raw/IMG_3420.mov",
+     "say": [
+      "THEN THE WARRIORS\nWALKED BY",
+      "HAND OUT. NO FEAR."
+     ]
+    },
+    {
+     "clip": [
+      12.6,
+      14.1
+     ],
+     "source": "raw/IMG_3420.mov",
+     "speed": 0.5,
+     "sfx": "shocked",
+     "max": 1.4,
+     "say": "STILL WANTED\nTHE HIGH FIVE"
+    },
+    {
+     "hold": "vine-boom",
+     "max": 1.2,
+     "at": 14.0,
+     "face": {
+      "x": 640,
+      "y": 720
+     }
+    },
+    {
+     "clip": [
+      17.2,
+      19.6
+     ],
+     "source": "raw/IMG_3420.mov",
+     "say": "OKAY. A LITTLE RESPECT."
+    },
+    {
+     "end": "womp-womp"
+    }
+   ]
+  },
+  {
+   "id": "rip-city-backstage",
+   "fps": 30,
+   "layout": {
+    "video_top": 300,
+    "video_height": 1500,
+    "prescale": [
+     1080,
+     1920
+    ],
+    "crop": {
+     "width": 1080,
+     "height": 1500,
+     "x": 0,
+     "y": 120
+    },
+    "face": {
+     "x": 540,
+     "y": 600
+    },
+    "hold_zoom": 1.45,
+    "caption_bottom_margin": 90,
+    "voice_loudness_lufs": -17,
+    "end_card_seconds": 2.6
+   },
+   "music": {
+    "file": "raw/theme.mp3",
+    "gain": 0.16,
+    "start": 4
+   },
+   "kicker": "On The Court / Game Night",
+   "hook": [
+    "Backstage with",
+    "the Blazers"
+   ],
+   "youtube_title": "Backstage with the Blazers",
+   "verdict": [
+    "Rip",
+    "City."
+   ],
+   "verdict_label": "On The Court",
+   "punch": [
+    "blazers",
+    "scoot",
+    "rip",
+    "city",
+    "hansen"
+   ],
+   "pieces": [
+    {
+     "clip": [
+      1.6,
+      4.2
+     ],
+     "source": "raw/IMG_3418.mov",
+     "say": "BACKSTAGE AT\nTHE BLAZERS GAME"
+    },
+    {
+     "clip": [
+      2.6,
+      6.6
+     ],
+     "source": "raw/IMG_3415.mov",
+     "say": "DAD: \"YANG HANSEN.\""
+    },
+    {
+     "clip": [
+      6.6,
+      10.8
+     ],
+     "source": "raw/IMG_3415.mov",
+     "say": "DAD: \"OH, THERE'S SCOOT.\nLET'S GO, SCOOT!\""
+    },
+    {
+     "clip": [
+      6.3,
+      10.4
+     ],
+     "source": "raw/IMG_3418.mov",
+     "say": "DAPPED UP\nBY THE BLAZERS"
+    },
+    {
+     "clip": [
+      10.4,
+      12.0
+     ],
+     "source": "raw/IMG_3418.mov"
+    },
+    {
+     "hold": "yay",
+     "max": 2.0,
+     "at": 11.9,
+     "face": {
+      "x": 600,
+      "y": 640
+     },
+     "say": "HIS TEAM. HIS NIGHT."
+    },
+    {
+     "end": "core"
+    }
+   ]
+  }
+ ]
+}

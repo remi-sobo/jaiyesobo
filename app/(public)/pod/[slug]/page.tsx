@@ -1,8 +1,10 @@
+import NewsletterBox from "@/components/site/newsletter-box";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import ArticleBody from "@/components/site/article-body";
 import EpisodePlayer from "@/components/site/episode-player";
+import { InstagramLine } from "@/components/site/instagram";
 import { notFound } from "next/navigation";
 import { episodeMeta, episodes, getEpisode } from "@/lib/content/episodes";
 import { getVaultEntry } from "@/lib/content/vault";
@@ -69,7 +71,12 @@ export default async function EpisodePage(props: PageProps<"/pod/[slug]">) {
           {ep.standfirst}
         </p>
 
-        <EpisodePlayer youtubeId={ep.youtubeId} title={ep.title} chapters={ep.chapters} />
+        <EpisodePlayer
+          youtubeId={ep.youtubeId}
+          title={ep.title}
+          chapters={ep.chapters}
+          belowVideo={<InstagramLine className="mt-4">Clips from the show are on Instagram:</InstagramLine>}
+        />
 
         {ep.audioUrl && (
           <audio controls preload="none" src={ep.audioUrl} className="mt-4 w-full">
@@ -92,7 +99,7 @@ export default async function EpisodePage(props: PageProps<"/pod/[slug]">) {
         </div>
 
         {ep.article ? (
-          <section id="article" className="mt-16 scroll-mt-24">
+          <section id="article" data-read={`pod:${ep.slug}`} data-read-label={ep.title} className="mt-16 scroll-mt-24">
             <SectionLabel tone="red">The article</SectionLabel>
             {ep.myTake ? (
               <div className="mt-8 border-l-2 border-[var(--color-red)] pl-6">
@@ -115,6 +122,8 @@ export default async function EpisodePage(props: PageProps<"/pod/[slug]">) {
             <VaultCompact entry={vault} />
           </div>
         )}
+
+        <NewsletterBox className="mt-16" />
 
         <footer className="mt-16 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-line)] pt-7 font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">
           <span>Jaiye Sobo with his dad</span>

@@ -14,7 +14,7 @@ export const posts: Post[] = [
     title: "The Grizzlies are 4-0 without Ja. Was I wrong?",
     titleAccent: "wrong?",
     standfirst:
-      "Before the season I said Memphis would be last in the West. They're 4-0. I owe them one — but only one.",
+      "Before the season I said Memphis would be last in the West. They're 4-0. I owe them one. But only one.",
     dek: "Ty Jerome is cooking and a rookie is going for a 10-10. I'll admit I was wrong about the team. The trade I still stand on.",
     topic: "Grizzlies",
     date: "2026-11-10",
@@ -25,7 +25,7 @@ export const posts: Post[] = [
     body: [
       {
         kind: "p",
-        text: "The Grizzlies are 4-0 without Ja. I admit it — I was wrong to say they'd be bad. Before the season I said they'd be last in the West (see Episode 1), and I said they'd be buns. They turned out to be really good.",
+        text: "The Grizzlies are 4-0 without Ja. I admit it. I was wrong to say they'd be bad. Before the season I said they'd be last in the West (see Episode 1), and I said they'd be buns. They turned out to be really good.",
       },
       {
         kind: "p",
@@ -33,7 +33,7 @@ export const posts: Post[] = [
       },
       {
         kind: "p",
-        text: "On the flipside, Jerami Grant and Kris Murray are doing terrible. And Ja is doing solid — 16 a game in three.",
+        text: "On the flipside, Jerami Grant and Kris Murray are doing terrible. And Ja is doing solid, 16 a game in three.",
       },
       {
         kind: "p",
@@ -50,12 +50,12 @@ export const posts: Post[] = [
       },
       {
         kind: "p",
-        text: "So in the Grizzlies–Blazers game, I've got the Blazers 127-123.",
+        text: "So in the Grizzlies vs Blazers game, I've got the Blazers 127-123.",
       },
       { kind: "note", text: "Write it down." },
       {
         kind: "p",
-        text: "And about was I wrong — there were two things I could've been wrong about. The team, and the trade. Can we agree I was wrong about the team? I'll say that. But I was right about the trade.",
+        text: "And about was I wrong. There were two things I could've been wrong about. The team, and the trade. Can we agree I was wrong about the team? I'll say that. But I was right about the trade.",
       },
     ],
   },

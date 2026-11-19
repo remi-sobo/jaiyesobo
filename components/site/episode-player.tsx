@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, type ReactNode } from "react";
 import type { Chapter } from "@/lib/content/types";
 import { Badge, SectionLabel } from "./type";
+import { useYouTubeWatch } from "@/components/analytics/use-youtube-watch";
 
 export function ytEmbedUrl(id: string, opts: { autoplay?: boolean } = {}) {
   // cc_load_policy=1 turns YouTube's captions on by default. enablejsapi lets the chapters seek.
@@ -16,8 +17,20 @@ function toSeconds(t: string) {
 }
 
 /** The episode video plus chapters you can tap to jump the video to that moment. */
-export default function EpisodePlayer({ youtubeId, title, chapters }: { youtubeId: string; title: string; chapters: Chapter[] }) {
+export default function EpisodePlayer({
+  youtubeId,
+  title,
+  chapters,
+  belowVideo,
+}: {
+  youtubeId: string;
+  title: string;
+  chapters: Chapter[];
+  /** Something small to show right under the video, above the chapters. */
+  belowVideo?: ReactNode;
+}) {
   const frame = useRef<HTMLIFrameElement>(null);
+  useYouTubeWatch(frame, youtubeId, title);
 
   function jump(time: string) {
     const win = frame.current?.contentWindow;
@@ -43,6 +56,8 @@ export default function EpisodePlayer({ youtubeId, title, chapters }: { youtubeI
         </div>
       </div>
 
+      {belowVideo}
+
       {chapters.length ? (
       <section id="chapters" className="mt-16 scroll-mt-24">
         <SectionLabel>Chapters</SectionLabel>
@@ -52,6 +67,7 @@ export default function EpisodePlayer({ youtubeId, title, chapters }: { youtubeI
               <button
                 type="button"
                 onClick={() => jump(c.time)}
+                data-track={`chapter:${c.time}`}
                 className="grid w-full grid-cols-[minmax(0,68px)_minmax(0,1fr)] gap-4 py-4 text-left transition-colors hover:bg-[var(--color-off-black)]"
               >
                 <span className="font-[family-name:var(--font-jetbrains)] text-[0.75rem] tracking-[0.05em] text-[var(--color-red)]">▶ {c.time}</span>

@@ -1,0 +1,19 @@
+{
+  "note": "On The Court sound kit. Every file is licensed from Epidemic Sound (downloaded 2026-11-10 through the connector). Do not add clips from YouTube, TikTok, or soundboard sites. Jaiye's own recordings go in custom/ and can be listed here the same way. 'gain' is a multiplier on the show-wide sfx level in the skill's style.json. 'max_seconds' cuts a long sound short with a fade.",
+  "sounds": {
+    "goat-baa": {"file": "goat-baa.wav", "meme": "the goat BAAAA", "epidemic_title": "Animals, Farm, Goat Bleating 02", "epidemic_id": "12db5b1f-f14e-495e-beb8-00a17ece2e33", "use_for": "a bad take or a wrong prediction"},
+    "scream": {"file": "scream.wav", "meme": "the FAHHH scream", "epidemic_title": "Voices, Scream, Male, Scream, Short", "epidemic_id": "59d26ffa-063a-41ac-b421-39c17fc050bc", "use_for": "someone gets roasted"},
+    "fart-short": {"file": "fart-short.wav", "meme": "fart", "epidemic_title": "Farts, Designed, Weak", "epidemic_id": "b4a4b797-1bc3-4db3-9755-cf56e5ee20ee", "use_for": "a bad take or a wrong prediction. Rare on purpose"},
+    "boom": {"file": "boom.wav", "meme": "vine boom", "epidemic_title": "Designed, Boom, Impact, Thud, Deep, Heavy, Realistic, Distant", "epidemic_id": "4969f8ba-0853-49d3-8d5f-9787371deb54", "max_seconds": 1.5, "use_for": "a big claim or a hot take"},
+    "record-scratch": {"file": "record-scratch.wav", "meme": "record scratch", "epidemic_title": "Communications, Phonograph, Vinyl, Record Scratch 08", "epidemic_id": "663d9cdd-37fc-41cd-9a1a-3d6391eddaba", "use_for": "a sudden change of subject, or wait, what?"},
+    "sad-trombone": {"file": "sad-trombone.wav", "meme": "sad trombone", "epidemic_title": "Fail, Trumpet 02", "epidemic_id": "28a7801c-9047-439a-b8b3-ba558660f428", "gain": 0.8, "use_for": "a bad take or a wrong prediction"},
+    "crickets": {"file": "crickets.wav", "meme": "crickets", "epidemic_title": "Animals, Insect, Cricket 02", "epidemic_id": "8aa570ca-328d-414d-a99c-657205376bfc", "max_seconds": 2.2, "gain": 0.8, "use_for": "a joke that needs a beat of silence"},
+    "airhorn": {"file": "airhorn.wav", "meme": "airhorn", "epidemic_title": "Horns, Air Powered, Air Horn, Blast, Long And Short", "epidemic_id": "2f53a3dc-8f5a-4fa1-860a-2d52cb1ebd91", "gain": 0.8, "use_for": "a great point or a win"},
+    "bruh": {"file": "bruh.wav", "meme": "bruh", "epidemic_title": "Voices, Male, Bruh, Pitched, Dark, Deep, Meme Redesign", "epidemic_id": "a30fd7e2-4158-4293-b9d4-9d05a5f185a6", "use_for": "someone gets roasted"},
+    "metal-pipe": {"file": "metal-pipe.wav", "meme": "metal pipe clang", "epidemic_title": "Metal, Impact, Metal Rod, Drop On Solid Ground", "epidemic_id": "81be77fe-7c6c-46d8-8d87-cb71e66b91b3", "max_seconds": 1.8, "use_for": "someone gets roasted, or something goes very wrong"},
+    "crowd-cheer": {"file": "crowd-cheer.wav", "meme": "crowd cheer", "epidemic_title": "Crowds, Cheering, Crowd, Small, British, Cheer 14", "epidemic_id": "486818d0-c420-4d90-9c9b-3c98e27af430", "gain": 0.8, "use_for": "a great point or a win"},
+    "ding": {"file": "ding.wav", "meme": "ding", "epidemic_title": "Bells, Handbell, Small, Reception Desk Bell, Single Ring", "epidemic_id": "dbfce0fc-ba2e-4344-968a-1e9f20523ac3", "max_seconds": 1.2, "use_for": "a correct pick"},
+    "wrong-buzzer": {"file": "wrong-buzzer.wav", "meme": "wrong answer buzzer", "epidemic_title": "Alarms, Buzzer, Wrong Answer, Incorrect, Error, Meme Redesign", "epidemic_id": "cb68563b-8a6d-49f7-874e-adf15dda41e9", "use_for": "a wrong prediction"},
+    "bonk": {"file": "bonk.wav", "meme": "bonk (stands in for the oof)", "epidemic_title": "Cartoon, Impact, Thud, Anvil Hit, Goofy, Meme Redesign", "epidemic_id": "fab58dea-9c4d-4776-ba28-ce5efa4562ed", "use_for": "a silly moment or a small fail"}
+  }
+}

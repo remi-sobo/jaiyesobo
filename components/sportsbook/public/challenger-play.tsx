@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { SbItem, SbPick, SbPlayerWithCode } from "@/lib/sportsbook/types";
 import { CardHead, CardPrompt, ResultLine, TeamDot, isLocked, isWinningOption } from "../card-parts";
@@ -18,14 +19,31 @@ async function post(body: Record<string, unknown>): Promise<{ ok: boolean; error
 const input = "h-12 w-full border border-[var(--color-line-strong)] bg-[var(--color-off-black)] px-3 text-[1rem] text-[var(--color-bone)] placeholder:text-[var(--color-mute)] focus:border-[var(--color-red)] focus:outline-none";
 const cta = "min-h-12 bg-[var(--color-red)] px-6 font-[family-name:var(--font-jetbrains)] text-[0.72rem] uppercase tracking-[0.2em] text-[var(--color-black)] hover:bg-[var(--color-bone)] disabled:opacity-50";
 
+const fieldLabel = "font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)]";
+const linkButton = "text-[0.85rem] text-[var(--color-mute)] underline-offset-4 hover:underline";
+
+type Mode = "join" | "code" | "email" | "email_code";
+
 export function JoinForm({ league, from, onJoined }: { league?: string; from?: string; onJoined?: () => void } = {}) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [age, setAge] = useState<"13_plus" | "under_13" | null>(null);
+  const [first, setFirst] = useState("");
+  const [last, setLast] = useState("");
+  const [email, setEmail] = useState("");
+  const [wantResults, setWantResults] = useState(true);
+  const [wantNews, setWantNews] = useState(true);
   const [code, setCode] = useState("");
-  const [mode, setMode] = useState<"join" | "restore">("join");
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginCode, setLoginCode] = useState("");
+  const [mode, setMode] = useState<Mode>("join");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  function go(next: Mode) {
+    setMode(next);
+    setError(null);
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -36,28 +54,50 @@ export function JoinForm({ league, from, onJoined }: { league?: string; from?: s
       setError("Tell us if you're 13 or older.");
       return;
     }
+    if (mode === "email") {
+      const res = await post({ action: "login_email", email: loginEmail.trim() });
+      setBusy(false);
+      if (!res.ok) setError(res.error ?? "Something went wrong.");
+      else go("email_code");
+      return;
+    }
     const res =
       mode === "join"
-        ? await post({ action: "join", name, age_band: age, league: league ?? null, from: from ?? null })
-        : await post({ action: "restore", code });
-    if (res.ok && mode === "restore" && league) await post({ action: "league_join", code: league, from: from ?? null });
+        ? await post({
+            action: "join",
+            name,
+            age_band: age,
+            first_name: age === "13_plus" ? first.trim() || null : null,
+            last_name: age === "13_plus" ? last.trim() || null : null,
+            league: league ?? null,
+            from: from ?? null,
+            email: email.trim() || undefined,
+            email_results: wantResults,
+            email_newsletter: wantNews,
+          })
+        : mode === "email_code"
+          ? await post({ action: "login_code", email: loginEmail.trim(), code: loginCode, league: league ?? null })
+          : await post({ action: "restore", code });
+    if (res.ok && mode === "code" && league) await post({ action: "league_join", code: league, from: from ?? null });
     setBusy(false);
     if (!res.ok) setError(res.error ?? "Something went wrong.");
     else if (onJoined) onJoined();
     else router.refresh();
   }
 
+  const submitLabel = busy ? "One sec…" : mode === "join" ? "I'm in" : mode === "email" ? "Email me a code" : "Let me back in";
+
   return (
     <form onSubmit={submit} className="mx-auto flex max-w-[420px] flex-col gap-3">
       {mode === "join" ? (
         <>
-          <label htmlFor="sb-name" className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">
-            Your name or nickname
+          <label htmlFor="sb-name" className={fieldLabel}>
+            Nickname
           </label>
           <input id="sb-name" className={input} value={name} maxLength={20} autoComplete="nickname" placeholder="Big Ticket" onChange={(e) => setName(e.target.value)} />
-          <p className="text-[0.8rem] text-[var(--color-mute)]">Everybody can see this name. Just your first name or a nickname.</p>
+          <p className="text-[0.8rem] text-[var(--color-mute)]">Everybody sees your nickname on the board.</p>
           <fieldset className="mt-2 flex flex-col gap-2">
-            <legend className="mb-2 font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">Are you 13 or older?</legend>
+            <legend className={`mb-2 ${fieldLabel}`}>Are you 13 or older?</legend>
             <div className="flex gap-2">
               {([
                 ["13_plus", "Yes"],
@@ -76,29 +116,118 @@ export function JoinForm({ league, from, onJoined }: { league?: string; from?: s
               <p className="text-[0.8rem] text-[var(--color-mute)]">You can play and react. Trash talk and starting leagues are for 13 and up.</p>
             ) : null}
           </fieldset>
+          {age === "13_plus" ? (
+            <div className="mt-2 flex flex-col gap-2">
+              <span className={fieldLabel}>Your real name (optional)</span>
+              <div className="flex gap-2">
+                <input aria-label="First name" className={input} value={first} maxLength={30} autoComplete="given-name" placeholder="First" onChange={(e) => setFirst(e.target.value)} />
+                <input aria-label="Last name" className={input} value={last} maxLength={30} autoComplete="family-name" placeholder="Last" onChange={(e) => setLast(e.target.value)} />
+              </div>
+              <p className="text-[0.8rem] text-[var(--color-mute)]">Private. Only Jaiye and his dad see it, so they know who&apos;s who.</p>
+            </div>
+          ) : null}
+          <div className="mt-2 flex flex-col gap-2">
+            <label htmlFor="sb-email" className={fieldLabel}>
+              {age === "under_13" ? "A parent's email (optional)" : "Email (optional)"}
+            </label>
+            <input id="sb-email" type="email" inputMode="email" autoComplete="email" className={input} value={email} maxLength={254} placeholder="you@example.com" onChange={(e) => setEmail(e.target.value)} />
+            <p className="text-[0.8rem] text-[var(--color-mute)]">
+              {age === "under_13" ? "Get your results every Monday. We'll ask them first." : "Get your results every Monday, and sign in on any device with a code."}
+            </p>
+            {email.trim() ? (
+              <div className="flex flex-col gap-1">
+                <label className="flex min-h-10 items-center gap-3 text-[0.9rem]">
+                  <input type="checkbox" checked={wantResults} onChange={(e) => setWantResults(e.target.checked)} className="h-5 w-5 accent-[var(--color-red)]" />
+                  My results every Monday
+                </label>
+                <label className="flex min-h-10 items-center gap-3 text-[0.9rem]">
+                  <input type="checkbox" checked={wantNews} onChange={(e) => setWantNews(e.target.checked)} className="h-5 w-5 accent-[var(--color-red)]" />
+                  Jaiye&apos;s newsletter: new episodes and columns
+                </label>
+              </div>
+            ) : null}
+          </div>
         </>
-      ) : (
+      ) : mode === "code" ? (
         <>
-          <label htmlFor="sb-code" className="font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)]">
+          <label htmlFor="sb-code" className={fieldLabel}>
             Your player code
           </label>
           <input id="sb-code" className={input} value={code} maxLength={16} placeholder="HOOP-1234" autoCapitalize="characters" onChange={(e) => setCode(e.target.value)} />
         </>
+      ) : mode === "email" ? (
+        <>
+          <label htmlFor="sb-login-email" className={fieldLabel}>
+            Your email
+          </label>
+          <input id="sb-login-email" type="email" inputMode="email" autoComplete="email" className={input} value={loginEmail} maxLength={254} placeholder="you@example.com" onChange={(e) => setLoginEmail(e.target.value)} />
+          <p className="text-[0.8rem] text-[var(--color-mute)]">For players 13 and up who confirmed their email. Under 13? Use your player code.</p>
+        </>
+      ) : (
+        <>
+          <label htmlFor="sb-login-code" className={fieldLabel}>
+            6 digit code
+          </label>
+          <input
+            id="sb-login-code"
+            className={`${input} font-[family-name:var(--font-jetbrains)] tracking-[0.3em]`}
+            value={loginCode}
+            maxLength={7}
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            placeholder="123456"
+            onChange={(e) => setLoginCode(e.target.value)}
+          />
+          <p className="text-[0.8rem] text-[var(--color-mute)]">
+            If {loginEmail.trim() || "that email"} is on a player, the code is on its way. It works for 15 minutes. Check spam if it&apos;s not there.
+          </p>
+        </>
       )}
       {error ? <p className="text-[0.85rem] text-[var(--color-red-soft)]">{error}</p> : null}
       <button type="submit" disabled={busy} className={cta}>
-        {busy ? "One sec…" : mode === "join" ? "I'm in" : "Let me back in"}
+        {submitLabel}
       </button>
-      <button
-        type="button"
-        onClick={() => {
-          setMode(mode === "join" ? "restore" : "join");
-          setError(null);
-        }}
-        className="text-[0.85rem] text-[var(--color-mute)] underline-offset-4 hover:underline"
-      >
-        {mode === "join" ? "Already playing? Use your code" : "New here? Join with a name"}
-      </button>
+      {mode === "join" ? (
+        <>
+          <p className="text-center text-[0.8rem] text-[var(--color-mute)]">
+            By joining you agree to the{" "}
+            <Link href="/runitback/terms" className="underline underline-offset-4 hover:text-[var(--color-bone)]">
+              Terms
+            </Link>
+            . See{" "}
+            <Link href="/runitback/privacy" className="underline underline-offset-4 hover:text-[var(--color-bone)]">
+              Privacy
+            </Link>{" "}
+            and{" "}
+            <Link href="/runitback/parents" className="underline underline-offset-4 hover:text-[var(--color-bone)]">
+              For parents
+            </Link>
+            .
+          </p>
+          <button type="button" onClick={() => go("email")} className={linkButton}>
+            Already playing? Sign back in
+          </button>
+        </>
+      ) : (
+        <div className="flex flex-col items-center gap-1">
+          {mode === "code" ? (
+            <button type="button" onClick={() => go("email")} className={linkButton}>
+              No code? Email me a login code
+            </button>
+          ) : mode === "email_code" ? (
+            <button type="button" onClick={() => go("email")} className={linkButton}>
+              Send a new code
+            </button>
+          ) : (
+            <button type="button" onClick={() => go("code")} className={linkButton}>
+              Use my player code instead
+            </button>
+          )}
+          <button type="button" onClick={() => go("join")} className={linkButton}>
+            New here? Join with a nickname
+          </button>
+        </div>
+      )}
     </form>
   );
 }

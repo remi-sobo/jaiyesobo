@@ -1,0 +1,228 @@
+{
+ "episode": "episode-03",
+ "status": "draft",
+ "note": "Built by find_players.py. One cue is one player cutout popping up from raw_from to raw_to (raw seconds). Set \"off\": true to drop one, or change player_id to fix a wrong face; both survive a rebuild. 'not_sure' are names the script would not guess. To show one, add a nickname to player-aliases.json and run this again.",
+ "cues": [
+  {
+   "id": "player-damian-lillard-00592",
+   "layout": "player",
+   "player_id": 203081,
+   "name": "Damian Lillard",
+   "team": "POR",
+   "said": "Lillard,",
+   "line": "the biggest scoring game this week? Lillard, Tatum, Mitchell, or Durant. Now I",
+   "raw_from": 59.18,
+   "raw_to": 60.48
+  },
+  {
+   "id": "player-jayson-tatum-00598",
+   "layout": "player",
+   "player_id": 1628369,
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "said": "Tatum,",
+   "line": "biggest scoring game this week? Lillard, Tatum, Mitchell, or Durant. Now I chose",
+   "raw_from": 60.48,
+   "raw_to": 61.78
+  },
+  {
+   "id": "player-kevin-durant-00609",
+   "layout": "player",
+   "player_id": 201142,
+   "name": "Kevin Durant",
+   "team": "HOU",
+   "said": "Durant.",
+   "line": "this week? Lillard, Tatum, Mitchell, or Durant. Now I chose Damian Lillard. He's",
+   "raw_from": 61.78,
+   "raw_to": 64.78
+  },
+  {
+   "id": "player-donovan-mitchell-00936",
+   "layout": "player",
+   "player_id": 1628378,
+   "name": "Donovan Mitchell",
+   "team": "CLE",
+   "said": "Donovan Mitchell,",
+   "line": "take it. And most people chose Donovan Mitchell, but then Jayson Tatum, Damian Lillard,",
+   "raw_from": 93.58,
+   "raw_to": 94.94
+  },
+  {
+   "id": "player-jayson-tatum-00950",
+   "layout": "player",
+   "player_id": 1628369,
+   "name": "Jayson Tatum",
+   "team": "BOS",
+   "said": "Jayson Tatum,",
+   "line": "people chose Donovan Mitchell, but then Jayson Tatum, Damian Lillard, and KD are tied.",
+   "raw_from": 94.94,
+   "raw_to": 96.46
+  },
+  {
+   "id": "player-damian-lillard-00965",
+   "layout": "player",
+   "player_id": 203081,
+   "name": "Damian Lillard",
+   "team": "POR",
+   "said": "Damian Lillard,",
+   "line": "Donovan Mitchell, but then Jayson Tatum, Damian Lillard, and KD are tied. So far",
+   "raw_from": 96.46,
+   "raw_to": 97.76
+  },
+  {
+   "id": "player-kevin-durant-00977",
+   "layout": "player",
+   "player_id": 201142,
+   "name": "Kevin Durant",
+   "team": "HOU",
+   "said": "KD",
+   "line": "then Jayson Tatum, Damian Lillard, and KD are tied. So far I'm actually",
+   "raw_from": 97.76,
+   "raw_to": 100.76
+  },
+  {
+   "id": "player-julius-randle-02866",
+   "layout": "player",
+   "player_id": 203944,
+   "name": "Julius Randle",
+   "team": "BKN",
+   "said": "Julius Randle",
+   "line": "bit weirder. Who scores more Tuesday? Julius Randle or Cade. Now pretty much everybody",
+   "raw_from": 286.54,
+   "raw_to": 287.84
+  },
+  {
+   "id": "player-cade-cunningham-02877",
+   "layout": "player",
+   "player_id": 1630595,
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "said": "Cade.",
+   "line": "scores more Tuesday? Julius Randle or Cade. Now pretty much everybody said Cade.",
+   "raw_from": 287.84,
+   "raw_to": 290.84
+  },
+  {
+   "id": "player-luka-doncic-03057",
+   "layout": "player",
+   "player_id": 1629029,
+   "name": "Luka Dončić",
+   "team": "LAL",
+   "said": "Luka Dončić",
+   "line": "only had 19. Oh, and does Luka Dončić get a double double versus Portland",
+   "raw_from": 305.66,
+   "raw_to": 308.66
+  },
+  {
+   "id": "player-donovan-mitchell-05408",
+   "layout": "player",
+   "player_id": 1628378,
+   "name": "Donovan Mitchell",
+   "team": "CLE",
+   "said": "Donovan Mitchell",
+   "line": "his only L's. Then he said Donovan Mitchell had the most points. He loves",
+   "raw_from": 540.74,
+   "raw_to": 543.74
+  },
+  {
+   "id": "player-julius-randle-05747",
+   "layout": "player",
+   "player_id": 203944,
+   "name": "Julius Randle",
+   "team": "BKN",
+   "said": "Julius Randle",
+   "line": "chose two. Who scores more Tuesday? Julius Randle or Cade. He chose Cade. Is",
+   "raw_from": 574.66,
+   "raw_to": 576.1
+  },
+  {
+   "id": "player-cade-cunningham-05762",
+   "layout": "player",
+   "player_id": 1630595,
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "said": "Cade.",
+   "line": "scores more Tuesday? Julius Randle or Cade. He chose Cade. Is Luka Dončić",
+   "raw_from": 576.1,
+   "raw_to": 578.1
+  },
+  {
+   "id": "player-luka-doncic-05782",
+   "layout": "player",
+   "player_id": 1629029,
+   "name": "Luka Dončić",
+   "team": "LAL",
+   "said": "Luka Dončić",
+   "line": "or Cade. He chose Cade. Is Luka Dončić to get a trip double double",
+   "raw_from": 578.1,
+   "raw_to": 581.1
+  },
+  {
+   "id": "player-anthony-edwards-06631",
+   "layout": "player",
+   "player_id": 1630162,
+   "name": "Anthony Edwards",
+   "team": "MIN",
+   "said": "Ant",
+   "line": "I chose uh I chose Minnesota Ant is just a house on fire",
+   "raw_from": 663.02,
+   "raw_to": 666.02
+  },
+  {
+   "id": "player-damian-lillard-06673",
+   "layout": "player",
+   "player_id": 203081,
+   "name": "Damian Lillard",
+   "team": "POR",
+   "said": "Dame",
+   "line": "fire right now. Now I chose Dame one because I'm a Blazers fan",
+   "raw_from": 667.26,
+   "raw_to": 670.26
+  },
+  {
+   "id": "player-julius-randle-07526",
+   "layout": "player",
+   "player_id": 203944,
+   "name": "Julius Randle",
+   "team": "BKN",
+   "said": "Julius Randle",
+   "line": "one. Now who scores more Tuesday, Julius Randle or Cade. I chose Cade. I",
+   "raw_from": 752.58,
+   "raw_to": 753.88
+  },
+  {
+   "id": "player-cade-cunningham-07538",
+   "layout": "player",
+   "player_id": 1630595,
+   "name": "Cade Cunningham",
+   "team": "DET",
+   "said": "Cade.",
+   "line": "scores more Tuesday, Julius Randle or Cade. I chose Cade. I don't know",
+   "raw_from": 753.88,
+   "raw_to": 756.88
+  },
+  {
+   "id": "player-luka-doncic-07807",
+   "layout": "player",
+   "player_id": 1629029,
+   "name": "Luka Dončić",
+   "team": "LAL",
+   "said": "Luka",
+   "line": "luck. Yeah, that was luck. Does Luka get a double double versus Portland",
+   "raw_from": 780.66,
+   "raw_to": 783.66
+  },
+  {
+   "id": "player-damian-lillard-09523",
+   "layout": "player",
+   "player_id": 203081,
+   "name": "Damian Lillard",
+   "team": "POR",
+   "said": "Dame",
+   "line": "one more points. And I need Dame to cook, and I will win",
+   "raw_from": 952.22,
+   "raw_to": 955.22
+  }
+ ],
+ "not_sure": []
+}

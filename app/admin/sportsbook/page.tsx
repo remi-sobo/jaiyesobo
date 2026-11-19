@@ -1,16 +1,21 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/session";
 import { getSettings } from "@/lib/sportsbook/draft";
-import { getHousePlayers } from "@/lib/sportsbook/players";
+import { getHousePlayers, whoIsWho } from "@/lib/sportsbook/players";
+import { autopilotStatus, type AutopilotStatus } from "@/lib/sportsbook/autopilot";
 import { loadWeekView } from "@/lib/sportsbook/view";
-import { currentWeekNumber, requestNow, weekRangeLabel, weekWindow } from "@/lib/sportsbook/weeks";
+import { currentWeekNumber, pacificWeekday, requestNow, tipLabel, weekRangeLabel, weekWindow } from "@/lib/sportsbook/weeks";
 import SharedPicks from "@/components/sportsbook/admin/shared-picks";
 import SlateEditor, { AddPropInline } from "@/components/sportsbook/admin/slate-editor-entry";
-import ResultsPanel, { BoardTable, ChallengersPanel, SettingsPanel } from "@/components/sportsbook/admin/results-panel";
+import ResultsPanel, { BoardTable, ChallengersPanel, SettingsPanel, type WhoMap } from "@/components/sportsbook/admin/results-panel";
 import RefreshButton from "@/components/sportsbook/admin/refresh-button";
 import { LeaguesPanel, ReportsPanel } from "@/components/sportsbook/admin/growth-panel";
 import { allLeagues } from "@/lib/sportsbook/leagues";
 import { openReports } from "@/lib/sportsbook/safety";
+import { emailEnabled } from "@/lib/email/send";
+import { subscriberStats } from "@/lib/email/subscribers";
+import { newsletterChoices, newsletterSentCount, previewNewsletter } from "@/lib/email/campaigns";
+import { NewsletterPanel, SubscribersPanel, type NewsletterChoice } from "@/components/sportsbook/admin/email-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -26,13 +31,28 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default async function AdminSportsbookPage(props: { searchParams: Promise<{ week?: string }> }) {
   await requireAdmin("/admin/sportsbook");
   const sp = await props.searchParams;
-  const current = currentWeekNumber();
-  const n = Math.min(40, Math.max(1, Number(sp.week) || current));
+  const now = new Date(requestNow());
+  const current = currentWeekNumber(now);
+  const next = current + 1;
+  // Weekly autopilot: next week's draft waits here. Saturday and Sunday the
+  // page opens on it unless a week was asked for.
+  const nextAuto = await autopilotStatus(next).catch((e: unknown) => {
+    console.error(JSON.stringify({ scope: "sportsbook.admin.autopilot", week: next, err: String(e) }));
+    return null;
+  });
+  const weekend = pacificWeekday(now) === 6 || pacificWeekday(now) === 0;
+  const fallbackWeek = weekend && nextAuto?.status === "draft" ? next : current;
+  const n = Math.min(40, Math.max(1, Number(sp.week) || fallbackWeek));
+  const auto: AutopilotStatus | null = n === next ? nextAuto : await autopilotStatus(n).catch(() => null);
 
   let loadError: string | null = null;
   let view: Awaited<ReturnType<typeof loadWeekView>> = null;
   let house: Awaited<ReturnType<typeof getHousePlayers>> | null = null;
   let settings: Awaited<ReturnType<typeof getSettings>> = { fav_teams: [], fav_players: [] };
+  // Real names and emails, admin only. Before migration 031 the name columns don't exist: fall back to nicknames.
+  const who: WhoMap = Object.fromEntries(
+    (await whoIsWho({ withEmail: true }).catch(() => [])).map((w) => [w.id, { real_name: w.real_name, email: w.email }]),
+  );
   try {
     [view, house, settings] = await Promise.all([loadWeekView(n, { admin: true }), getHousePlayers(), getSettings()]);
   } catch (e) {
@@ -40,6 +60,20 @@ export default async function AdminSportsbookPage(props: { searchParams: Promise
     loadError = "Couldn't load Run It Back Picks. The tables may not exist yet (migration 025).";
   }
   const [reports, leagues] = await Promise.all([openReports().catch(() => []), allLeagues().catch(() => [])]);
+  const stats = await subscriberStats().catch(() => ({ confirmed: 0, pending: 0, unsubscribed: 0, results: 0, newsletter: 0 }));
+  const choices: NewsletterChoice[] = await Promise.all(
+    newsletterChoices().map(async (c) => {
+      const mail = previewNewsletter(c.kind, c.slug);
+      return {
+        kind: c.kind,
+        slug: c.slug,
+        label: `${c.kind === "episode" ? "Episode" : "Column"}: ${c.title}`,
+        subject: mail?.subject ?? c.title,
+        lines: (mail?.text ?? "").split("\n").map((l) => l.trim()).filter(Boolean).slice(0, 4),
+        alreadySent: await newsletterSentCount(c.kind, c.slug).catch(() => 0),
+      };
+    }),
+  );
   const w = view?.week ?? weekWindow(n); // existing weeks keep the dates on their row
   const status = view?.week.status ?? "none";
 
@@ -90,12 +124,42 @@ export default async function AdminSportsbookPage(props: { searchParams: Promise
         </div>
       </div>
 
+      {nextAuto && nextAuto.status === "draft" && nextAuto.items > 0 ? (
+        <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 border border-[var(--color-red)] px-4 py-3">
+          <span className="text-[0.95rem]">
+            {nextAuto.approved
+              ? Date.parse(nextAuto.opensAt) <= now.getTime()
+                ? `Week ${next} is approved and opens on the next sync.`
+                : `Week ${next} is approved and goes live ${tipLabel(nextAuto.opensAt)}.`
+              : `Week ${next} is drafted and waiting for you.`}
+          </span>
+          {!nextAuto.approved && n !== next ? (
+            <Link
+              href={`/admin/sportsbook?week=${next}`}
+              className="font-[family-name:var(--font-jetbrains)] text-[0.62rem] uppercase tracking-[0.15em] text-[var(--color-red)]"
+            >
+              Review Week {next} →
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
+
       {loadError ? (
         <p className="text-[var(--color-warm-mute)]">{loadError}</p>
       ) : (
         <>
           {status === "none" || status === "draft" ? (
-            <SlateEditor week={n} items={view?.items ?? []} status={status === "none" ? "none" : "draft"} now={view?.now ?? requestNow()} />
+            <SlateEditor
+              week={n}
+              items={view?.items ?? []}
+              status={status === "none" ? "none" : "draft"}
+              now={view?.now ?? requestNow()}
+              autopilot={
+                auto && status === "draft"
+                  ? { approved: auto.approved, opensLabel: tipLabel(auto.opensAt), past: Date.parse(auto.opensAt) <= now.getTime() }
+                  : null
+              }
+            />
           ) : null}
 
           {status === "open" && view && house ? (
@@ -122,7 +186,13 @@ export default async function AdminSportsbookPage(props: { searchParams: Promise
             <LeaguesPanel leagues={leagues} />
           </Section>
           <Section title="Challengers">
-            <ChallengersPanel players={view?.players ?? []} />
+            <ChallengersPanel players={view?.players ?? []} who={who} />
+          </Section>
+          <Section title="Subscribers">
+            <SubscribersPanel stats={stats} enabled={emailEnabled()} />
+          </Section>
+          <Section title="Newsletter">
+            <NewsletterPanel choices={choices} audience={stats.newsletter} enabled={emailEnabled()} />
           </Section>
           <Section title="Settings">
             <SettingsPanel favTeams={settings.fav_teams} favPlayers={settings.fav_players} />

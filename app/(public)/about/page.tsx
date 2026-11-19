@@ -3,6 +3,7 @@ import Image from "next/image";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { HandNote, SectionLabel } from "@/components/site/type";
+import { InstagramLine } from "@/components/site/instagram";
 
 export const metadata: Metadata = {
   title: "About · Jaiye Sobo",
@@ -88,6 +89,7 @@ export default function AboutPage() {
             <HandNote className="mt-2">
               I still think I&apos;m right about the Blazers though.
             </HandNote>
+            <InstagramLine className="mt-4">My podcast is on Instagram:</InstagramLine>
           </div>
 
           <aside>

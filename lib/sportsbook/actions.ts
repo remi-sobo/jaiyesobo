@@ -1,10 +1,11 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { buildContext, draftOne, draftSlate, half, writeRecap, type DraftItem } from "./draft";
-import { getItems, getPicks, getPlayers, getSubmissions, getWeek, gradeWeek, listWeeks, nightlySync, pushGraded, pushOpen, weekBoard } from "./data";
+import { getItems, getPicks, getPlayers, getSubmissions, getWeek, gradeWeek, listWeeks, nightlySync, pushGraded, pushOpen, syncBoxes, syncGames, weekBoard } from "./data";
 import { pickPoints } from "./grade";
 import { recapPreview, sendPush, type PushResult } from "./push";
 import type { ItemOption, SbItem, SbPick, SbWeek } from "./types";
-import { SB_SEASON, currentWeekNumber, weekWindow } from "./weeks";
+import { SB_SEASON, currentWeekNumber, pacificDate, resultsWeekToSend, weekWindow } from "./weeks";
+import { EMAIL_RUN_BUDGET_MS } from "@/lib/email/rules";
 
 const db = () => createServiceClient();
 
@@ -237,6 +238,9 @@ export async function makeRecap(n: number): Promise<string> {
   const week = await getWeek(n);
   if (!week) throw new ActionError("No such week.");
   const items = await getItems(week.id);
+  // A recap written before every pick has a result gets the scores wrong (Week 4's did).
+  const left = items.filter((i) => i.status === "open").length;
+  if (left) throw new ActionError(`${left} ${left === 1 ? "pick still needs" : "picks still need"} a result before the recap.`);
   const picks = await getPicks(items.map((i) => i.id));
   const players = await getPlayers();
   const board = weekBoard(items, picks, players);
@@ -270,7 +274,8 @@ export async function makeRecap(n: number): Promise<string> {
 
 export async function saveRecap(n: number, text: string): Promise<void> {
   const week = await getWeek(n);
-  if (!week || week.status === "final") throw new ActionError("Can't edit that recap.");
+  // A final week's recap stays editable (migration 029): it is usually written right after the week closes.
+  if (!week || week.status === "draft") throw new ActionError("Can't edit that recap.");
   const recap = text.trim().slice(0, 2000);
   const { error } = await db().from("sb_weeks").update({ recap: recap || null }).eq("id", week.id);
   if (error) throw error;
@@ -313,20 +318,17 @@ export async function finalizeWeek(n: number): Promise<void> {
  * alone. Remi can still finalize early by hand. Safe to run any number of
  * times, from any job; returns the week numbers it closed.
  */
-export async function closeOutWeeks(now = new Date()): Promise<number[]> {
+export async function closeOutWeeks(now = new Date(), opts: { recap?: boolean; emailDeadline?: number } = {}): Promise<number[]> {
   const closed: number[] = [];
-  for (const week of (await listWeeks()).filter((w) => w.status === "graded")) {
+  const weeks = await listWeeks();
+  for (const week of weeks.filter((w) => w.status === "graded")) {
     try {
       const items = await getItems(week.id);
       if (items.some((i) => i.status === "open")) continue;
-      if (!week.recap) {
-        // A recap failure must not keep the week from publishing.
-        try {
-          await makeRecap(week.week_number);
-        } catch (e) {
-          console.error(JSON.stringify({ scope: "sportsbook.closeout", week: week.week_number, recapError: String(e) }));
-        }
-      }
+      // Finalize first: it is one quick update. The recap is an AI call that
+      // can outlive a page's after-response budget, so it comes after and only
+      // when the caller has time (the cron jobs); a missed recap is written on
+      // the next run below.
       await finalizeWeek(week.week_number);
       closed.push(week.week_number);
       console.log(JSON.stringify({ scope: "sportsbook.closeout", week: week.week_number, closed: true, at: now.toISOString() }));
@@ -336,28 +338,85 @@ export async function closeOutWeeks(now = new Date()): Promise<number[]> {
   }
   // The recap push went out with the recap. This is the idempotent graded push.
   if (closed.length) await pushGraded();
+  if (opts.recap) {
+    // Final weeks still missing their recap: the ones closed just now and any
+    // earlier close-out that ran out of time. One at a time, newest first.
+    const missing = (await listWeeks())
+      .filter((w) => w.status === "final" && !w.recap)
+      .sort((a, b) => b.week_number - a.week_number);
+    for (const week of missing) {
+      try {
+        await makeRecap(week.week_number);
+      } catch (e) {
+        console.error(JSON.stringify({ scope: "sportsbook.closeout", week: week.week_number, recapError: String(e) }));
+      }
+    }
+    await emailResults(now, opts.emailDeadline ?? Date.now() + EMAIL_RUN_BUDGET_MS);
+  }
   return closed;
 }
 
+/**
+ * The Monday results email: only for the week that just ended, once it is
+ * final (see `resultsWeekToSend`). Older weeks that were finalized late are
+ * never sent. The email carries the recap, so a week still waiting on its
+ * recap is held for up to 36 hours and then sent without it. Every send is
+ * deduped per subscriber, so reruns (the nightly job runs this too) only
+ * finish what is left. All the sends in one cron invocation share `deadline`
+ * (epoch ms). Does nothing until RESEND_API_KEY is set. Never throws into the
+ * job.
+ */
+async function emailResults(now: Date, deadline: number) {
+  try {
+    const n = resultsWeekToSend(await listWeeks(), now);
+    if (n === null) return;
+    // One shared deadline for the whole cron invocation (nightlySync and weeklyJob both come through here).
+    const left = deadline - Date.now();
+    if (left <= 0) return;
+    const { sendResultsEmails } = await import("@/lib/email/campaigns");
+    await sendResultsEmails(n, { budgetMs: left });
+  } catch (e) {
+    console.error(JSON.stringify({ scope: "sportsbook.closeout", resultsEmailError: String(e) }));
+  }
+}
+
 /** Monday morning: grade last week, write its recap, draft this week. */
+/**
+ * Sunday night close-out (vercel.json runs it every 15 minutes, Sunday about
+ * 6pm to Monday 3am Pacific). Pulls the latest scores and box scores, grades,
+ * opens next week if it's due, and closes any week whose last game is final:
+ * recap, then the results email with the invite to next week. Every step is
+ * safe to rerun, so most runs do nothing.
+ */
+export async function closeoutJob(now = new Date()) {
+  const emailDeadline = Date.now() + EMAIL_RUN_BUDGET_MS;
+  const live = (await listWeeks()).filter((w) => w.status === "open" || w.status === "graded");
+  if (live.length === 0) return { skipped: "no live week" };
+  await syncGames(pacificDate(new Date(now.getTime() - 86_400_000)), pacificDate(now));
+  const boxes = await syncBoxes(30);
+  let graded = 0;
+  for (const w of live) graded += await gradeWeek(w, now);
+  // Open next week first, so the results email can carry "Play Week N".
+  let opened: number[] = [];
+  try {
+    opened = await (await import("./autopilot")).maybeOpenWeeks(now);
+  } catch (err) {
+    console.error(JSON.stringify({ scope: "sportsbook.autopilot", err: String(err) }));
+  }
+  const closed = await closeOutWeeks(now, { recap: true, emailDeadline });
+  return { boxes, graded, opened, closed };
+}
+
 export async function weeklyJob(now = new Date()) {
-  const sync = await nightlySync(now);
+  // One email budget for the whole invocation: nightlySync's results pass and the one below share it.
+  const emailDeadline = Date.now() + EMAIL_RUN_BUDGET_MS;
+  const sync = await nightlySync(now, { emailDeadline });
   const n = currentWeekNumber(now);
   const out: Record<string, unknown> = { sync, week: n };
   const last = n > 1 ? await getWeek(n - 1) : null;
-  if (last && (last.status === "open" || last.status === "graded")) {
-    await gradeWeek(last, now);
-    const fresh = await getWeek(n - 1);
-    if (fresh && !fresh.recap) {
-      try {
-        await makeRecap(n - 1);
-        out.recap = true;
-      } catch (e) {
-        out.recapError = String(e);
-      }
-    }
-  }
-  out.closed = await closeOutWeeks(now);
+  // The recap is written by closeOutWeeks below, once every pick has a result.
+  if (last && (last.status === "open" || last.status === "graded")) await gradeWeek(last, now);
+  out.closed = await closeOutWeeks(now, { recap: true, emailDeadline });
   // Backstop for the pushes: no-ops if nightlySync and saveRecap already sent them.
   out.push = {
     graded: await pushGraded(),
@@ -370,6 +429,13 @@ export async function weeklyJob(now = new Date()) {
     } catch (e) {
       out.draftError = String(e);
     }
+  }
+  // Open whatever is ready, after the fallback draft above so a missing week is
+  // drafted and opened in this same run. Never throws. Lazy: autopilot loads this file.
+  try {
+    out.opened = await (await import("./autopilot")).maybeOpenWeeks(now);
+  } catch (e) {
+    out.openError = String(e);
   }
   return out;
 }

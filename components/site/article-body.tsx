@@ -1,14 +1,22 @@
 import type { Block } from "@/lib/content/types";
 import { HandNote } from "./type";
 
-/** Jaiye's article prose: paragraphs, the boxed pull block, and margin notes. Shared by columns and episodes. */
-export default function ArticleBody({ blocks }: { blocks: Block[] }) {
+/** Jaiye's article prose: paragraphs, the boxed pull block, and margin notes. Shared by columns and episodes. `lead` sets the first paragraph bigger with a red drop cap, for columns. */
+export default function ArticleBody({ blocks, lead = false }: { blocks: Block[]; lead?: boolean }) {
+  const firstP = blocks.findIndex((b) => b.kind === "p");
   return (
     <div className="flex flex-col gap-[26px]">
       {blocks.map((block, i) => {
         if (block.kind === "p") {
           return (
-            <p key={i} className="text-[1.1rem] leading-[1.75] text-pretty">
+            <p
+              key={i}
+              className={
+                lead && i === firstP
+                  ? "text-[1.3rem] leading-[1.6] text-pretty first-letter:float-left first-letter:mr-3 first-letter:mt-1 first-letter:font-[family-name:var(--font-fraunces)] first-letter:text-[4.2rem] first-letter:font-black first-letter:leading-[0.8] first-letter:text-[var(--color-red)]"
+                  : "text-[1.1rem] leading-[1.75] text-pretty"
+              }
+            >
               {block.text}
             </p>
           );

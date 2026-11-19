@@ -31,15 +31,44 @@ export type ApiPlayer = {
   push_enabled: PushSettings;
   /** Players who haven't confirmed they're 13 or older can't post trash talk or create leagues, and get no push alerts. */
   can_talk: boolean;
+  /** Optional real names, 13+ only. Only ever sent to the player themself; nobody else's ApiPlayer carries them. */
+  first_name: string | null;
+  last_name: string | null;
 };
 
 /* Sessions */
 
-export type JoinRequest = { name: string; age_band: AgeBand };
+export type JoinRequest = { name: string; age_band: AgeBand; first_name?: string | null; last_name?: string | null };
 export type RestoreRequest = { code: string };
+/** POST /session/email-code. Always 200 for a valid address, matched or not. */
+export type EmailCodeRequest = { email: string };
+/** POST /session/email-login. Answers with a SessionResponse. */
+export type EmailLoginRequest = { email: string; code: string };
 export type SessionResponse = { token: string; player: ApiPlayer };
 
 /* Me */
+
+/**
+ * The player's email, as the app may see it: a masked hint, never the address.
+ * `status` is `pending` until the address (or, for a player under 13, a parent)
+ * confirms from the link in the email.
+ */
+export type ApiEmail = {
+  /** "r***@gmail.com" */
+  address_hint: string | null;
+  status: "pending" | "confirmed" | "unsubscribed";
+  /** `parent` when the player is under 13 and a parent has to say yes. */
+  relation: "self" | "parent";
+  want_results: boolean;
+  want_newsletter: boolean;
+};
+
+/** PUT /me/email. The player's age band decides whether this goes to a parent. */
+export type EmailPutRequest = { email: string; results: boolean; newsletter: boolean };
+export type EmailPutResponse = { status: "check-your-inbox" | "parent-check"; email: ApiEmail | null };
+/** PATCH /me/email. Both off unsubscribes. */
+export type EmailPatchRequest = { results?: boolean; newsletter?: boolean };
+export type EmailPatchResponse = { email: ApiEmail | null };
 
 export type MeResponse = {
   player: ApiPlayer;
@@ -47,6 +76,8 @@ export type MeResponse = {
   season: string;
   /** Ids of the players this player has muted, so the app can offer "Unmute". */
   muted: string[];
+  /** null until the player adds an email. */
+  email: ApiEmail | null;
 };
 export type MePatch = {
   display_name?: string;
@@ -55,6 +86,9 @@ export type MePatch = {
   /** Expo push token, like ExponentPushToken[xxxx]. null turns push off for this account. */
   push_token?: string | null;
   push_enabled?: Partial<PushSettings>;
+  /** Optional real names, 13+ only. Private: only Jaiye and Remi see them. Empty string or null clears one. */
+  first_name?: string | null;
+  last_name?: string | null;
 };
 
 /* Weeks and picks */

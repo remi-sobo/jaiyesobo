@@ -20,6 +20,13 @@ const nextConfig: NextConfig = {
       fallback: [],
     };
   },
+  async headers() {
+    // Email links carry a token in the query string: never pass it on in a Referer header.
+    return [
+      { source: "/email/:path*", headers: [{ key: "Referrer-Policy", value: "no-referrer" }] },
+      { source: "/api/email/:path*", headers: [{ key: "Referrer-Policy", value: "no-referrer" }] },
+    ];
+  },
   async redirects() {
     // Vol. 01 had Ball, Build and Read as their own doors. Vol. 02 folds
     // all three into Now, so the old URLs keep working instead of 404ing.

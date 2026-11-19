@@ -167,10 +167,68 @@ the same lock rules; the public Supabase keys still can't write anything.
   free stats API if not.
 - AI: Claude via the Anthropic setup the site already uses.
 
+## 7b. Autopilot (weekly, no new crons)
+
+Code: `lib/sportsbook/autopilot.ts`. It reuses the nightly cron, the weekly cron, the live sync
+and the admin actions.
+
+- **Saturday:** next week drafts itself. The nightly cron (10:00 UTC, which is Saturday and Sunday
+  early morning Pacific) calls `prepNextWeek`: on a Saturday or Sunday Pacific, if next week has no
+  row or is a draft with no picks, the AI drafts it. A week that already has picks is never redrafted.
+  Failures are logged and retried by the next night's run.
+- **Approve:** Remi opens `/admin/sportsbook` (it lands on next week Saturday and Sunday, and a
+  red banner at the top of every admin week points to it) and taps **Approve Week N**, any time.
+  That writes `{ at }` to `app_config` under the key `sb_approved:<season>:<week>` (for example
+  `sb_approved:2026-27:5`). **Undo** deletes the key. Redrafting the whole slate clears it.
+- **Sunday 6:00pm Pacific:** an approved week goes live. `opensAt` is the later of 6:00pm Pacific the
+  evening before the week's `starts_on` (computed from Pacific midnight, so it is DST safe) and the
+  previous week's last pick lock. It opens on the first Sportsbook page view after that (the live sync),
+  the moment Remi approves if that time has already passed, or at the latest the next nightly run.
+- **Monday 12:00am Pacific:** the fallback. A draft week with picks opens at its `starts_on` midnight
+  even if nobody approved it. The weekly cron (Monday 11:00 UTC) also drafts a missing current week
+  first, then opens whatever is ready, so a week with no row is drafted and opened in one run.
+- **Open rule:** open when (approved and now >= `opensAt`) or now >= week start. Only drafts with at
+  least one pick open. **Open now** in admin still opens a week by hand at any time.
+- **Two open weeks:** the new week opens Sunday evening while the old one is still `open` (grading
+  and close-out happen Monday). The featured week is the highest `open` week, so the public page and
+  the app switch to the new week at that moment, and the old week stays reachable at its own URL.
+
+## 7c. Email
+
+Email is opt in, free to send within Resend's free tier, and inert until `RESEND_API_KEY` is set
+(every send logs and skips). Code lives in `lib/email/`; tables are `sb_subscribers` and
+`sb_email_log` (migration 030, RLS on, no policies, server only).
+
+- **Who.** Players (website join form, app join screen, app Settings, a small prompt on the week
+  page and the app's This Week) and fans (the newsletter box on the home page, /pod, each episode
+  and each column). Addresses are stored lowercased, one row per address.
+- **Consent.** Nothing is sent until an address is confirmed from a link in an email. A player under
+  13 (or an old account with no age answer) can only use a parent's address: the first email is a
+  parent consent email ("Yes, send <name>'s results to me"). The fan box asks "I'm 13 or older" or
+  "I'm a parent signing up my kid". Confirm links last 7 days; unsubscribe and preferences links
+  never expire. Account deletion removes the address.
+- **What.** Two kinds, each its own toggle: Monday results and Jaiye's newsletter (new episode or
+  column). Every email has an unsubscribe link, a "Manage what I get" link
+  (`/email/preferences?t=`) and `List-Unsubscribe` one click headers (`POST /api/email/unsubscribe`).
+- **Monday results.** `closeOutWeeks(now, { recap: true })` (the weekly and nightly cron jobs) calls
+  `sendResultsEmails(n)` for final weeks published in the last 7 days, after recaps are written. A
+  week still missing its recap is held up to 36 hours, then sent without it. Subject: "Week N:
+  <winner> won. You finished <ordinal>." for a player who played that week, "Week N: <winner> won"
+  for everyone else. Sends one at a time with a 0.6 second gap and stop after 150 seconds; the next
+  run finishes the rest. `sb_email_log` has a unique (subscriber, dedupe key) index
+  (`results:<season>:<n>`, `newsletter:<kind>:<slug>`), so reruns never send twice.
+- **Newsletter.** Admin, Run It Back Picks page, "Newsletter" section: pick an episode or column,
+  preview, "Send test to me" (to the contact address), "Send to N subscribers".
+- **Env.** `RESEND_API_KEY`, `EMAIL_FROM` (default "Jaiye at Run It Back <picks@jaiyesobo.com>"),
+  `EMAIL_REPLY_TO` (default the contact address), `EMAIL_MAILING_ADDRESS` (overrides the footer address; the default is the work address in `lib/email/templates.ts`).
+  `jaiyesobo.com` must be verified in Resend (SPF and DKIM) before sending.
+- **Later.** `phone` and `want_sms` on `sb_subscribers` are reserved for text messages (Twilio).
+  Nothing reads them yet.
+
 ## 8. Not in v1
 
 - Real sportsbook odds (AI lines from stats only).
-- Push or email notifications.
+- Push notifications (email came later, see 7c).
 - Challenger accounts with email or passwords (display name and player code only).
 - Live in-game updates (results update nightly and on demand, not play by play).
 
@@ -195,6 +253,5 @@ the same lock rules; the public Supabase keys still can't write anything.
 - Fan extras (no free text, nothing to moderate): emoji reactions on revealed picks, a weekly
   fan vote on who wins (Jaiye or Remi), and one optional line of trash talk on Jaiye's and
   Remi's own picks.
-- Phase 2 ideas, not built: a Monday email to challengers (opt in, 13+ or a parent's email,
-  unsubscribe link, needs an email service like Resend), and challenger comments (AI screened
-  and held for approval).
+- Monday email to challengers: built, see section 7c. Phase 2 idea, not built: challenger comments
+  (AI screened and held for approval).

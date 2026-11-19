@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
+import { alertPlayer } from "@/lib/sportsbook/alerts";
 import { createServiceClient } from "@/lib/supabase/server";
 import { ActionError, savePick, submitPicks } from "@/lib/sportsbook/actions";
 import { toggleReaction, isReactionKey } from "@/lib/sportsbook/fans";
@@ -17,7 +18,8 @@ import {
   renameLeague,
 } from "@/lib/sportsbook/leagues";
 import { overLimit } from "@/lib/sportsbook/limits";
-import { challengerByCode, checkDisplayName, createChallenger, isAgeBand } from "@/lib/sportsbook/players";
+import { challengerByCode, checkDisplayName, checkRealNames, createChallenger, isAgeBand } from "@/lib/sportsbook/players";
+import { requestLoginCode, verifyLoginCode } from "@/lib/email/login";
 import { rivalRecord, topRivals } from "@/lib/sportsbook/rivals";
 import { deleteAccount, deleteTalk, fileReport, isReportContext, mutedBy, playerFlags, postTalk, setMute } from "@/lib/sportsbook/safety";
 import { scheduleLiveSync } from "@/lib/sportsbook/live";
@@ -26,6 +28,7 @@ import { TALK_KEYS, TALK_LINES } from "@/lib/sportsbook/talk";
 import { featuredWeekNumber, loadWeekView } from "@/lib/sportsbook/view";
 import { getPicks, getWeek, listWeeks } from "@/lib/sportsbook/data";
 import { episodeForWeek } from "@/lib/app-api/episode";
+import { apiEmailFor, subscribe, updatePrefsForPlayer } from "@/lib/email/subscribers";
 import {
   apiLeague,
   apiLeagues,
@@ -43,6 +46,8 @@ import {
 } from "@/lib/app-api/server";
 import type {
   ApiLeagueDetail,
+  EmailPatchResponse,
+  EmailPutResponse,
   ApiLeagueMember,
   InviteResponse,
   MeResponse,
@@ -160,9 +165,12 @@ async function handle(method: string, path: string[], req: Request): Promise<Res
       const check = checkDisplayName(bd.name);
       if (!check.ok) throw new HttpError(400, check.error);
       if (!isAgeBand(bd.age_band)) throw new HttpError(400, "Tell us if you're 13 or older.");
+      const real = checkRealNames(bd.first_name, bd.last_name, bd.age_band);
+      if (!real.ok) throw new HttpError(400, real.error);
       if (await overLimit(req, "join")) throw new HttpError(429, "Too many new players from here. Try later.");
-      const { id } = await createChallenger(check.name, bd.age_band);
+      const { id } = await createChallenger(check.name, bd.age_band, real.names);
       const token = await createSession(id);
+      after(() => alertPlayer("new", id, { via: "app" }));
       const p = (await loadPlayer(id))!;
       return json({ token, player: apiPlayer(p) } satisfies SessionResponse, 201);
     }
@@ -172,7 +180,26 @@ async function handle(method: string, path: string[], req: Request): Promise<Res
       const id = await challengerByCode(str(bd.code));
       if (!id) throw new HttpError(404, "No player with that code.");
       const token = await createSession(id);
+      after(() => alertPlayer("back", id, { via: "app", how: "player code" }));
       const p = (await loadPlayer(id))!;
+      return json({ token, player: apiPlayer(p) } satisfies SessionResponse);
+    }
+    case route === "POST /session/email-code": {
+      const bd = await body(req);
+      if (await overLimit(req, "login")) throw new HttpError(429, "Too many tries. Wait a bit.");
+      const res = await requestLoginCode(bd.email);
+      if (!res.ok) throw new HttpError(400, res.error);
+      return ok();
+    }
+    case route === "POST /session/email-login": {
+      const bd = await body(req);
+      if (await overLimit(req, "restore")) throw new HttpError(429, "Too many tries. Wait a bit.");
+      const res = await verifyLoginCode(bd.email, bd.code);
+      if (!res.ok) throw new HttpError(400, res.error);
+      const token = await createSession(res.playerId);
+      const back = res.playerId;
+      after(() => alertPlayer("back", back, { via: "app", how: "email code" }));
+      const p = (await loadPlayer(res.playerId))!;
       return json({ token, player: apiPlayer(p) } satisfies SessionResponse);
     }
     case route === "DELETE /session": {
@@ -204,7 +231,33 @@ async function handle(method: string, path: string[], req: Request): Promise<Res
 
   switch (true) {
     case route === "GET /me":
-      return json({ player: apiPlayer(me), leagues: await apiLeagues(me), season: SB_SEASON, muted: [...(await mutedBy(me.id))] } satisfies MeResponse);
+      return json({ player: apiPlayer(me), leagues: await apiLeagues(me), season: SB_SEASON, muted: [...(await mutedBy(me.id))], email: await apiEmailFor(me.id) } satisfies MeResponse);
+    case route === "PUT /me/email": {
+      // Same path as the website. The player's own age band decides whether a parent has to say yes.
+      const bd = await body(req);
+      if (await overLimit(req, "email")) throw new HttpError(429, "Too many tries. Try again later.");
+      const res = await subscribe({
+        email: bd.email,
+        playerId: me.id,
+        ageBand: me.age_band,
+        source: "app",
+        wantResults: bd.results !== false,
+        wantNewsletter: bd.newsletter !== false,
+      });
+      if (!res.ok) throw new HttpError(400, res.error);
+      return json({ status: res.status, email: await apiEmailFor(me.id) } satisfies EmailPutResponse);
+    }
+    case route === "PATCH /me/email": {
+      const bd = await body(req);
+      const cur = await apiEmailFor(me.id);
+      if (!cur || cur.status === "unsubscribed") throw new HttpError(404, "Add an email first.");
+      const ok = await updatePrefsForPlayer(me.id, {
+        results: typeof bd.results === "boolean" ? bd.results : cur.want_results,
+        newsletter: typeof bd.newsletter === "boolean" ? bd.newsletter : cur.want_newsletter,
+      });
+      if (!ok) throw new HttpError(404, "Add an email first.");
+      return json({ email: await apiEmailFor(me.id) } satisfies EmailPatchResponse);
+    }
     case route === "PATCH /me": {
       const bd = await body(req);
       const patch: Record<string, unknown> = {};
@@ -213,6 +266,17 @@ async function handle(method: string, path: string[], req: Request): Promise<Res
         const check = checkDisplayName(bd.display_name);
         if (!check.ok) throw new HttpError(400, check.error);
         patch.display_name = check.name;
+      }
+      if (bd.first_name !== undefined || bd.last_name !== undefined) {
+        if (await overLimit(req, "name")) throw new HttpError(429, "Slow down a little.");
+        const real = checkRealNames(
+          bd.first_name !== undefined ? bd.first_name : me.first_name,
+          bd.last_name !== undefined ? bd.last_name : me.last_name,
+          me.age_band,
+        );
+        if (!real.ok) throw new HttpError(400, real.error);
+        patch.first_name = real.names.first_name;
+        patch.last_name = real.names.last_name;
       }
       // Accounts made before the age question can answer it once. Anyone who already has an answer keeps it.
       let ageBand = me.age_band;
@@ -241,7 +305,7 @@ async function handle(method: string, path: string[], req: Request): Promise<Res
         if (error) throw error;
       }
       const p = (await loadPlayer(me.id))!;
-      return json({ player: apiPlayer(p), leagues: await apiLeagues(p), season: SB_SEASON, muted: [...(await mutedBy(p.id))] } satisfies MeResponse);
+      return json({ player: apiPlayer(p), leagues: await apiLeagues(p), season: SB_SEASON, muted: [...(await mutedBy(p.id))], email: await apiEmailFor(p.id) } satisfies MeResponse);
     }
     case route === "DELETE /me":
       await deleteAccount(me.id);
@@ -442,11 +506,11 @@ async function run(method: string, req: Request, ctx: Ctx): Promise<Response> {
 // Next fills in OPTIONS (204 plus Allow) when a route file doesn't export one. This keeps that
 // answer for every origin and adds the preflight headers for the dev origins only.
 export const OPTIONS = (req: Request) => {
-  const res = new Response(null, { status: 204, headers: { Allow: "DELETE, GET, HEAD, OPTIONS, PATCH, POST" } });
+  const res = new Response(null, { status: 204, headers: { Allow: "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT" } });
   const origin = devOrigin(req);
   if (origin) {
     res.headers.set("Access-Control-Allow-Origin", origin);
-    res.headers.set("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
+    res.headers.set("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
     res.headers.set("Access-Control-Allow-Headers", "authorization,content-type");
     res.headers.set("Access-Control-Max-Age", "600");
     res.headers.append("Vary", "Origin");
@@ -456,4 +520,5 @@ export const OPTIONS = (req: Request) => {
 export const GET = (req: Request, ctx: Ctx) => run("GET", req, ctx);
 export const POST = (req: Request, ctx: Ctx) => run("POST", req, ctx);
 export const PATCH = (req: Request, ctx: Ctx) => run("PATCH", req, ctx);
+export const PUT = (req: Request, ctx: Ctx) => run("PUT", req, ctx);
 export const DELETE = (req: Request, ctx: Ctx) => run("DELETE", req, ctx);

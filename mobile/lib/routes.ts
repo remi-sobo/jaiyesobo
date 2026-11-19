@@ -3,6 +3,12 @@
 // response shape only needs to be written once.
 import type {
   ApiBoard,
+  EmailCodeRequest,
+  EmailLoginRequest,
+  EmailPatchRequest,
+  EmailPatchResponse,
+  EmailPutRequest,
+  EmailPutResponse,
   ApiLeague,
   ApiLeagueDetail,
   ApiOk,
@@ -46,6 +52,18 @@ export async function restoreSession(req: RestoreRequest): Promise<SessionRespon
   return res;
 }
 
+/** POST /session/email-code — email a login code. Same answer whether or not the address is on a player. */
+export function requestEmailCode(req: EmailCodeRequest): Promise<ApiOk> {
+  return appApi<ApiOk>("/session/email-code", { method: "POST", body: req, anonymous: true });
+}
+
+/** POST /session/email-login — sign in with the emailed code. Stores the token. */
+export async function emailLogin(req: EmailLoginRequest): Promise<SessionResponse> {
+  const res = await appApi<SessionResponse>("/session/email-login", { method: "POST", body: req, anonymous: true });
+  await setToken(res.token);
+  return res;
+}
+
 /** DELETE /session — revoke this phone's token server-side. Call before clearing it locally. */
 export function signOut(): Promise<ApiOk> {
   return appApi<ApiOk>("/session", { method: "DELETE" });
@@ -54,6 +72,16 @@ export function signOut(): Promise<ApiOk> {
 /** GET /me — current player, their leagues, the active season. 401 if signed out. */
 export function getMe(signal?: AbortSignal): Promise<MeResponse> {
   return appApi<MeResponse>("/me", { signal });
+}
+
+/** PUT /me/email — add or change the player's email. Under 13, the confirm email goes to a parent. */
+export function putEmail(req: EmailPutRequest): Promise<EmailPutResponse> {
+  return appApi<EmailPutResponse>("/me/email", { method: "PUT", body: req });
+}
+
+/** PATCH /me/email — the two toggles. Both off unsubscribes. */
+export function patchEmail(req: EmailPatchRequest): Promise<EmailPatchResponse> {
+  return appApi<EmailPatchResponse>("/me/email", { method: "PATCH", body: req });
 }
 
 /** PATCH /me — change name, push settings, or push token. Returns the fresh /me payload. */

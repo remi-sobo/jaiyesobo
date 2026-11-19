@@ -1,0 +1,558 @@
+{
+ "episode": "episode-03",
+ "status": "draft",
+ "note": "Vertical clips for YouTube Shorts. Each short is a list of pieces. 'clip' is [start, end] in raw seconds. 'hold' freezes on Jaiye's face while a sound plays (name from podcast/sfx/kit.json or a file in podcast/sfx/memes/). 'end' is the closing card, with an optional sound. Captions come from words.json. A clip can carry a 'card' (kicker, title, rows, result) that shows in the strip under the picture until the next clip. The first three shorts were built on 2026-11-10 with the earlier layout (no card strip) and Remi liked them as they are; do not rebuild them without asking.",
+ "shorts": [
+  {
+   "id": "dont-tell-my-dad",
+   "kicker": "On The Court",
+   "hook": [
+    "Don't tell",
+    "my dad"
+   ],
+   "youtube_title": "Don't tell my dad I made a second account",
+   "pieces": [
+    {
+     "clip": [
+      422.2,
+      427.95
+     ]
+    },
+    {
+     "hold": "spongebob-fail",
+     "max": 2.4
+    },
+    {
+     "clip": [
+      432.2,
+      433.85
+     ]
+    },
+    {
+     "clip": [
+      441.7,
+      452.95
+     ]
+    },
+    {
+     "hold": "record-scratch",
+     "max": 1.2
+    },
+    {
+     "clip": [
+      611.8,
+      615.85
+     ]
+    },
+    {
+     "clip": [
+      618.5,
+      623.35
+     ]
+    },
+    {
+     "hold": "fahhh",
+     "max": 2.0
+    },
+    {
+     "clip": [
+      625.6,
+      628.0
+     ]
+    },
+    {
+     "end": "boom"
+    }
+   ]
+  },
+  {
+   "id": "negative-nine",
+   "kicker": "On The Court",
+   "hook": [
+    "What I really",
+    "finished at"
+   ],
+   "youtube_title": "I finished at 19. I mean 17. I mean...",
+   "pieces": [
+    {
+     "clip": [
+      889.4,
+      894.2
+     ]
+    },
+    {
+     "clip": [
+      896.8,
+      901.95
+     ]
+    },
+    {
+     "hold": "wrong-buzzer",
+     "max": 1.0
+    },
+    {
+     "clip": [
+      903.6,
+      909.95
+     ]
+    },
+    {
+     "hold": "spongebob-fail",
+     "max": 3.4
+    },
+    {
+     "clip": [
+      928.5,
+      935.85
+     ]
+    },
+    {
+     "end": "airhorn"
+    }
+   ]
+  },
+  {
+   "id": "zero-votes-for-dad",
+   "kicker": "On The Court",
+   "hook": [
+    "Zero votes",
+    "for my dad"
+   ],
+   "youtube_title": "Zero votes for my dad",
+   "pieces": [
+    {
+     "clip": [
+      102.2,
+      108.95
+     ]
+    },
+    {
+     "hold": "you-are-an-idiot",
+     "max": 2.8
+    },
+    {
+     "clip": [
+      109.2,
+      112.85
+     ]
+    },
+    {
+     "clip": [
+      132.8,
+      137.95
+     ]
+    },
+    {
+     "hold": "fahhh",
+     "max": 2.0
+    },
+    {
+     "clip": [
+      642.0,
+      644.95
+     ]
+    },
+    {
+     "hold": "metal-pipe",
+     "max": 1.4
+    },
+    {
+     "clip": [
+      648.5,
+      649.3
+     ]
+    },
+    {
+     "clip": [
+      651.7,
+      653.25
+     ]
+    },
+    {
+     "end": "sad-trombone"
+    }
+   ]
+  },
+  {
+   "id": "dumb-dums",
+   "kicker": "On The Court",
+   "hook": [
+    "They are",
+    "dumb dums"
+   ],
+   "youtube_title": "Whoever picked Phoenix...",
+   "pieces": [
+    {
+     "clip": [
+      138.7,
+      146.5
+     ],
+     "card": {
+      "kicker": "Pick 3 / 2 points",
+      "title": "OKC by more than 7.5?",
+      "rows": [
+       [
+        "Jaiye",
+        "Yes"
+       ],
+       [
+        "Dad",
+        "Yes"
+       ]
+      ]
+     }
+    },
+    {
+     "clip": [
+      149.6,
+      154.0
+     ],
+     "card": {
+      "kicker": "Pick 3 / 2 points",
+      "title": "OKC by more than 7.5?",
+      "rows": [
+       [
+        "Jaiye",
+        "Yes"
+       ],
+       [
+        "Dad",
+        "Yes"
+       ]
+      ]
+     }
+    },
+    {
+     "hold": "rizz",
+     "max": 1.4
+    },
+    {
+     "clip": [
+      168.2,
+      173.6
+     ],
+     "card": {
+      "kicker": "Pick 3 / 2 points",
+      "title": "OKC by more than 7.5?",
+      "rows": [
+       [
+        "Jaiye",
+        "Yes",
+        "hit"
+       ],
+       [
+        "Dad",
+        "Yes",
+        "hit"
+       ]
+      ],
+      "result": [
+       "Final",
+       "OKC 125",
+       "PHX 114"
+      ]
+     }
+    },
+    {
+     "hold": "yeah-boiii",
+     "max": 2.6
+    },
+    {
+     "clip": [
+      179.6,
+      185.4
+     ],
+     "card": {
+      "kicker": "Pick 3 / 2 points",
+      "title": "OKC by more than 7.5?",
+      "rows": [
+       [
+        "Jaiye",
+        "Yes",
+        "hit"
+       ],
+       [
+        "Dad",
+        "Yes",
+        "hit"
+       ]
+      ],
+      "result": [
+       "Final",
+       "OKC 125",
+       "PHX 114"
+      ]
+     }
+    },
+    {
+     "hold": "faaah",
+     "max": 2.0
+    },
+    {
+     "end": "boom"
+    }
+   ]
+  },
+  {
+   "id": "that-was-luck",
+   "kicker": "On The Court",
+   "hook": [
+    "That was",
+    "just luck"
+   ],
+   "youtube_title": "Everybody said Cade. That was luck.",
+   "pieces": [
+    {
+     "clip": [
+      285.1,
+      288.7
+     ],
+     "card": {
+      "kicker": "Pick 6 / 2 points",
+      "title": "Randle or Cade?",
+      "rows": [
+       [
+        "Jaiye",
+        "Cade"
+       ],
+       [
+        "Dad",
+        "Randle"
+       ]
+      ]
+     }
+    },
+    {
+     "clip": [
+      289.2,
+      293.3
+     ],
+     "card": {
+      "kicker": "Pick 6 / 2 points",
+      "title": "Randle or Cade?",
+      "rows": [
+       [
+        "Jaiye",
+        "Cade"
+       ],
+       [
+        "Dad",
+        "Randle"
+       ]
+      ]
+     }
+    },
+    {
+     "clip": [
+      294.2,
+      302.2
+     ],
+     "card": {
+      "kicker": "Pick 6 / 2 points",
+      "title": "Randle or Cade?",
+      "rows": [
+       [
+        "Jaiye",
+        "Cade",
+        "miss"
+       ],
+       [
+        "Dad",
+        "Randle",
+        "hit"
+       ]
+      ],
+      "result": [
+       "Final",
+       "Randle 24",
+       "Cade 19"
+      ]
+     }
+    },
+    {
+     "hold": "huh",
+     "max": 1.0
+    },
+    {
+     "clip": [
+      774.5,
+      776.8
+     ],
+     "card": {
+      "kicker": "Pick 6 / 2 points",
+      "title": "Randle or Cade?",
+      "rows": [
+       [
+        "Jaiye",
+        "Cade",
+        "miss"
+       ],
+       [
+        "Dad",
+        "Randle",
+        "hit"
+       ]
+      ],
+      "result": [
+       "Final",
+       "Randle 24",
+       "Cade 19"
+      ]
+     }
+    },
+    {
+     "clip": [
+      778.0,
+      779.9
+     ],
+     "card": {
+      "kicker": "Pick 6 / 2 points",
+      "title": "Randle or Cade?",
+      "rows": [
+       [
+        "Jaiye",
+        "Cade",
+        "miss"
+       ],
+       [
+        "Dad",
+        "Randle",
+        "hit"
+       ]
+      ],
+      "result": [
+       "Final",
+       "Randle 24",
+       "Cade 19"
+      ]
+     }
+    },
+    {
+     "hold": "bruh-meme",
+     "max": 1.0
+    },
+    {
+     "end": "aww"
+    }
+   ]
+  },
+  {
+   "id": "i-believe-in-portland",
+   "kicker": "On The Court",
+   "hook": [
+    "I believe",
+    "in Portland"
+   ],
+   "youtube_title": "I believe in Portland all the way",
+   "pieces": [
+    {
+     "clip": [
+      780.3,
+      792.0
+     ],
+     "card": {
+      "kicker": "Pick 7 / 3 points",
+      "title": "Luka double-double?",
+      "rows": [
+       [
+        "Jaiye",
+        "No"
+       ],
+       [
+        "Dad",
+        "Yes"
+       ]
+      ]
+     }
+    },
+    {
+     "clip": [
+      792.0,
+      795.2
+     ],
+     "card": {
+      "kicker": "Pick 7 / 3 points",
+      "title": "Luka double-double?",
+      "rows": [
+       [
+        "Jaiye",
+        "No",
+        "hit"
+       ],
+       [
+        "Dad",
+        "Yes",
+        "miss"
+       ]
+      ]
+     }
+    },
+    {
+     "hold": "yeah-boiii",
+     "max": 2.6
+    },
+    {
+     "clip": [
+      795.4,
+      803.6
+     ],
+     "card": {
+      "kicker": "Pick 7 / 3 points",
+      "title": "Luka double-double?",
+      "rows": [
+       [
+        "Jaiye",
+        "No",
+        "hit"
+       ],
+       [
+        "Dad",
+        "Yes",
+        "miss"
+       ]
+      ],
+      "result": [
+       "Luka",
+       "41 pts",
+       "5 reb, 9 ast"
+      ]
+     }
+    },
+    {
+     "hold": "huh",
+     "max": 1.0
+    },
+    {
+     "clip": [
+      807.2,
+      809.3
+     ],
+     "card": {
+      "kicker": "Pick 7 / 3 points",
+      "title": "Luka double-double?",
+      "rows": [
+       [
+        "Jaiye",
+        "No",
+        "hit"
+       ],
+       [
+        "Dad",
+        "Yes",
+        "miss"
+       ]
+      ],
+      "result": [
+       "Luka",
+       "41 pts",
+       "5 reb, 9 ast"
+      ]
+     }
+    },
+    {
+     "end": "rizz"
+    }
+   ]
+  }
+ ]
+}

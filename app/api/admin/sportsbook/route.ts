@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { sendWaitingConfirmations } from "@/lib/email/subscribers";
 import { requireAdmin } from "@/lib/session";
 import { createServiceClient } from "@/lib/supabase/server";
 import { isTeamCode } from "@/lib/nba/teams";
@@ -18,9 +19,12 @@ import {
   submitPicks,
   updateItem,
 } from "@/lib/sportsbook/actions";
+import { approveWeek, unapproveWeek } from "@/lib/sportsbook/autopilot";
 import { checkDisplayName, getHousePlayers } from "@/lib/sportsbook/players";
 import { archiveLeague, createLeague } from "@/lib/sportsbook/leagues";
 import { resolveReports } from "@/lib/sportsbook/safety";
+import { sendNewsletter, sendNewsletterTest, type NewsletterKind } from "@/lib/email/campaigns";
+import { CONTACT_EMAIL } from "@/lib/sportsbook/contact";
 import { SB_SEASON } from "@/lib/sportsbook/weeks";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +38,7 @@ const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : u
  * POST /api/admin/sportsbook { action, ... }
  *
  * Every admin move for Run It Back Picks goes through here: drafting the
- * slate, editing it, opening the week, Jaiye's and Remi's picks on the
+ * slate, editing it, approving it (the weekly autopilot opens it Sunday 6pm), opening the week, Jaiye's and Remi's picks on the
  * shared screen, hand grading, recaps, finalizing, challenger moderation,
  * leagues, reports and Season Pass grants for beta testers.
  */
@@ -49,9 +53,13 @@ export async function POST(req: Request) {
   const week = num(body.week);
   try {
     switch (body.action) {
-      case "draft":
+      case "draft": {
         if (!week) break;
-        return NextResponse.json({ ok: true, count: await draftWeek(week) });
+        const count = await draftWeek(week);
+        // A new slate is a new thing to approve; the Monday fallback still covers it.
+        await unapproveWeek(week);
+        return NextResponse.json({ ok: true, count });
+      }
       case "regenerate":
         await regenerateItem(str(body.item_id));
         return NextResponse.json({ ok: true });
@@ -78,6 +86,13 @@ export async function POST(req: Request) {
       case "open":
         if (!week) break;
         await openWeek(week);
+        return NextResponse.json({ ok: true });
+      case "approve":
+        if (!week) break;
+        return NextResponse.json({ ok: true, ...(await approveWeek(week)) });
+      case "unapprove":
+        if (!week) break;
+        await unapproveWeek(week);
         return NextResponse.json({ ok: true });
       case "pick": {
         const who = body.player === "remi" || body.player === "jaiye" ? body.player : null;
@@ -150,6 +165,24 @@ export async function POST(req: Request) {
           .eq("kind", "challenger");
         if (error) throw error;
         return NextResponse.json({ ok: true });
+      }
+      case "email_catchup": {
+        // Confirm emails for anyone who signed up before RESEND_API_KEY was set.
+        return NextResponse.json({ ok: true, ...(await sendWaitingConfirmations()) });
+      }
+      case "newsletter_test": {
+        // One copy to Remi's address. No dedupe log, so it can be sent as often as needed.
+        const kind: NewsletterKind = body.kind === "column" ? "column" : "episode";
+        const res = await sendNewsletterTest({ kind, slug: str(body.slug), to: CONTACT_EMAIL, note: str(body.note) });
+        if (res.status === "error") throw new ActionError(res.error);
+        return NextResponse.json({ ok: true, status: res.status });
+      }
+      case "newsletter_send": {
+        const kind: NewsletterKind = body.kind === "column" ? "column" : "episode";
+        // Stay inside this route's 120 second limit. Anything left is finished by pressing the button again: nobody gets it twice.
+        const res = await sendNewsletter({ kind, slug: str(body.slug), note: str(body.note), budgetMs: 60_000 });
+        if (res.errors && !res.sent && !res.already) throw new ActionError("Nothing was sent. Check the server log.");
+        return NextResponse.json({ ok: true, ...res });
       }
       case "settings": {
         const fav_teams = (Array.isArray(body.fav_teams) ? body.fav_teams : []).map(str).filter(isTeamCode);

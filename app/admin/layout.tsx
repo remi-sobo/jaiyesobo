@@ -3,6 +3,7 @@ import { getAdminSession } from "@/lib/session";
 import Sidebar from "@/components/admin/sidebar";
 import { getSidebarCounts } from "@/lib/admin-data";
 import { getActiveKid, getAllKids, type Kid } from "@/lib/admin-context";
+import { openCount } from "@/lib/instagram/data";
 
 export const metadata: Metadata = {
   title: "Admin · Sobo",
@@ -19,6 +20,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   let uploadsCount = 0;
   let pendingQuestions = 0;
   let newFeedback = 0;
+  let openReplies = 0;
   let activeKid: Kid = { id: "", display_name: "Jaiye" };
   let kids: Kid[] = [];
 
@@ -30,6 +32,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       uploadsCount = counts.uploadsCount;
       pendingQuestions = counts.pendingQuestions;
       newFeedback = counts.newFeedback;
+      openReplies = await openCount();
     } catch {
       // schema or seed not ready yet; just show zeros
     }
@@ -45,6 +48,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             uploadsCount={uploadsCount}
             pendingQuestions={pendingQuestions}
             newFeedback={newFeedback}
+            openReplies={openReplies}
             kids={kids}
             activeKidId={activeKid.id}
             activeKidName={activeKid.display_name}

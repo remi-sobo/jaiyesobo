@@ -1,13 +1,20 @@
 import Link from "next/link";
+import { instagram } from "@/lib/content/social";
 
 const links = [
-  { href: "/column", label: "Column" },
-  { href: "/pod", label: "Pod" },
-  { href: "/games", label: "Games" },
-  { href: "/history", label: "History" },
+  { href: "/on-the-court", label: "On The Court" },
+  { href: "/games", label: "Play" },
+  { href: "/runitback", label: "Run It Back Picks" },
+  { href: "/predictions", label: "Predictions" },
   { href: "/now", label: "Now" },
   { href: "/about", label: "About" },
   { href: "/feed.xml", label: "Feed" },
+];
+
+const legal = [
+  { href: "/privacy", label: "Privacy" },
+  { href: "/terms", label: "Terms" },
+  { href: "/runitback/parents", label: "For parents" },
 ];
 
 export default function Footer() {
@@ -37,10 +44,27 @@ export default function Footer() {
               </Link>
             </li>
           ))}
+          <li>
+            <a
+              href={instagram.url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-block py-1 text-[var(--color-mute)] transition-colors duration-300 hover:text-[var(--color-red)]"
+            >
+              Instagram ↗
+            </a>
+          </li>
         </ul>
 
         <div className="mt-10 flex flex-col gap-2 border-t border-[var(--color-line)] pt-7 font-[family-name:var(--font-jetbrains)] text-[0.65rem] uppercase tracking-[0.2em] text-[var(--color-mute)] sm:flex-row sm:justify-between">
           <div>Vol. 02 · 2026 · East Palo Alto</div>
+          <nav aria-label="Legal" className="flex flex-wrap gap-x-5 gap-y-1">
+            {legal.map((l) => (
+              <Link key={l.href} href={l.href} className="inline-flex min-h-6 items-center transition-colors duration-300 hover:text-[var(--color-red)]">
+                {l.label}
+              </Link>
+            ))}
+          </nav>
           <div>Built with Dad</div>
         </div>
       </div>

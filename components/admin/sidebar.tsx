@@ -9,6 +9,7 @@ type Props = {
   uploadsCount: number;
   pendingQuestions: number;
   newFeedback: number;
+  openReplies?: number;
   kids: Kid[];
   activeKidId: string;
   activeKidName: string;
@@ -18,6 +19,7 @@ export default function Sidebar({
   uploadsCount,
   pendingQuestions,
   newFeedback,
+  openReplies = 0,
   kids,
   activeKidId,
   activeKidName,
@@ -97,6 +99,22 @@ export default function Sidebar({
         <NavItem href="/admin/predictions" active={is("/admin/predictions")} label="NBA Predictions" />
       </NavGroup>
 
+      <NavGroup label="Site">
+        <NavItem href="/admin/analytics" active={is("/admin/analytics")} label="Analytics" />
+        <NavItem
+          href="/admin/replies"
+          active={is("/admin/replies")}
+          label="Replies"
+          right={
+            openReplies > 0 ? (
+              <span className="font-[family-name:var(--font-jetbrains)] text-[0.6rem] text-[var(--color-bone)] bg-[var(--color-red)] px-1.5 py-0.5 rounded-sm">
+                {openReplies}
+              </span>
+            ) : null
+          }
+        />
+      </NavGroup>
+
       <NavGroup label="System">
         <NavItem href="/admin/setup" active={is("/admin/setup")} label="Setup" />
       </NavGroup>
@@ -124,6 +142,8 @@ const MOBILE_LINKS = [
   { href: "/admin/feedback", label: "Feedback" },
   { href: "/admin/sportsbook", label: "Run It Back" },
   { href: "/admin/predictions", label: "Predictions" },
+  { href: "/admin/analytics", label: "Analytics" },
+  { href: "/admin/replies", label: "Replies" },
   { href: "/admin/setup", label: "Setup" },
 ];
 

@@ -1,0 +1,448 @@
+{
+ "words": [
+  {
+   "word": "All",
+   "start": 0.48,
+   "end": 0.8,
+   "confidence": 0.922
+  },
+  {
+   "word": "right.",
+   "start": 0.8,
+   "end": 1.44,
+   "confidence": 0.894
+  },
+  {
+   "word": "Um",
+   "start": 1.44,
+   "end": 1.76,
+   "confidence": 0.988
+  },
+  {
+   "word": "how",
+   "start": 2.64,
+   "end": 2.96,
+   "confidence": 0.988
+  },
+  {
+   "word": "far",
+   "start": 2.96,
+   "end": 3.28,
+   "confidence": 1.0
+  },
+  {
+   "word": "can",
+   "start": 3.28,
+   "end": 3.44,
+   "confidence": 1.0
+  },
+  {
+   "word": "the",
+   "start": 3.44,
+   "end": 3.6,
+   "confidence": 0.999
+  },
+  {
+   "word": "Blazers",
+   "start": 3.6,
+   "end": 4.16,
+   "confidence": 0.986
+  },
+  {
+   "word": "actually",
+   "start": 4.16,
+   "end": 4.4,
+   "confidence": 0.997
+  },
+  {
+   "word": "get",
+   "start": 4.4,
+   "end": 4.56,
+   "confidence": 0.999
+  },
+  {
+   "word": "this",
+   "start": 4.56,
+   "end": 4.64,
+   "confidence": 0.999
+  },
+  {
+   "word": "year?",
+   "start": 4.64,
+   "end": 4.88,
+   "confidence": 0.936
+  },
+  {
+   "word": "Are",
+   "start": 4.88,
+   "end": 5.04,
+   "confidence": 0.919
+  },
+  {
+   "word": "are",
+   "start": 5.04,
+   "end": 5.2,
+   "confidence": 0.926
+  },
+  {
+   "word": "they",
+   "start": 5.2,
+   "end": 5.44,
+   "confidence": 0.999
+  },
+  {
+   "word": "real",
+   "start": 5.44,
+   "end": 5.6,
+   "confidence": 0.999
+  },
+  {
+   "word": "contenders",
+   "start": 5.6,
+   "end": 6.08,
+   "confidence": 0.999
+  },
+  {
+   "word": "or",
+   "start": 6.16,
+   "end": 6.32,
+   "confidence": 0.97
+  },
+  {
+   "word": "or",
+   "start": 6.32,
+   "end": 6.48,
+   "confidence": 0.884
+  },
+  {
+   "word": "are",
+   "start": 6.48,
+   "end": 6.64,
+   "confidence": 0.983
+  },
+  {
+   "word": "they",
+   "start": 6.64,
+   "end": 6.8,
+   "confidence": 0.999
+  },
+  {
+   "word": "just",
+   "start": 6.8,
+   "end": 6.96,
+   "confidence": 1.0
+  },
+  {
+   "word": "playing",
+   "start": 6.96,
+   "end": 7.44,
+   "confidence": 0.929
+  },
+  {
+   "word": "or",
+   "start": 7.44,
+   "end": 7.68,
+   "confidence": 0.999
+  },
+  {
+   "word": "play",
+   "start": 7.68,
+   "end": 7.92,
+   "confidence": 0.999
+  },
+  {
+   "word": "off",
+   "start": 8.08,
+   "end": 8.24,
+   "confidence": 0.927
+  },
+  {
+   "word": "or",
+   "start": 8.32,
+   "end": 8.56,
+   "confidence": 0.999
+  },
+  {
+   "word": "like",
+   "start": 8.56,
+   "end": 8.72,
+   "confidence": 0.999
+  },
+  {
+   "word": "actually",
+   "start": 8.96,
+   "end": 9.6,
+   "confidence": 0.999
+  },
+  {
+   "word": "you",
+   "start": 9.92,
+   "end": 10.08,
+   "confidence": 0.98
+  },
+  {
+   "word": "know,",
+   "start": 10.08,
+   "end": 10.32,
+   "confidence": 0.926
+  },
+  {
+   "word": "championship",
+   "start": 10.32,
+   "end": 10.96,
+   "confidence": 0.989
+  },
+  {
+   "word": "contenders?",
+   "start": 10.96,
+   "end": 11.6,
+   "confidence": 0.952
+  },
+  {
+   "word": "Well",
+   "start": 11.6,
+   "end": 11.68,
+   "confidence": 0.912
+  },
+  {
+   "word": "I'm",
+   "start": 11.76,
+   "end": 12.0,
+   "confidence": 0.982
+  },
+  {
+   "word": "saying",
+   "start": 12.0,
+   "end": 12.24,
+   "confidence": 0.998
+  },
+  {
+   "word": "they're",
+   "start": 12.24,
+   "end": 12.56,
+   "confidence": 0.941
+  },
+  {
+   "word": "getting",
+   "start": 12.56,
+   "end": 12.96,
+   "confidence": 1.0
+  },
+  {
+   "word": "past",
+   "start": 12.96,
+   "end": 13.12,
+   "confidence": 0.998
+  },
+  {
+   "word": "the",
+   "start": 13.12,
+   "end": 13.36,
+   "confidence": 0.99
+  },
+  {
+   "word": "first",
+   "start": 13.36,
+   "end": 13.68,
+   "confidence": 0.999
+  },
+  {
+   "word": "round.",
+   "start": 13.68,
+   "end": 16.0,
+   "confidence": 0.902
+  },
+  {
+   "word": "For",
+   "start": 16.0,
+   "end": 16.32,
+   "confidence": 0.994
+  },
+  {
+   "word": "me",
+   "start": 16.32,
+   "end": 16.64,
+   "confidence": 1.0
+  },
+  {
+   "word": "it's",
+   "start": 16.8,
+   "end": 17.2,
+   "confidence": 0.998
+  },
+  {
+   "word": "between",
+   "start": 17.2,
+   "end": 17.92,
+   "confidence": 0.999
+  },
+  {
+   "word": "um",
+   "start": 18.08,
+   "end": 18.4,
+   "confidence": 0.995
+  },
+  {
+   "word": "a",
+   "start": 18.56,
+   "end": 18.8,
+   "confidence": 0.881
+  },
+  {
+   "word": "second",
+   "start": 18.8,
+   "end": 19.28,
+   "confidence": 1.0
+  },
+  {
+   "word": "round",
+   "start": 19.28,
+   "end": 19.6,
+   "confidence": 1.0
+  },
+  {
+   "word": "playing",
+   "start": 19.68,
+   "end": 20.08,
+   "confidence": 1.0
+  },
+  {
+   "word": "a",
+   "start": 20.08,
+   "end": 20.32,
+   "confidence": 0.998
+  },
+  {
+   "word": "really",
+   "start": 20.32,
+   "end": 20.56,
+   "confidence": 0.998
+  },
+  {
+   "word": "bad",
+   "start": 20.56,
+   "end": 20.88,
+   "confidence": 1.0
+  },
+  {
+   "word": "team",
+   "start": 20.88,
+   "end": 21.2,
+   "confidence": 0.999
+  },
+  {
+   "word": "and",
+   "start": 21.2,
+   "end": 21.44,
+   "confidence": 0.998
+  },
+  {
+   "word": "barely",
+   "start": 21.44,
+   "end": 21.84,
+   "confidence": 0.999
+  },
+  {
+   "word": "making",
+   "start": 21.84,
+   "end": 22.24,
+   "confidence": 1.0
+  },
+  {
+   "word": "it",
+   "start": 22.24,
+   "end": 22.4,
+   "confidence": 0.999
+  },
+  {
+   "word": "to",
+   "start": 22.4,
+   "end": 22.56,
+   "confidence": 0.948
+  },
+  {
+   "word": "the",
+   "start": 22.56,
+   "end": 22.72,
+   "confidence": 0.984
+  },
+  {
+   "word": "third",
+   "start": 22.72,
+   "end": 23.04,
+   "confidence": 0.998
+  },
+  {
+   "word": "round",
+   "start": 23.04,
+   "end": 23.36,
+   "confidence": 1.0
+  },
+  {
+   "word": "or",
+   "start": 23.6,
+   "end": 23.76,
+   "confidence": 1.0
+  },
+  {
+   "word": "um",
+   "start": 23.84,
+   "end": 24.08,
+   "confidence": 0.992
+  },
+  {
+   "word": "losing",
+   "start": 24.16,
+   "end": 24.64,
+   "confidence": 1.0
+  },
+  {
+   "word": "in",
+   "start": 24.64,
+   "end": 24.8,
+   "confidence": 0.994
+  },
+  {
+   "word": "the",
+   "start": 24.8,
+   "end": 24.88,
+   "confidence": 0.99
+  },
+  {
+   "word": "second",
+   "start": 24.88,
+   "end": 25.2,
+   "confidence": 0.998
+  },
+  {
+   "word": "round.",
+   "start": 25.2,
+   "end": 25.52,
+   "confidence": 0.891
+  },
+  {
+   "word": "That's",
+   "start": 25.52,
+   "end": 25.76,
+   "confidence": 0.992
+  },
+  {
+   "word": "what",
+   "start": 26.0,
+   "end": 26.16,
+   "confidence": 0.999
+  },
+  {
+   "word": "I",
+   "start": 26.16,
+   "end": 26.48,
+   "confidence": 0.999
+  },
+  {
+   "word": "think.",
+   "start": 26.48,
+   "end": 26.96,
+   "confidence": 0.955
+  }
+ ]
+}

@@ -6,7 +6,7 @@
  */
 
 import { anthropic } from "@ai-sdk/anthropic";
-import { generateObject, generateText } from "ai";
+import { generateText } from "ai";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/server";
 import { TEAMS, isTeamCode, type TeamCode } from "@/lib/nba/teams";
@@ -258,14 +258,35 @@ const AiItem = z.object({
   split: z.number().optional(),
   upset_picks: z.array(z.object({ team: z.string(), game_id: z.string() })).optional(),
 });
+
+/** What the model sends back: a list of items. Exported for tests. */
+export const DraftReply = z.object({ items: z.array(AiItem) });
 type AiItem = z.infer<typeof AiItem>;
 
+/** Pulls the JSON object out of a model reply, tolerating code fences or a stray sentence around it. */
+export function extractJson(text: string): unknown {
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start < 0 || end <= start) throw new Error("The AI reply had no JSON in it.");
+  return JSON.parse(text.slice(start, end + 1));
+}
+
+/**
+ * Asks for plain JSON and checks it with zod here, instead of using the API's
+ * structured output. Our item schema is too big for structured output ("Schema
+ * is too complex"), and every item is validated again in toDraftItem anyway.
+ */
 async function askModel<T extends z.ZodTypeAny>(schema: T, system: string, prompt: string): Promise<z.infer<T>> {
+  const shape = JSON.stringify(z.toJSONSchema(schema));
+  const fullSystem = `${system}
+
+Reply with only one JSON object that matches this JSON Schema. No prose before or after it and no code fences. Leave out fields that don't apply.
+${shape}`;
   let last: unknown;
   for (const model of MODELS) {
     try {
-      const { object } = await generateObject({ model: anthropic(model), schema, system, prompt });
-      return object as z.infer<T>;
+      const { text } = await generateText({ model: anthropic(model), system: fullSystem, prompt, maxOutputTokens: 16000 });
+      return schema.parse(extractJson(text)) as z.infer<T>;
     } catch (e) {
       last = e;
     }
@@ -543,7 +564,7 @@ export function toDraftItem(ai: AiItem, ctx: SlateContext): DraftItem | null {
 export async function draftSlate(ctx: SlateContext, avoid: string[] = []): Promise<DraftItem[]> {
   if (ctx.games.length === 0) throw new Error("No upcoming games this week.");
   // Structured output rejects array length rules, so counts are checked in code below.
-  const schema = z.object({ items: z.array(AiItem) });
+  const schema = DraftReply;
   const out = await askModel(
     schema,
     SYSTEM,
@@ -560,7 +581,7 @@ Build this week's slate: 11 or 12 items, at least 6 different types, exactly one
 
 /** One replacement item, optionally of a given type. */
 export async function draftOne(ctx: SlateContext, avoid: string[], type?: ItemType): Promise<DraftItem> {
-  const schema = z.object({ items: z.array(AiItem) });
+  const schema = DraftReply;
   const want = type && type !== "custom" ? `of type "${type}" (${ITEM_TYPE_LABEL[type]})` : "of a type that isn't already overused in the avoid list";
   const out = await askModel(
     schema,

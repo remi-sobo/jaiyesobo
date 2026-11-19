@@ -5,6 +5,7 @@ import { schedule } from "@/lib/content/publishing";
 import { formatShortDate, pad } from "@/lib/content/format";
 import { SectionLabel } from "@/components/site/type";
 import { GhostButton, PlayButton } from "@/components/site/buttons";
+import NewsletterBox from "@/components/site/newsletter-box";
 
 export default function OnTheCourt() {
   const ep = latestEpisode();
@@ -30,7 +31,7 @@ export default function OnTheCourt() {
       <div className="mx-auto max-w-[1200px]">
         <div className="grid gap-[clamp(24px,4vw,64px)] lg:grid-cols-2 lg:items-center">
           <div>
-            <SectionLabel>The Podcast</SectionLabel>
+            <SectionLabel>On The Court · The Show</SectionLabel>
 
             <h2 className="mt-6 font-[family-name:var(--font-fraunces)] text-[clamp(2.6rem,5.6vw,4.4rem)] font-black leading-[0.9] tracking-[-0.04em]">
               Jaiye&apos;s On
@@ -52,7 +53,8 @@ export default function OnTheCourt() {
 
             <div className="mt-8 flex flex-wrap gap-3">
               <PlayButton href={`/pod/${ep.slug}`}>Play episode</PlayButton>
-              <GhostButton href="/pod">All episodes</GhostButton>
+              <GhostButton href="/pod#episodes">All episodes</GhostButton>
+              <GhostButton href="/column">Read the column</GhostButton>
             </div>
           </div>
 
@@ -100,6 +102,8 @@ export default function OnTheCourt() {
             );
           })}
         </div>
+
+        <NewsletterBox className="mt-[clamp(32px,5vw,64px)] max-w-[640px]" />
       </div>
     </section>
   );

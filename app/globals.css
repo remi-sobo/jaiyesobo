@@ -45,10 +45,11 @@
   --color-games-yellow: #F5C842;
   --color-games-green: #3ECFB2;
 
-  --font-display: 'Fraunces', serif;
-  --font-body: 'Inter', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-  --font-hand: 'Caveat', cursive;
+  /* The family names come from next/font/local in app/layout.tsx. */
+  --font-display: var(--font-fraunces), serif;
+  --font-body: var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), monospace;
+  --font-hand: var(--font-caveat), cursive;
 }
 
 @keyframes pin-shake {
