@@ -5,11 +5,17 @@ import { getGamesAudience } from "@/lib/games/audience";
 import SeedKemiPanel from "@/components/admin/seed-kemi-panel";
 import SeedDraftWheelPanel from "@/components/admin/seed-draft-wheel-panel";
 import GameAudiencePanel from "@/components/admin/game-audience-panel";
+import InstagramSetupPanel from "@/components/admin/replies/instagram-setup-panel";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminSetupPage() {
+export default async function AdminSetupPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ig_connected?: string; ig_error?: string }>;
+}) {
   await requireAdmin();
+  const { ig_connected, ig_error } = await searchParams;
   const [kids, games, audience] = await Promise.all([
     getAllKids(),
     getAllGames(),
@@ -31,6 +37,8 @@ export default async function AdminSetupPage() {
           action here is idempotent.
         </p>
       </div>
+
+      <InstagramSetupPanel connected={ig_connected} error={ig_error} />
 
       <SeedKemiPanel />
 
