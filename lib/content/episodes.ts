@@ -4,6 +4,27 @@ import type { Episode } from "./types";
 /** On The Court. Newest first. */
 export const episodes: Episode[] = [
   {
+    number: 8,
+    slug: "heat-turnaround",
+    title: "Why the Heat turned around (and who cares about the trade?)",
+    titleAccent: "turned around",
+    standfirst:
+      "The Heat started 0 and 4, then won 9 of their next 11. Three reasons why, the Giannis trade, a true story about shooting threes against Klay Thompson, rapid fire, and my bold take of the week.",
+    date: "2026-11-19",
+    runtime: "6:29",
+    guests: "Jaiye",
+    youtubeId: "JrcuUPX7Xxo",
+    myTake: "Who the heck cares about Tyler Herro if you can have Giannis Antetokounmpo?",
+    chapters: [
+      { time: "00:00", text: "Cold open. Who cares about Tyler Herro if you can have Giannis?" },
+      { time: "00:09", text: "3, 2, 1. On The Court." },
+      { time: "00:49", text: "Three reasons the Heat turned it around." },
+      { time: "02:36", text: "The Giannis trade. Only NBA casuals would ask if it was worth it." },
+      { time: "04:07", text: "Rapid fire. Giannis or Bam? That one's obvious." },
+      { time: "05:23", text: "Predictions, and my bold take of the week." },
+    ],
+  },
+  {
     number: 6,
     slug: "runitback-week-5",
     title: "My Week 5 Run It Back Picks",
